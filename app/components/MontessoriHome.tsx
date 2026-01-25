@@ -50,20 +50,19 @@ export default function MontessoriHome() {
     };
   }, [activeMaterialId, setActiveMaterial]);
 
-  const progressPercent = useMemo(() => {
-    if (!materials.length) {
-      return 0;
-    }
-
-    return Math.min(
-      100,
-      Math.round((completedIds.length / materials.length) * 100),
-    );
-  }, [completedIds.length, materials.length]);
-
   const activeMaterial = materials.find(
     (material) => material.id === activeMaterialId,
   );
+  const upcomingMaterials = useMemo(
+    () =>
+      materials.filter((material) => material.id !== activeMaterialId).slice(0, 3),
+    [materials, activeMaterialId],
+  );
+  const completedCount = completedIds.length;
+  const totalCount = materials.length;
+  const isActiveComplete = activeMaterial
+    ? completedIds.includes(activeMaterial.id)
+    : false;
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,#f5efe6_0%,#fdfbf8_45%,#f7efe4_100%)]">
@@ -80,27 +79,27 @@ export default function MontessoriHome() {
               {...fadeUp}
               className="font-display text-4xl font-semibold leading-tight text-stone-900 sm:text-5xl"
             >
-              Hands-on Montessori materials brought to life in 3D.
+              Build one Montessori lesson at a time, then pack it into your library.
             </motion.h1>
             <motion.p
               {...fadeUp}
               className="max-w-xl text-base leading-relaxed text-stone-600 sm:text-lg"
             >
-              Build calm, focused lessons with interactive 3D materials, gentle
-              narration cues, and progress tracking for every child.
+              Focus on a single material, test it with a calm routine, then move it into a
+              category before starting the next lesson.
             </motion.p>
             <motion.div {...fadeUp} className="flex flex-wrap gap-3">
               <a
                 className="rounded-full bg-stone-900 px-6 py-3 text-sm font-semibold text-stone-50 transition hover:bg-stone-800"
-                href="#materials"
+                href="#focus"
               >
-                Explore materials
+                Current focus
               </a>
               <a
                 className="rounded-full border border-stone-300 bg-white px-6 py-3 text-sm font-semibold text-stone-800 transition hover:border-stone-400 hover:bg-stone-50"
-                href="#setup"
+                href="#pipeline"
               >
-                Setup checklist
+                Library pipeline
               </a>
             </motion.div>
             <motion.div
@@ -136,16 +135,16 @@ export default function MontessoriHome() {
           </motion.div>
         </section>
 
-        <section id="materials" className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-wrap items-end justify-between gap-4">
+        <section id="focus" className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+          <div className="rounded-[32px] border border-stone-200 bg-white/80 p-6">
+            <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <h2 className="font-display text-3xl text-stone-900">
-                  Montessori materials, curated and calm
-                </h2>
-                <p className="mt-2 text-sm text-stone-600">
-                  Start with classic materials and build sensory-rich lessons.
+                <p className="text-xs uppercase tracking-[0.2em] text-stone-400">
+                  Current focus
                 </p>
+                <h2 className="font-display text-3xl text-stone-900">
+                  {activeMaterial?.name ?? "Loading focus"}
+                </h2>
               </div>
               <span className="rounded-full border border-stone-200 bg-white px-4 py-2 text-xs uppercase tracking-[0.2em] text-stone-500">
                 {source === "supabase"
@@ -155,144 +154,138 @@ export default function MontessoriHome() {
                     : "Supabase not set"}
               </span>
             </div>
+            <p className="mt-3 text-sm text-stone-600">
+              {activeMaterial?.description ??
+                "Add your first Montessori material to start the workflow."}
+            </p>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              {materials.map((material) => {
-                const isActive = material.id === activeMaterialId;
-                const isComplete = completedIds.includes(material.id);
-                return (
-                  <div
-                    key={material.id}
-                    onClick={() => setActiveMaterial(material.id)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        setActiveMaterial(material.id);
-                      }
-                    }}
-                    role="button"
-                    tabIndex={0}
-                    className={`flex flex-col gap-3 rounded-3xl border p-5 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400 ${
-                      isActive
-                        ? "border-stone-900 bg-stone-900 text-white"
-                        : "border-stone-200 bg-white/80 text-stone-700 hover:border-stone-400"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-display text-xl">
-                        {material.name}
-                      </h3>
-                      {isComplete ? (
-                        <span className="rounded-full bg-white/20 px-3 py-1 text-[10px] uppercase tracking-[0.2em]">
-                          Complete
-                        </span>
-                      ) : null}
-                    </div>
-                    <p className={`text-sm ${isActive ? "text-white/80" : "text-stone-600"}`}>
-                      {material.description}
-                    </p>
-                    <div className="flex flex-wrap items-center gap-3">
-                      {material.ageRange ? (
-                        <span className={`rounded-full border px-3 py-1 text-[10px] uppercase tracking-[0.2em] ${
-                          isActive
-                            ? "border-white/30 text-white"
-                            : "border-stone-200 text-stone-500"
-                        }`}>
-                          {material.ageRange} yrs
-                        </span>
-                      ) : null}
-                      <button
-                        className={`rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.2em] ${
-                          isActive
-                            ? "bg-white/20 text-white"
-                            : "bg-stone-900 text-white"
-                        }`}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          markComplete(material.id);
-                        }}
-                        type="button"
-                      >
-                        Mark complete
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="rounded-[32px] border border-stone-200 bg-white/80 p-6">
-            <div className="rounded-[24px] bg-[#f7efe4] p-5">
-              <p className="text-xs uppercase tracking-[0.2em] text-stone-400">
-                Progress + audio
-              </p>
-              <div className="mt-4 rounded-2xl bg-white/80 p-4">
-                <div className="flex items-center justify-between text-sm text-stone-600">
-                  <span>Progress</span>
-                  <span>{progressPercent}%</span>
-                </div>
-                <div className="mt-3 h-2 rounded-full bg-stone-100">
-                  <div
-                    className="h-2 rounded-full bg-amber-400 transition"
-                    style={{ width: `${progressPercent}%` }}
-                  />
-                </div>
-                <p className="mt-3 text-xs uppercase tracking-[0.2em] text-stone-400">
-                  {completedIds.length} of {materials.length} activities done
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              <div className="rounded-2xl bg-white/80 p-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-stone-400">
+                  Status
                 </p>
-              </div>
-              <div className="mt-4 rounded-2xl bg-white/80 p-4">
-                <p className="text-sm text-stone-600">
-                  Tap the chime to start a gentle narration cue.
+                <p className="mt-2 text-sm text-stone-600">
+                  {isActiveComplete
+                    ? "Ready to pack into your library category."
+                    : "In testing. Keep one focused routine for the child."}
                 </p>
                 <button
-                  className="mt-3 rounded-full bg-stone-900 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white"
+                  className="mt-4 rounded-full bg-stone-900 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white disabled:cursor-not-allowed disabled:bg-stone-300"
+                  onClick={() => {
+                    if (activeMaterial) {
+                      markComplete(activeMaterial.id);
+                    }
+                  }}
+                  type="button"
+                  disabled={!activeMaterial}
+                >
+                  {isActiveComplete ? "Marked complete" : "Mark tested"}
+                </button>
+              </div>
+              <div className="rounded-2xl bg-white/80 p-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-stone-400">
+                  Audio cue
+                </p>
+                <p className="mt-2 text-sm text-stone-600">
+                  A soft chime before each lesson begins.
+                </p>
+                <button
+                  className="mt-4 rounded-full border border-stone-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-stone-700 transition hover:border-stone-400 hover:bg-stone-50"
                   onClick={playChime}
                   type="button"
                 >
                   Play chime
                 </button>
               </div>
-              <div className="mt-4 rounded-2xl bg-white/80 p-4">
-                <p className="text-sm text-stone-600">Drag practice</p>
-                <div className="mt-3">
-                  <DraggableRod />
-                </div>
+            </div>
+
+            <div className="mt-6 rounded-2xl bg-white/80 p-4">
+              <div className="flex items-center justify-between text-xs uppercase tracking-[0.2em] text-stone-400">
+                <span>Testing tray</span>
+                <span>
+                  {completedCount}/{totalCount} packed
+                </span>
+              </div>
+              <div className="mt-3">
+                <DraggableRod />
               </div>
             </div>
           </div>
-        </section>
 
-        <section id="setup" className="rounded-[36px] border border-stone-200 bg-white/90 p-8">
-          <h2 className="font-display text-3xl text-stone-900">
-            Setup checklist
-          </h2>
-          <div className="mt-6 grid gap-6 md:grid-cols-3">
-            {[
-              {
-                title: "Supabase project",
-                detail: "Create a database and store materials + progress.",
-              },
-              {
-                title: "Vercel deploy",
-                detail: "Connect GitHub repo and add env variables.",
-              },
-              {
-                title: "3D assets",
-                detail: "Drop GLB models into Supabase storage.",
-              },
-            ].map((item) => (
-              <div
-                key={item.title}
-                className="rounded-3xl border border-stone-200 bg-[#fdf9f2] p-5"
-              >
-                <h3 className="font-display text-xl text-stone-900">
-                  {item.title}
-                </h3>
-                <p className="mt-2 text-sm text-stone-600">{item.detail}</p>
+          <div className="flex flex-col gap-6">
+            <div className="rounded-[28px] border border-stone-200 bg-white/80 p-5">
+              <p className="text-xs uppercase tracking-[0.2em] text-stone-400">
+                Next up
+              </p>
+              <div className="mt-4 grid gap-3">
+                {upcomingMaterials.length ? (
+                  upcomingMaterials.map((material) => (
+                    <button
+                      key={material.id}
+                      onClick={() => setActiveMaterial(material.id)}
+                      className="flex items-center justify-between rounded-2xl border border-stone-200 bg-white px-4 py-3 text-left text-sm text-stone-700 transition hover:border-stone-300 hover:bg-stone-50"
+                      type="button"
+                    >
+                      <span className="font-display text-base text-stone-900">
+                        {material.name}
+                      </span>
+                      <span className="text-xs uppercase tracking-[0.2em] text-stone-400">
+                        Focus
+                      </span>
+                    </button>
+                  ))
+                ) : (
+                  <p className="text-sm text-stone-500">
+                    You are clear to build your next material.
+                  </p>
+                )}
               </div>
-            ))}
+            </div>
+
+            <div
+              id="pipeline"
+              className="rounded-[28px] border border-stone-200 bg-white/80 p-5"
+            >
+              <p className="text-xs uppercase tracking-[0.2em] text-stone-400">
+                Library pipeline
+              </p>
+              <div className="mt-4 grid gap-3 text-sm text-stone-600">
+                {[
+                  {
+                    title: "Build the lesson",
+                    detail: "Design the 3D routine + script.",
+                    status: "Now",
+                  },
+                  {
+                    title: "Test with a child",
+                    detail: "Observe focus + refine pacing.",
+                    status: isActiveComplete ? "Done" : "Next",
+                  },
+                  {
+                    title: "Pack into library",
+                    detail: "Add category + publish.",
+                    status: isActiveComplete ? "Ready" : "Later",
+                  },
+                ].map((step) => (
+                  <div
+                    key={step.title}
+                    className="rounded-2xl border border-stone-200 bg-[#fdf9f2] p-4"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-display text-base text-stone-900">
+                        {step.title}
+                      </span>
+                      <span className="text-[10px] uppercase tracking-[0.2em] text-stone-400">
+                        {step.status}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-xs text-stone-500">
+                      {step.detail}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </section>
       </main>
