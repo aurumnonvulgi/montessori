@@ -489,6 +489,8 @@ export default function SandpaperNumeralsScene({
           enableZoom={false}
           maxPolarAngle={Math.PI / 2.1}
           target={[0, 0, 0.1]}
+          minAzimuthAngle={-Math.PI / 2}
+          maxAzimuthAngle={Math.PI / 2}
         />
       </Canvas>
     </div>
