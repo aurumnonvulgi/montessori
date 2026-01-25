@@ -10,6 +10,7 @@ type SandpaperNumeralsSceneProps = {
   playing: boolean;
   voiceEnabled: boolean;
   className?: string;
+  onLessonComplete?: () => void;
 };
 
 type QuizPhase = "click" | "name" | null;
@@ -116,7 +117,7 @@ function SandpaperNumeralsContent({
   const completedRef = useRef(false);
   const quizLiftRef = useRef<number | null>(null);
   const quizLiftStartRef = useRef<number | null>(null);
-  const spokenRef = useRef<Record<number, boolean>>({});
+  const introTimeoutsRef = useRef<number[]>([]);
   const numeralTextures = useMemo(
     () => numerals.map((value) => createNumeralTexture(value)),
     [],
@@ -130,6 +131,32 @@ function SandpaperNumeralsContent({
   }, [quizLiftIndex]);
 
   useEffect(() => {
+    introTimeoutsRef.current.forEach((timeoutId) => {
+      window.clearTimeout(timeoutId);
+    });
+    introTimeoutsRef.current = [];
+
+    if (!playing || !voiceEnabled) {
+      return () => {};
+    }
+
+    timeline.stages.forEach((stage, index) => {
+      const delayMs = (stage.slideEnd ?? 0) * 1000 + 150;
+      const timeoutId = window.setTimeout(() => {
+        speakText(numeralWords[index]);
+      }, delayMs);
+      introTimeoutsRef.current.push(timeoutId);
+    });
+
+    return () => {
+      introTimeoutsRef.current.forEach((timeoutId) => {
+        window.clearTimeout(timeoutId);
+      });
+      introTimeoutsRef.current = [];
+    };
+  }, [playing, voiceEnabled]);
+
+  useEffect(() => {
     return () => {
       numeralTextures.forEach((texture) => texture?.dispose());
     };
@@ -141,7 +168,6 @@ function SandpaperNumeralsContent({
     if (!playing) {
       startTimeRef.current = null;
       completedRef.current = false;
-      spokenRef.current = {};
       numerals.forEach((_, index) => {
         const card = cardRefs.current[index];
         if (!card) {
@@ -242,10 +268,6 @@ function SandpaperNumeralsContent({
       const text = textRefs.current[index];
       if (text) {
         text.visible = playing;
-        if (t >= end && voiceEnabled && !spokenRef.current[index]) {
-          spokenRef.current[index] = true;
-          speakText(numeralWords[index]);
-        }
         text.position.y = textSurfaceY;
         const material = text.material as THREE.MeshStandardMaterial;
         if (material?.color) {
@@ -342,13 +364,16 @@ export default function SandpaperNumeralsScene({
   playing,
   voiceEnabled,
   className,
+  onLessonComplete,
 }: SandpaperNumeralsSceneProps) {
   const [quizIndex, setQuizIndex] = useState<number | null>(null);
   const [quizPhase, setQuizPhase] = useState<QuizPhase>(null);
   const [quizLiftIndex, setQuizLiftIndex] = useState<number | null>(null);
   const quizDoneRef = useRef(false);
+  const lessonCompleteRef = useRef(false);
   const promptRef = useRef<Record<string, boolean>>({});
   const timeoutRef = useRef<number | null>(null);
+  const quizStartTimerRef = useRef<number | null>(null);
   const recognitionRef = useRef<any>(null);
   const awaitingAnswerRef = useRef(false);
 
@@ -365,8 +390,13 @@ export default function SandpaperNumeralsScene({
   const handleSequenceComplete = useCallback(() => {
     if (!quizDoneRef.current) {
       quizDoneRef.current = true;
-      setQuizPhase("click");
-      setQuizIndex(0);
+      if (quizStartTimerRef.current) {
+        window.clearTimeout(quizStartTimerRef.current);
+      }
+      quizStartTimerRef.current = window.setTimeout(() => {
+        setQuizPhase("click");
+        setQuizIndex(0);
+      }, 600);
     }
   }, []);
 
@@ -459,6 +489,7 @@ export default function SandpaperNumeralsScene({
   useEffect(() => {
     if (!playing) {
       quizDoneRef.current = false;
+      lessonCompleteRef.current = false;
       promptRef.current = {};
       awaitingAnswerRef.current = false;
       setQuizIndex(null);
@@ -467,6 +498,10 @@ export default function SandpaperNumeralsScene({
       if (timeoutRef.current) {
         window.clearTimeout(timeoutRef.current);
         timeoutRef.current = null;
+      }
+      if (quizStartTimerRef.current) {
+        window.clearTimeout(quizStartTimerRef.current);
+        quizStartTimerRef.current = null;
       }
       if (recognitionRef.current) {
         try {
@@ -501,18 +536,22 @@ export default function SandpaperNumeralsScene({
       const advance = () => {
         awaitingAnswerRef.current = false;
         setQuizLiftIndex(null);
-        setQuizIndex((prev) => {
-          if (prev === null) {
+          setQuizIndex((prev) => {
+            if (prev === null) {
+              return null;
+            }
+            const next = prev + 1;
+            if (next < nameOrder.length) {
+              return next;
+            }
+            setQuizPhase(null);
+            if (!lessonCompleteRef.current) {
+              lessonCompleteRef.current = true;
+              onLessonComplete?.();
+            }
             return null;
-          }
-          const next = prev + 1;
-          if (next < nameOrder.length) {
-            return next;
-          }
-          setQuizPhase(null);
-          return null;
-        });
-      };
+          });
+        };
 
       if (timeoutRef.current) {
         window.clearTimeout(timeoutRef.current);
@@ -531,12 +570,23 @@ export default function SandpaperNumeralsScene({
         finishAfterDelay();
       }
     }
-  }, [currentTarget, quizPhase, startRecognition, voiceEnabled, nameOrder.length]);
+  }, [
+    currentTarget,
+    quizPhase,
+    startRecognition,
+    voiceEnabled,
+    nameOrder.length,
+    onLessonComplete,
+  ]);
 
   useEffect(() => {
     return () => {
       if (timeoutRef.current) {
         window.clearTimeout(timeoutRef.current);
+      }
+      if (quizStartTimerRef.current) {
+        window.clearTimeout(quizStartTimerRef.current);
+        quizStartTimerRef.current = null;
       }
       if (recognitionRef.current) {
         try {
@@ -550,7 +600,7 @@ export default function SandpaperNumeralsScene({
   }, []);
 
   const cameraPosition = useMemo(
-    () => [0, 1.22, 1.45] as [number, number, number],
+    () => [0, 1.35, 1.75] as [number, number, number],
     [],
   );
 
@@ -558,7 +608,7 @@ export default function SandpaperNumeralsScene({
     <div
       className={`w-full overflow-hidden rounded-[28px] bg-[#f7efe4] ${className ?? "h-[420px]"}`}
     >
-      <Canvas shadows camera={{ position: cameraPosition, fov: 30 }}>
+      <Canvas shadows camera={{ position: cameraPosition, fov: 28 }}>
         <color attach="background" args={["#f7efe4"]} />
         <SandpaperNumeralsContent
           playing={playing}
@@ -571,11 +621,11 @@ export default function SandpaperNumeralsScene({
           enablePan={false}
           enableZoom
           maxPolarAngle={Math.PI / 2.1}
-          target={[0, 0, 0.25]}
+          target={[0, 0, 0.3]}
           minAzimuthAngle={-(Math.PI * 65) / 180}
           maxAzimuthAngle={(Math.PI * 65) / 180}
-          minDistance={1.9}
-          maxDistance={3.2}
+          minDistance={2.2}
+          maxDistance={3.6}
         />
       </Canvas>
     </div>
