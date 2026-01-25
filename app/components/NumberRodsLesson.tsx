@@ -1,9 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import NumberRodsScene, { NUMBER_ROD_STAGES } from "./NumberRodsScene";
 
 export default function NumberRodsLesson() {
+  const router = useRouter();
   const [lessonStarted, setLessonStarted] = useState(false);
   const [resetKey, setResetKey] = useState(0);
   const [stageIndex, setStageIndex] = useState(0);
@@ -41,6 +43,17 @@ export default function NumberRodsLesson() {
 
   const handleStageComplete = useCallback(() => {
     clearConfettiTimers();
+    const isFinalStage = stageIndex >= NUMBER_ROD_STAGES.length - 1;
+
+    if (!isFinalStage) {
+      advanceTimerRef.current = window.setTimeout(() => {
+        setStageIndex((prev) =>
+          prev < NUMBER_ROD_STAGES.length - 1 ? prev + 1 : prev,
+        );
+      }, 700);
+      return;
+    }
+
     setConfettiVisible(true);
     setFadeOut(false);
 
@@ -51,11 +64,12 @@ export default function NumberRodsLesson() {
     advanceTimerRef.current = window.setTimeout(() => {
       setConfettiVisible(false);
       setFadeOut(false);
-      setStageIndex((prev) =>
-        prev < NUMBER_ROD_STAGES.length - 1 ? prev + 1 : prev,
-      );
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem("number-rods-complete", "true");
+      }
+      router.push("/");
     }, 3400);
-  }, [clearConfettiTimers]);
+  }, [clearConfettiTimers, router, stageIndex]);
 
   useEffect(() => {
     return () => {

@@ -1,8 +1,18 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import NumberRodsScene from "./NumberRodsScene";
 
 export default function MontessoriHome() {
+  const [isCompleted, setIsCompleted] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    setIsCompleted(window.localStorage.getItem("number-rods-complete") === "true");
+  }, []);
+
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,#f5efe6_0%,#fdfbf8_45%,#f7efe4_100%)]">
       <main className="mx-auto flex min-h-screen w-full max-w-5xl items-center justify-center px-6 py-12 sm:px-10">
@@ -23,6 +33,13 @@ export default function MontessoriHome() {
               <span className="font-display text-2xl font-semibold text-stone-900">
                 Number Rods
               </span>
+              {isCompleted ? (
+                <div className="mt-2 flex justify-center">
+                  <span className="rounded-full bg-emerald-100 px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-emerald-700">
+                    Completed
+                  </span>
+                </div>
+              ) : null}
             </div>
           </div>
         </a>
