@@ -32,10 +32,9 @@ const stackOffsets = [
 ];
 const rowZ = 0.38;
 const rowX = [-0.38, 0, 0.38];
-const traceWidth = cardSize.width * 0.55;
-const traceHeight = cardSize.height * 0.7;
-const traceHalfW = traceWidth / 2;
-const traceHalfH = traceHeight / 2;
+const textSurfaceY = cardSize.thickness / 2 + 0.002;
+const textRaise = 0.025;
+const carveDepth = 0.004;
 
 const smoothstep = (t: number) => t * t * (3 - 2 * t);
 const clamp01 = (t: number) => Math.min(1, Math.max(0, t));
@@ -57,33 +56,6 @@ const buildTimeline = () => {
 
 const timeline = buildTimeline();
 
-const getTracePoint = (index: number, progress: number) => {
-  const p = clamp01(progress);
-  const z = lerp(traceHalfH, -traceHalfH, p);
-
-  if (index === 0) {
-    return { x: 0, z };
-  }
-
-  if (index === 1) {
-    if (p < 0.5) {
-      return { x: lerp(-traceHalfW, traceHalfW, p / 0.5), z };
-    }
-    return { x: lerp(traceHalfW, -traceHalfW, (p - 0.5) / 0.5), z };
-  }
-
-  if (p < 0.33) {
-    return { x: lerp(traceHalfW * 0.1, traceHalfW, p / 0.33), z };
-  }
-  if (p < 0.66) {
-    return { x: lerp(traceHalfW, traceHalfW * 0.1, (p - 0.33) / 0.33), z };
-  }
-  return {
-    x: lerp(traceHalfW * 0.1, traceHalfW, (p - 0.66) / 0.34),
-    z,
-  };
-};
-
 const speakText = (text: string) => {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) {
     return;
@@ -99,6 +71,7 @@ const speakText = (text: string) => {
 
 type SandpaperNumeralsContentProps = {
   playing: boolean;
+  voiceEnabled: boolean;
   quizLiftIndex: number | null;
   onComplete: () => void;
   onSelect: (index: number) => void;
@@ -106,6 +79,7 @@ type SandpaperNumeralsContentProps = {
 
 function SandpaperNumeralsContent({
   playing,
+  voiceEnabled,
   quizLiftIndex,
   onComplete,
   onSelect,
@@ -113,12 +87,11 @@ function SandpaperNumeralsContent({
   const cardRefs = useRef<THREE.Group[]>([]);
   const cardMeshRefs = useRef<THREE.Mesh[]>([]);
   const textRefs = useRef<THREE.Mesh[]>([]);
-  const ringRefs = useRef<THREE.Mesh[]>([]);
-  const sweepRefs = useRef<THREE.Mesh[]>([]);
   const startTimeRef = useRef<number | null>(null);
   const completedRef = useRef(false);
   const quizLiftRef = useRef<number | null>(null);
   const quizLiftStartRef = useRef<number | null>(null);
+  const spokenRef = useRef<Record<number, boolean>>({});
 
   useEffect(() => {
     quizLiftRef.current = quizLiftIndex;
@@ -133,6 +106,7 @@ function SandpaperNumeralsContent({
     if (!playing) {
       startTimeRef.current = null;
       completedRef.current = false;
+      spokenRef.current = {};
       numerals.forEach((_, index) => {
         const card = cardRefs.current[index];
         if (!card) {
@@ -146,20 +120,19 @@ function SandpaperNumeralsContent({
         const text = textRefs.current[index];
         if (text) {
           text.visible = false;
+          text.position.set(0, textSurfaceY, 0);
+          const material = text.material as THREE.MeshStandardMaterial;
+          if (material?.color) {
+            material.color.set("#e9e6df");
+            material.emissive.set("#e9e6df");
+            material.emissiveIntensity = 0;
+          }
         }
         const mesh = cardMeshRefs.current[index];
         if (mesh) {
           const material = mesh.material as THREE.MeshStandardMaterial;
           material.emissive.set("#1f7a3c");
           material.emissiveIntensity = 0;
-        }
-        const ring = ringRefs.current[index];
-        if (ring) {
-          ring.visible = false;
-        }
-        const sweep = sweepRefs.current[index];
-        if (sweep) {
-          sweep.visible = false;
         }
       });
       return;
@@ -232,6 +205,45 @@ function SandpaperNumeralsContent({
       const text = textRefs.current[index];
       if (text) {
         text.visible = t >= end - 0.2;
+        const traceActive = t >= traceStart && t <= traceEnd;
+        const traceProgress = traceActive
+          ? clamp01((t - traceStart) / (traceEnd - traceStart))
+          : 0;
+        const raiseProgress = clamp01(traceProgress / 0.35);
+        const lowerProgress = clamp01((traceProgress - 0.35) / 0.65);
+        let textY = textSurfaceY;
+        let carved = false;
+
+        if (traceActive) {
+          if (traceProgress <= 0.35) {
+            textY = lerp(
+              textSurfaceY,
+              textSurfaceY + textRaise,
+              smoothstep(raiseProgress),
+            );
+          } else {
+            textY = lerp(
+              textSurfaceY + textRaise,
+              textSurfaceY - carveDepth,
+              smoothstep(lowerProgress),
+            );
+          }
+          if (voiceEnabled && !spokenRef.current[index]) {
+            spokenRef.current[index] = true;
+            speakText(numeralWords[index]);
+          }
+        } else if (t > traceEnd) {
+          textY = textSurfaceY - carveDepth;
+          carved = true;
+        }
+
+        text.position.y = textY;
+        const material = text.material as THREE.MeshStandardMaterial;
+        if (material?.color) {
+          material.color.set(carved ? "#d6d0c4" : "#e9e6df");
+          material.emissive.set(material.color);
+          material.emissiveIntensity = carved ? 0.15 : 0;
+        }
       }
 
       const mesh = cardMeshRefs.current[index];
@@ -239,44 +251,6 @@ function SandpaperNumeralsContent({
         const material = mesh.material as THREE.MeshStandardMaterial;
         material.emissive.set("#1f7a3c");
         material.emissiveIntensity = quizLiftIndexValue === index ? 0.25 : 0;
-      }
-
-      const ring = ringRefs.current[index];
-      if (ring) {
-        if (index === 0 && t >= traceStart && t <= traceEnd) {
-          const progress = clamp01((t - traceStart) / (traceEnd - traceStart));
-          const point = getTracePoint(index, progress);
-          const startColor = new THREE.Color("#f8f4e8");
-          const endColor = new THREE.Color("#f8d85b");
-          const ringMaterial = ring.material as THREE.MeshStandardMaterial;
-          ringMaterial.color.copy(startColor).lerp(endColor, progress);
-          ringMaterial.emissive.copy(ringMaterial.color);
-          ringMaterial.emissiveIntensity = 0.35 * progress;
-          ring.position.set(point.x, cardSize.thickness / 2 + 0.01, point.z);
-          ring.rotation.set(-Math.PI / 2, 0, progress * Math.PI * 2);
-          ring.visible = true;
-        } else {
-          ring.visible = false;
-        }
-      }
-
-      const sweep = sweepRefs.current[index];
-      if (sweep) {
-        if (index === 1 && t >= traceStart && t <= traceEnd) {
-          const progress = clamp01((t - traceStart) / (traceEnd - traceStart));
-          const startColor = new THREE.Color("#f8f4e8");
-          const endColor = new THREE.Color("#f8d85b");
-          const sweepMaterial = sweep.material as THREE.MeshStandardMaterial;
-          sweepMaterial.color.copy(startColor).lerp(endColor, progress);
-          sweepMaterial.emissive.copy(sweepMaterial.color);
-          sweepMaterial.emissiveIntensity = 0.3 * progress;
-          const sweepZ = lerp(traceHalfH, -traceHalfH, progress);
-          sweep.position.set(0, cardSize.thickness / 2 + 0.01, sweepZ);
-          sweep.rotation.set(-Math.PI / 2, 0, progress * Math.PI * 0.6);
-          sweep.visible = true;
-        } else {
-          sweep.visible = false;
-        }
       }
     });
   });
@@ -336,7 +310,7 @@ function SandpaperNumeralsContent({
                 textRefs.current[index] = el;
               }
             }}
-            position={[0, cardSize.thickness / 2 + 0.002, 0]}
+            position={[0, textSurfaceY, 0]}
             rotation={[-Math.PI / 2, 0, 0]}
             fontSize={0.22}
             color="#e9e6df"
@@ -345,38 +319,6 @@ function SandpaperNumeralsContent({
           >
             {value}
           </Text>
-          <mesh
-            ref={(el) => {
-              if (el) {
-                ringRefs.current[index] = el;
-              }
-            }}
-            visible={false}
-          >
-            <ringGeometry args={[0.022, 0.032, 36]} />
-            <meshStandardMaterial
-              color="#f8f4e8"
-              roughness={0.4}
-              metalness={0.1}
-            />
-          </mesh>
-          <mesh
-            ref={(el) => {
-              if (el) {
-                sweepRefs.current[index] = el;
-              }
-            }}
-            visible={false}
-          >
-            <planeGeometry args={[traceWidth * 0.75, traceHeight * 0.08]} />
-            <meshStandardMaterial
-              color="#f8f4e8"
-              roughness={0.35}
-              metalness={0.1}
-              transparent
-              opacity={0.85}
-            />
-          </mesh>
         </group>
       ))}
     </group>
@@ -607,6 +549,7 @@ export default function SandpaperNumeralsScene({
         <color attach="background" args={["#f7efe4"]} />
         <SandpaperNumeralsContent
           playing={playing}
+          voiceEnabled={voiceEnabled}
           quizLiftIndex={quizLiftIndex}
           onComplete={handleSequenceComplete}
           onSelect={handleCardSelect}
