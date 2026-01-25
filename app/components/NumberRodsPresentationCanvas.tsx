@@ -86,6 +86,48 @@ const SuccessOverlay = ({ fadeOut }: { fadeOut: boolean }) => (
   </div>
 );
 
+const MicOverlay = ({ state }: { state: "listening" | "success" }) => {
+  const isSuccess = state === "success";
+  return (
+    <div className="absolute inset-0 z-20">
+      <div
+        className={`absolute inset-0 ${
+          isSuccess ? "bg-emerald-400/25" : "bg-red-400/25"
+        }`}
+      />
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div
+          className={`flex h-28 w-28 items-center justify-center rounded-full ${
+            isSuccess ? "bg-white/85" : "bg-red-500 text-white"
+          } shadow-xl`}
+        >
+          {isSuccess ? (
+            <svg viewBox="0 0 120 120" className="h-16 w-16">
+              <path
+                d="M18 64l28 28 56-62"
+                fill="none"
+                stroke="#f2c94c"
+                strokeWidth="14"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          ) : (
+            <span className="flex h-12 w-12 animate-pulse items-center justify-center rounded-full bg-white/15">
+              <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden="true">
+                <path
+                  d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 14 0h-2zm-6.5 8h3v-2h-3v2z"
+                  fill="currentColor"
+                />
+              </svg>
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function NumberRodsPresentationCanvas({
   playing,
   voiceEnabled,
@@ -96,7 +138,11 @@ export default function NumberRodsPresentationCanvas({
   const recognitionRef = useRef<any>(null);
   const demoTimerRef = useRef<number | null>(null);
   const successTimerRef = useRef<number | null>(null);
+  const introSuccessTimerRef = useRef<number | null>(null);
+  const introSequenceRef = useRef(false);
+  const retryRecognitionRef = useRef(false);
   const fadeTimerRef = useRef<number | null>(null);
+  const retryTimerRef = useRef<number | null>(null);
   const initialPositionsRef = useRef<Record<RodId, Position>>(
     {} as Record<RodId, Position>,
   );
@@ -110,8 +156,10 @@ export default function NumberRodsPresentationCanvas({
     2: false,
     3: false,
   });
-  const [listening, setListening] = useState(false);
   const [micError, setMicError] = useState("");
+  const [micOverlayState, setMicOverlayState] = useState<"idle" | "listening" | "success">(
+    "idle",
+  );
   const [successVisible, setSuccessVisible] = useState(false);
   const [successFade, setSuccessFade] = useState(false);
   const rodNodeRefs = useMemo(() => {
@@ -215,9 +263,17 @@ export default function NumberRodsPresentationCanvas({
       window.clearTimeout(successTimerRef.current);
       successTimerRef.current = null;
     }
+    if (introSuccessTimerRef.current) {
+      window.clearTimeout(introSuccessTimerRef.current);
+      introSuccessTimerRef.current = null;
+    }
     if (fadeTimerRef.current) {
       window.clearTimeout(fadeTimerRef.current);
       fadeTimerRef.current = null;
+    }
+    if (retryTimerRef.current) {
+      window.clearTimeout(retryTimerRef.current);
+      retryTimerRef.current = null;
     }
   }, []);
 
@@ -304,7 +360,8 @@ export default function NumberRodsPresentationCanvas({
     setPlaced({ 1: false, 2: false, 3: false });
     setPhase("intro");
     setMicError("");
-    setListening(false);
+    setMicOverlayState("idle");
+    introSequenceRef.current = false;
   }, [layout.width, layout.height, startPositions]);
 
   useEffect(() => {
@@ -314,7 +371,17 @@ export default function NumberRodsPresentationCanvas({
       setRodPositions(startPositions);
       setPlaced({ 1: false, 2: false, 3: false });
       setMicError("");
-      setListening(false);
+      setMicOverlayState("idle");
+      introSequenceRef.current = false;
+      retryRecognitionRef.current = false;
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {
+          // ignore
+        }
+        recognitionRef.current = null;
+      }
       return;
     }
     if (phase === "intro") {
@@ -368,7 +435,30 @@ export default function NumberRodsPresentationCanvas({
     };
   }, [clearTimers]);
 
-  const beginMicCapture = useCallback(() => {
+  const playBeep = useCallback(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContext) {
+      return;
+    }
+    const context = new AudioContext();
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    oscillator.type = "sine";
+    oscillator.frequency.value = 880;
+    gain.gain.value = 0.12;
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+    oscillator.start();
+    oscillator.stop(context.currentTime + 0.22);
+    oscillator.onended = () => {
+      context.close().catch(() => undefined);
+    };
+  }, []);
+
+  const startRecognition = useCallback(() => {
     if (!playing || phase !== "intro") {
       return;
     }
@@ -384,6 +474,7 @@ export default function NumberRodsPresentationCanvas({
 
     if (!SpeechRecognition) {
       setMicError("Speech recognition is not supported in this browser.");
+      setMicOverlayState("idle");
       return;
     }
 
@@ -399,32 +490,84 @@ export default function NumberRodsPresentationCanvas({
     recognition.lang = "en-US";
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
+    retryRecognitionRef.current = true;
 
     recognition.onresult = (event: any) => {
       const transcript = event.results?.[0]?.[0]?.transcript ?? "";
       if (isIntroMatch(transcript)) {
         setMicError("");
-        showSuccessOverlay(() => {
+        retryRecognitionRef.current = false;
+        setMicOverlayState("success");
+        if (introSuccessTimerRef.current) {
+          window.clearTimeout(introSuccessTimerRef.current);
+        }
+        introSuccessTimerRef.current = window.setTimeout(() => {
+          setMicOverlayState("idle");
           setPhase("rod1-demo");
-        });
+        }, 850);
       } else {
         setMicError("Try reading the sentence again.");
+        setMicOverlayState("listening");
+        retryRecognitionRef.current = true;
       }
     };
 
     recognition.onerror = () => {
       setMicError("Microphone error. Please try again.");
-      setListening(false);
+      setMicOverlayState("idle");
+      retryRecognitionRef.current = false;
     };
 
     recognition.onend = () => {
-      setListening(false);
+      recognitionRef.current = null;
+      if (retryRecognitionRef.current && playing && phase === "intro") {
+        if (retryTimerRef.current) {
+          window.clearTimeout(retryTimerRef.current);
+        }
+        retryTimerRef.current = window.setTimeout(() => {
+          startRecognition();
+        }, 350);
+      }
     };
 
     recognitionRef.current = recognition;
-    setListening(true);
+    setMicOverlayState("listening");
     recognition.start();
-  }, [phase, playing, showSuccessOverlay]);
+  }, [phase, playing]);
+
+  const startIntroSequence = useCallback(() => {
+    if (!playing || phase !== "intro" || introSequenceRef.current) {
+      return;
+    }
+    introSequenceRef.current = true;
+    setMicError("");
+    const speakLine = (text: string) =>
+      new Promise<void>((resolve) => {
+        if (!voiceEnabled || typeof window === "undefined" || !("speechSynthesis" in window)) {
+          resolve();
+          return;
+        }
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 0.9;
+        utterance.pitch = 0.95;
+        utterance.volume = 0.9;
+        utterance.onend = () => resolve();
+        utterance.onerror = () => resolve();
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(utterance);
+      });
+
+    const run = async () => {
+      await speakLine("Please repeat after me.");
+      await speakLine(INTRO_SENTENCE);
+      playBeep();
+      window.setTimeout(() => {
+        startRecognition();
+      }, 250);
+    };
+
+    run().catch(() => undefined);
+  }, [phase, playBeep, playing, startRecognition, voiceEnabled]);
 
   const handleRodDrag = useCallback(
     (rodId: RodId, data: { x: number; y: number }) => {
@@ -476,39 +619,26 @@ export default function NumberRodsPresentationCanvas({
 
   const showCaret = phase === "intro" && playing && typedSentence.length < INTRO_SENTENCE.length;
 
+  useEffect(() => {
+    if (phase === "intro" && playing) {
+      startIntroSequence();
+    }
+  }, [phase, playing, startIntroSequence]);
+
   return (
     <div
       className={`relative w-full overflow-hidden rounded-[28px] bg-[#f5efe6] ${className ?? "h-[420px]"}`}
     >
-      <div className="absolute left-6 right-6 top-4 rounded-2xl bg-white/90 px-6 py-4 text-center text-lg font-semibold text-stone-800 shadow-sm md:text-xl">
+      <div className="absolute left-6 right-6 top-4 rounded-2xl bg-white/90 px-6 py-4 text-center text-xl font-semibold text-stone-800 shadow-sm md:text-2xl">
         <span>{phase === "intro" ? typedSentence : bannerText}</span>
         {showCaret ? (
           <span className="ml-1 inline-block h-4 w-[2px] animate-pulse bg-stone-500 align-middle md:h-5" />
         ) : null}
       </div>
 
-      {phase === "intro" ? (
-        <div className="absolute left-1/2 top-20 w-[86%] max-w-[520px] -translate-x-1/2">
-          <button
-            type="button"
-            onClick={beginMicCapture}
-            className="flex w-full items-center justify-center gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 shadow-sm transition hover:bg-red-100"
-          >
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-red-500 text-white">
-              <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
-                <path
-                  d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 14 0h-2zm-6.5 8h3v-2h-3v2z"
-                  fill="currentColor"
-                />
-              </svg>
-            </span>
-            <span>{listening ? "Listening..." : "Please read the above sentence"}</span>
-          </button>
-          {micError ? (
-            <p className="mt-2 text-center text-xs font-medium text-red-600">
-              {micError}
-            </p>
-          ) : null}
+      {phase === "intro" && micError ? (
+        <div className="absolute left-1/2 top-24 w-[86%] max-w-[520px] -translate-x-1/2 text-center text-xs font-medium text-red-600">
+          {micError}
         </div>
       ) : null}
 
@@ -587,6 +717,10 @@ export default function NumberRodsPresentationCanvas({
           );
         })}
       </div>
+
+      {micOverlayState !== "idle" ? (
+        <MicOverlay state={micOverlayState === "success" ? "success" : "listening"} />
+      ) : null}
 
       {successVisible ? <SuccessOverlay fadeOut={successFade} /> : null}
     </div>
