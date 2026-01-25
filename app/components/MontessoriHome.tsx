@@ -15,7 +15,6 @@ export default function MontessoriHome() {
             <div className="pointer-events-none absolute inset-6 rounded-[28px] bg-white/70">
               <NumberRodsScene
                 playing={false}
-                voiceEnabled={false}
                 className="h-full"
               />
             </div>

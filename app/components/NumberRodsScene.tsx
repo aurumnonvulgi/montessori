@@ -1,14 +1,11 @@
 "use client";
 
 import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls } from "@react-three/drei";
+import { OrbitControls, SoftShadows } from "@react-three/drei";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
-import { playChime } from "../lib/sounds";
-
 type NumberRodsSceneProps = {
   playing: boolean;
-  voiceEnabled: boolean;
   onComplete?: () => void;
   className?: string;
 };
@@ -18,7 +15,7 @@ type Step = {
   duration: number;
 };
 
-const timeScale = 1.02;
+const timeScale = 1.2;
 const scale = (value: number) => value * timeScale;
 
 const steps: Step[] = [
@@ -56,19 +53,6 @@ const smoothstep = (t: number) => t * t * (3 - 2 * t);
 const clamp01 = (t: number) => Math.min(1, Math.max(0, t));
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
-const speakText = (text: string) => {
-  if (typeof window === "undefined" || !("speechSynthesis" in window)) {
-    return;
-  }
-
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.rate = 0.85;
-  utterance.pitch = 0.95;
-  utterance.volume = 0.8;
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(utterance);
-};
-
 const buildTimeline = () => {
   let cursor = 0;
   const map: Record<string, { start: number; end: number }> = {};
@@ -82,39 +66,19 @@ const buildTimeline = () => {
 
 const timeline = buildTimeline();
 
-const voiceCues = [
-  { id: "rod1Lift", text: "This is one" },
-  { id: "rod1Trace", text: "one" },
-  { id: "rod2Lift", text: "This is two" },
-  { id: "rod2Seg1", text: "one" },
-  { id: "rod2Seg2", text: "two" },
-  { id: "rod3Lift", text: "This is three" },
-  { id: "rod3Seg1", text: "one" },
-  { id: "rod3Seg2", text: "two" },
-  { id: "rod3Seg3", text: "three" },
-];
-
 function NumberRodsContent({
   playing,
-  voiceEnabled,
   onComplete,
 }: Omit<NumberRodsSceneProps, "className">) {
   const rodRefs = useRef<THREE.Group[]>([]);
   const segmentRefs = useRef<THREE.Mesh[][]>([[], [], []]);
   const startTimeRef = useRef<number | null>(null);
-  const spokenRef = useRef<Record<string, boolean>>({});
-  const chimeRef = useRef(false);
   const completedRef = useRef(false);
 
   useEffect(() => {
     if (!playing) {
       startTimeRef.current = null;
-      spokenRef.current = {};
-      chimeRef.current = false;
       completedRef.current = false;
-      if (typeof window !== "undefined" && "speechSynthesis" in window) {
-        window.speechSynthesis.cancel();
-      }
     }
   }, [playing]);
 
@@ -137,8 +101,6 @@ function NumberRodsContent({
 
     if (startTimeRef.current === null) {
       startTimeRef.current = now;
-      spokenRef.current = {};
-      chimeRef.current = false;
       completedRef.current = false;
     }
 
@@ -149,21 +111,6 @@ function NumberRodsContent({
       if (onComplete) {
         onComplete();
       }
-    }
-
-    if (!chimeRef.current && t >= timeline.map.finalTap.start) {
-      chimeRef.current = true;
-      playChime();
-    }
-
-    if (voiceEnabled) {
-      voiceCues.forEach((cue) => {
-        const cueTime = timeline.map[cue.id].start;
-        if (t >= cueTime && !spokenRef.current[cue.id]) {
-          spokenRef.current[cue.id] = true;
-          speakText(cue.text);
-        }
-      });
     }
 
     const rodLengths = [1, 2, 3].map((count) => segmentLength * count);
@@ -251,13 +198,21 @@ function NumberRodsContent({
 
   return (
     <group>
-      <ambientLight intensity={0.55} />
-      <directionalLight position={[2.2, 2.6, 1.8]} intensity={1.1} castShadow />
-      <directionalLight position={[-2.6, 2.1, -1.2]} intensity={0.35} />
+      <ambientLight intensity={0.6} />
+      <directionalLight
+        position={[2.2, 2.6, 1.8]}
+        intensity={0.9}
+        castShadow
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
+        shadow-bias={-0.0002}
+        shadow-normalBias={0.01}
+      />
+      <directionalLight position={[-2.6, 2.1, -1.2]} intensity={0.25} />
 
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
         <planeGeometry args={[3, 2]} />
-        <meshStandardMaterial color="#f1e5d1" roughness={0.9} metalness={0.05} />
+        <meshStandardMaterial color="#f3e9d8" roughness={0.95} metalness={0.02} />
       </mesh>
 
       {rods.map((rod, index) => {
@@ -310,7 +265,6 @@ function NumberRodsContent({
 
 export default function NumberRodsScene({
   playing,
-  voiceEnabled,
   onComplete,
   className,
 }: NumberRodsSceneProps) {
@@ -318,13 +272,10 @@ export default function NumberRodsScene({
     <div
       className={`w-full overflow-hidden rounded-[28px] bg-[#f7efe4] ${className ?? "h-[420px]"}`}
     >
-      <Canvas shadows camera={{ position: [0.8, 0.6, 1.6], fov: 40 }}>
+      <Canvas shadows="soft" camera={{ position: [0.8, 0.6, 1.6], fov: 40 }}>
         <color attach="background" args={["#f7efe4"]} />
-        <NumberRodsContent
-          playing={playing}
-          voiceEnabled={voiceEnabled}
-          onComplete={onComplete}
-        />
+        <SoftShadows size={6} focus={0.35} samples={18} />
+        <NumberRodsContent playing={playing} onComplete={onComplete} />
         <OrbitControls enablePan={false} enableZoom={false} maxPolarAngle={Math.PI / 2.1} />
       </Canvas>
     </div>
