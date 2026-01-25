@@ -3,15 +3,20 @@
 import { useEffect, useState } from "react";
 import NumberRodsScene from "./NumberRodsScene";
 import SandpaperNumeralsPreview from "./SandpaperNumeralsPreview";
+import SpindleBoxesPreview from "./SpindleBoxesPreview";
 
 export default function MontessoriHome() {
   const [isCompleted, setIsCompleted] = useState(false);
+  const [spindleCompleted, setSpindleCompleted] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
     }
     setIsCompleted(window.localStorage.getItem("number-rods-complete") === "true");
+    setSpindleCompleted(
+      window.localStorage.getItem("spindle-boxes-complete") === "true",
+    );
   }, []);
 
   return (
@@ -59,6 +64,30 @@ export default function MontessoriHome() {
                 <span className="font-display text-2xl font-semibold text-stone-900">
                   Sandpaper Numerals
                 </span>
+              </div>
+            </div>
+          </a>
+
+          <a
+            href="/lessons/spindle-boxes"
+            className="group mx-auto w-full max-w-[560px]"
+            aria-label="Open Spindle Boxes lesson"
+          >
+            <div className="relative w-full rounded-[40px] border border-stone-200 bg-white/90 p-6 shadow-[0_30px_80px_-50px_rgba(60,40,20,0.6)] transition hover:-translate-y-1 hover:shadow-[0_40px_90px_-50px_rgba(60,40,20,0.7)]">
+              <div className="pointer-events-none aspect-square w-full rounded-[28px] bg-white/70">
+                <SpindleBoxesPreview className="h-full" />
+              </div>
+              <div className="mt-6 text-center">
+                <span className="font-display text-2xl font-semibold text-stone-900">
+                  Spindle Boxes
+                </span>
+                {spindleCompleted ? (
+                  <div className="mt-2 flex justify-center">
+                    <span className="rounded-full bg-emerald-100 px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-emerald-700">
+                      Completed
+                    </span>
+                  </div>
+                ) : null}
               </div>
             </div>
           </a>
