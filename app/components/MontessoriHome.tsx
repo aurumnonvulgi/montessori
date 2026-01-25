@@ -161,6 +161,17 @@ export default function MontessoriHome() {
               {activeMaterial?.description ??
                 "Add your first Montessori material to start the workflow."}
             </p>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <a
+                className="rounded-full bg-stone-900 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-stone-800"
+                href="/lessons/number-rods"
+              >
+                Open Number Rods lesson
+              </a>
+              <span className="rounded-full border border-stone-200 bg-white px-4 py-2 text-[10px] uppercase tracking-[0.2em] text-stone-500">
+                Focused mode
+              </span>
+            </div>
 
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               <div className="rounded-2xl bg-white/80 p-4">
