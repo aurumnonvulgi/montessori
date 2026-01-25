@@ -39,7 +39,7 @@ const durations = {
   lift: 0.7,
   settle: 0.5,
   glowHold: 0.35,
-  count: 0.95,
+  count: 0.75,
   finalLift: 0.6,
   finalSettle: 0.4,
   pause: 0.25,
@@ -110,7 +110,7 @@ const buildTimeline = () => {
 
 const timeline = buildTimeline();
 
-const voiceCues: { id: string; text: string }[] = [];
+const voiceCues: { id: string; text: string; offset?: number }[] = [];
 for (let rod = 1; rod <= rodCount; rod += 1) {
   voiceCues.push({
     id: `rod${rod}Lift`,
@@ -120,6 +120,7 @@ for (let rod = 1; rod <= rodCount; rod += 1) {
     voiceCues.push({
       id: `rod${rod}Count${segment}`,
       text: numberWords[segment - 1],
+      offset: scale(0.12),
     });
   }
 }
@@ -202,7 +203,7 @@ function NumberRodsContent({
 
     if (voiceEnabled) {
       voiceCues.forEach((cue) => {
-        const cueTime = timeline.map[cue.id].start;
+        const cueTime = timeline.map[cue.id].start + (cue.offset ?? 0);
         if (t >= cueTime && !spokenRef.current[cue.id]) {
           spokenRef.current[cue.id] = true;
           speakText(cue.text);
@@ -218,9 +219,10 @@ function NumberRodsContent({
     const quizLiftStart = quizLiftStartRef.current;
     const quizLiftElapsed =
       quizLiftIndex !== null && quizLiftStart !== null ? now - quizLiftStart : 0;
+    const quizLiftDuration = 1.8;
     const quizLiftValue =
-      quizLiftIndex !== null && quizLiftElapsed < 1.2
-        ? Math.sin((quizLiftElapsed / 1.2) * Math.PI) * 0.03
+      quizLiftIndex !== null && quizLiftElapsed < quizLiftDuration
+        ? Math.sin((quizLiftElapsed / quizLiftDuration) * Math.PI) * 0.03
         : 0;
     rodLengths.forEach((length, index) => {
       const rod = rodRefs.current[index];
@@ -308,12 +310,8 @@ function NumberRodsContent({
         const countProgress = isCountActive
           ? clamp01((t - countRange.start) / (countRange.end - countRange.start))
           : 0;
-        const segmentPulse = isCountActive
-          ? 0.35 * Math.abs(Math.sin(countProgress * Math.PI * 2))
-          : 0;
-        const segmentScale = isCountActive
-          ? 1 + 0.02 * Math.sin(countProgress * Math.PI * 2)
-          : 1;
+        const segmentPulse = isCountActive ? 0.25 : 0;
+        const segmentScale = isCountActive ? 1.02 : 1;
         const quizGlow = isQuizLift && quizLiftValue > 0 ? 0.6 : 0;
         const emissiveIntensity = Math.max(
           glowUp,
@@ -602,7 +600,7 @@ export default function NumberRodsScene({
 
       const startedRecognition = startRecognition(advance);
       if (!startedRecognition) {
-        timeoutRef.current = window.setTimeout(advance, 1100);
+        timeoutRef.current = window.setTimeout(advance, 1600);
       }
     }
   }, [currentTarget, quizPhase, startRecognition, voiceEnabled]);
