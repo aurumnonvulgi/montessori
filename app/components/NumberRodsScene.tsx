@@ -197,6 +197,17 @@ function NumberRodsContent({
   const quizLiftRef = useRef<number | null>(null);
   const quizLiftStartRef = useRef<number | null>(null);
   const completedRef = useRef(false);
+  const dimFactor = 0.45;
+
+  const getBaseColor = (material: THREE.MeshStandardMaterial) => {
+    const stored = material.userData.baseColor as THREE.Color | undefined;
+    if (stored) {
+      return stored;
+    }
+    const base = material.color.clone();
+    material.userData.baseColor = base;
+    return base;
+  };
 
   useEffect(() => {
     if (!playing) {
@@ -250,6 +261,9 @@ function NumberRodsContent({
             return;
           }
           const material = segment.material as THREE.MeshStandardMaterial;
+          const baseColor = getBaseColor(material);
+          material.color.copy(baseColor);
+          material.emissive.copy(baseColor);
           material.emissiveIntensity = 0;
           segment.scale.set(1, 1, 1);
         });
@@ -323,6 +337,9 @@ function NumberRodsContent({
             return;
           }
           const material = segment.material as THREE.MeshStandardMaterial;
+          const baseColor = getBaseColor(material);
+          material.color.copy(baseColor).multiplyScalar(dimFactor);
+          material.emissive.copy(baseColor);
           material.emissiveIntensity = 0;
           segment.scale.set(1, 1, 1);
         });
@@ -400,10 +417,12 @@ function NumberRodsContent({
           return;
         }
         const material = segment.material as THREE.MeshStandardMaterial;
-        const baseColor = material.color;
+        const baseColor = getBaseColor(material);
+        material.color.copy(baseColor);
         const countKey = `rod${rodNumber}Count${segmentIndex + 1}`;
         const countRange = timeline.map[countKey];
         if (!countRange) {
+          material.emissive.copy(baseColor);
           material.emissiveIntensity = 0;
           segment.scale.set(1, 1, 1);
           return;
@@ -553,7 +572,7 @@ export default function NumberRodsScene({
   );
   const targetX = leftEdge + (segmentLength * stageMax) / 2;
   const cameraPosition = useMemo(
-    () => [targetX + 0.55, 0.5, 1.05] as [number, number, number],
+    () => [targetX + 0.5, 0.46, 0.98] as [number, number, number],
     [targetX],
   );
 
@@ -790,7 +809,7 @@ export default function NumberRodsScene({
     <div
       className={`w-full overflow-hidden rounded-[28px] bg-[#f7efe4] ${className ?? "h-[420px]"}`}
     >
-      <Canvas shadows camera={{ position: cameraPosition, fov: 34 }}>
+      <Canvas shadows camera={{ position: cameraPosition, fov: 33 }}>
         <color attach="background" args={["#f7efe4"]} />
         <NumberRodsContent
           playing={playing}
@@ -810,7 +829,7 @@ export default function NumberRodsScene({
           maxPolarAngle={Math.PI / 2.1}
           minAzimuthAngle={-Math.PI / 2}
           maxAzimuthAngle={Math.PI / 2}
-          target={[targetX, 0, 0]}
+          target={[targetX, 0.03, 0]}
           minDistance={0.85}
           maxDistance={2}
         />

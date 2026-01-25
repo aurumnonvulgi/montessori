@@ -77,7 +77,7 @@ export default function NumberRodsLesson() {
           voiceEnabled={lessonStarted}
           stageIndex={stageIndex}
           onStageComplete={handleStageComplete}
-          className="h-[62vh] min-h-[460px]"
+          className="h-[68vh] min-h-[500px]"
         />
 
         {!lessonStarted ? (
