@@ -468,6 +468,20 @@ export default function SandpaperNumeralsScene({
     () => [0, 1, 0.85] as [number, number, number],
     [],
   );
+  const controlsTarget = useMemo(
+    () => [0, 0, 0.18] as [number, number, number],
+    [],
+  );
+  const polarAngle = useMemo(() => {
+    const dx = cameraPosition[0] - controlsTarget[0];
+    const dy = cameraPosition[1] - controlsTarget[1];
+    const dz = cameraPosition[2] - controlsTarget[2];
+    const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+    if (distance === 0) {
+      return 0;
+    }
+    return Math.acos(dy / distance);
+  }, [cameraPosition, controlsTarget]);
 
   return (
     <div
@@ -487,8 +501,9 @@ export default function SandpaperNumeralsScene({
         <OrbitControls
           enablePan={false}
           enableZoom={false}
-          maxPolarAngle={Math.PI / 2.1}
-          target={[0, 0, 0.18]}
+          minPolarAngle={polarAngle}
+          maxPolarAngle={polarAngle}
+          target={controlsTarget}
           minAzimuthAngle={-Math.PI / 2}
           maxAzimuthAngle={Math.PI / 2}
         />
