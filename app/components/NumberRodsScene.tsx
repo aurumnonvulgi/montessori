@@ -242,6 +242,10 @@ function NumberRodsContent({
         const material = segment.material as THREE.MeshStandardMaterial;
         const baseColor = material.color;
         const segmentHighlight =
+          (index === 0 &&
+            t >= timeline.map.rod1Trace.start &&
+            t <= timeline.map.rod1Trace.end &&
+            segmentIndex === 0) ||
           (index === 1 &&
             ((t >= timeline.map.rod2Seg1.start && t <= timeline.map.rod2Seg1.end && segmentIndex === 0) ||
               (t >= timeline.map.rod2Seg2.start && t <= timeline.map.rod2Seg2.end && segmentIndex === 1))) ||
@@ -343,8 +347,10 @@ function NumberRodsContent({
   );
 }
 
-const quizOrder = [0, 1, 2];
+const clickOrder = [2, 1, 0];
+const nameOrder = [0, 1, 2];
 const rodNames = ["one", "two", "three"];
+type QuizPhase = "click" | "name" | null;
 
 export default function NumberRodsScene({
   playing,
@@ -353,18 +359,25 @@ export default function NumberRodsScene({
   className,
 }: NumberRodsSceneProps) {
   const [quizIndex, setQuizIndex] = useState<number | null>(null);
+  const [quizPhase, setQuizPhase] = useState<QuizPhase>(null);
   const [quizLiftRod, setQuizLiftRod] = useState<number | null>(null);
   const quizDoneRef = useRef(false);
-  const promptRef = useRef<Record<number, boolean>>({});
+  const promptRef = useRef<Record<string, boolean>>({});
   const timeoutRef = useRef<number | null>(null);
   const recognitionRef = useRef<any>(null);
   const awaitingAnswerRef = useRef(false);
 
-  const currentTarget = quizIndex !== null ? quizOrder[quizIndex] : null;
+  const currentTarget =
+    quizIndex !== null && quizPhase === "click"
+      ? clickOrder[quizIndex]
+      : quizIndex !== null && quizPhase === "name"
+        ? nameOrder[quizIndex]
+        : null;
 
   const handleSequenceComplete = useCallback(() => {
     if (!quizDoneRef.current) {
       quizDoneRef.current = true;
+      setQuizPhase("click");
       setQuizIndex(0);
     }
     if (onComplete) {
@@ -422,7 +435,7 @@ export default function NumberRodsScene({
 
   const handleRodSelect = useCallback(
     (index: number) => {
-      if (currentTarget === null) {
+      if (currentTarget === null || quizPhase !== "click") {
         return;
       }
 
@@ -437,35 +450,25 @@ export default function NumberRodsScene({
         return;
       }
 
-      awaitingAnswerRef.current = true;
-      if (voiceEnabled) {
-        speakText("What is this?");
-      }
       playChime();
-      setQuizLiftRod(index);
-
-      const advance = () => {
-        awaitingAnswerRef.current = false;
-        setQuizLiftRod(null);
+      if (timeoutRef.current) {
+        window.clearTimeout(timeoutRef.current);
+      }
+      timeoutRef.current = window.setTimeout(() => {
         setQuizIndex((prev) => {
           if (prev === null) {
             return null;
           }
           const next = prev + 1;
-          return next < quizOrder.length ? next : null;
+          if (next < clickOrder.length) {
+            return next;
+          }
+          setQuizPhase("name");
+          return 0;
         });
-      };
-
-      if (timeoutRef.current) {
-        window.clearTimeout(timeoutRef.current);
-      }
-
-      const startedRecognition = voiceEnabled ? startRecognition(advance) : false;
-      if (!startedRecognition) {
-        timeoutRef.current = window.setTimeout(advance, 1400);
-      }
+      }, 600);
     },
-    [currentTarget, startRecognition, voiceEnabled],
+    [currentTarget, quizPhase, voiceEnabled],
   );
 
   useEffect(() => {
@@ -474,6 +477,7 @@ export default function NumberRodsScene({
       promptRef.current = {};
       awaitingAnswerRef.current = false;
       setQuizIndex(null);
+      setQuizPhase(null);
       setQuizLiftRod(null);
       if (recognitionRef.current) {
         try {
@@ -487,15 +491,50 @@ export default function NumberRodsScene({
   }, [playing]);
 
   useEffect(() => {
-    if (currentTarget === null || !voiceEnabled) {
+    if (currentTarget === null || !voiceEnabled || quizPhase === null) {
       return;
     }
-    if (promptRef.current[currentTarget]) {
+    const promptKey = `${quizPhase}-${currentTarget}`;
+    if (promptRef.current[promptKey]) {
       return;
     }
-    promptRef.current[currentTarget] = true;
-    speakText(`Can you click on ${rodNames[currentTarget]}?`);
-  }, [currentTarget, voiceEnabled]);
+    promptRef.current[promptKey] = true;
+
+    if (quizPhase === "click") {
+      speakText(`Can you click on ${rodNames[currentTarget]}?`);
+      return;
+    }
+
+    if (quizPhase === "name") {
+      awaitingAnswerRef.current = true;
+      setQuizLiftRod(currentTarget);
+      speakText("What is this?");
+      const advance = () => {
+        awaitingAnswerRef.current = false;
+        setQuizLiftRod(null);
+        setQuizIndex((prev) => {
+          if (prev === null) {
+            return null;
+          }
+          const next = prev + 1;
+          if (next < nameOrder.length) {
+            return next;
+          }
+          setQuizPhase(null);
+          return null;
+        });
+      };
+
+      if (timeoutRef.current) {
+        window.clearTimeout(timeoutRef.current);
+      }
+
+      const startedRecognition = startRecognition(advance);
+      if (!startedRecognition) {
+        timeoutRef.current = window.setTimeout(advance, 1400);
+      }
+    }
+  }, [currentTarget, quizPhase, startRecognition, voiceEnabled]);
 
   useEffect(() => {
     return () => {
