@@ -465,7 +465,7 @@ export default function SandpaperNumeralsScene({
   }, []);
 
   const cameraPosition = useMemo(
-    () => [0.2, 0.6, 1.2] as [number, number, number],
+    () => [0, 1.05, 0.9] as [number, number, number],
     [],
   );
 
@@ -486,10 +486,10 @@ export default function SandpaperNumeralsScene({
           enableZoom
           maxPolarAngle={Math.PI / 2.1}
           target={[0, 0, 0.1]}
-          minAzimuthAngle={-Math.PI / 2}
-          maxAzimuthAngle={Math.PI / 2}
-          minDistance={0.9}
-          maxDistance={2.1}
+          minAzimuthAngle={-(Math.PI * 65) / 180}
+          maxAzimuthAngle={(Math.PI * 65) / 180}
+          minDistance={1.25}
+          maxDistance={2.4}
         />
       </Canvas>
     </div>
