@@ -1,7 +1,7 @@
 "use client";
 
 import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, Text } from "@react-three/drei";
+import { OrbitControls } from "@react-three/drei";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { playChime } from "../lib/sounds";
@@ -32,6 +32,36 @@ const rowZ = 0.38;
 const rowX = [-0.38, 0, 0.38];
 const textSurfaceY = cardSize.thickness / 2 + 0.002;
 const carveDepth = 0.004;
+const labelSize = {
+  width: cardSize.width * 0.46,
+  height: cardSize.height * 0.6,
+};
+const labelCanvasSize = 256;
+
+const createNumeralTexture = (value: string) => {
+  if (typeof document === "undefined") {
+    return null;
+  }
+  const canvas = document.createElement("canvas");
+  canvas.width = labelCanvasSize;
+  canvas.height = labelCanvasSize;
+  const context = canvas.getContext("2d");
+  if (!context) {
+    return null;
+  }
+
+  context.clearRect(0, 0, labelCanvasSize, labelCanvasSize);
+  context.fillStyle = "#ffffff";
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.font = `700 ${Math.floor(labelCanvasSize * 0.78)}px "Georgia", "Times New Roman", serif`;
+  context.fillText(value, labelCanvasSize / 2, labelCanvasSize * 0.56);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.anisotropy = 4;
+  texture.needsUpdate = true;
+  return texture;
+};
 
 const smoothstep = (t: number) => t * t * (3 - 2 * t);
 const clamp01 = (t: number) => Math.min(1, Math.max(0, t));
@@ -87,6 +117,10 @@ function SandpaperNumeralsContent({
   const quizLiftRef = useRef<number | null>(null);
   const quizLiftStartRef = useRef<number | null>(null);
   const spokenRef = useRef<Record<number, boolean>>({});
+  const numeralTextures = useMemo(
+    () => numerals.map((value) => createNumeralTexture(value)),
+    [],
+  );
 
   useEffect(() => {
     quizLiftRef.current = quizLiftIndex;
@@ -94,6 +128,12 @@ function SandpaperNumeralsContent({
       quizLiftStartRef.current = performance.now() / 1000;
     }
   }, [quizLiftIndex]);
+
+  useEffect(() => {
+    return () => {
+      numeralTextures.forEach((texture) => texture?.dispose());
+    };
+  }, [numeralTextures]);
 
   useFrame((state) => {
     const now = state.clock.getElapsedTime();
@@ -278,7 +318,7 @@ function SandpaperNumeralsContent({
               metalness={0.05}
             />
           </mesh>
-          <Text
+          <mesh
             ref={(el) => {
               if (el) {
                 textRefs.current[index] = el;
@@ -286,13 +326,16 @@ function SandpaperNumeralsContent({
             }}
             position={[0, textSurfaceY, 0]}
             rotation={[-Math.PI / 2, 0, 0]}
-            fontSize={0.22}
-            color="#e9e6df"
-            anchorX="center"
-            anchorY="middle"
           >
-            {value}
-          </Text>
+            <planeGeometry args={[labelSize.width, labelSize.height]} />
+            <meshStandardMaterial
+              color="#e9e6df"
+              emissive="#e9e6df"
+              transparent
+              alphaTest={0.1}
+              map={numeralTextures[index] ?? null}
+            />
+          </mesh>
         </group>
       ))}
     </group>
