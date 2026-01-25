@@ -33,8 +33,8 @@ const rowX = [-0.48, 0, 0.48];
 const rowZOffsets = [0.02, 0, -0.02];
 const textSurfaceY = cardSize.thickness / 2 + 0.002;
 const labelSize = {
-  width: cardSize.width * 0.46,
-  height: cardSize.height * 0.6,
+  width: cardSize.width * 0.54,
+  height: cardSize.height * 0.7,
 };
 const labelCanvasSize = 256;
 
@@ -54,8 +54,8 @@ const createNumeralTexture = (value: string) => {
   context.fillStyle = "#ffffff";
   context.textAlign = "center";
   context.textBaseline = "middle";
-  context.font = `700 ${Math.floor(labelCanvasSize * 0.78)}px "Helvetica", "Arial", sans-serif`;
-  context.fillText(value, labelCanvasSize / 2, labelCanvasSize * 0.56);
+  context.font = `700 ${Math.floor(labelCanvasSize * 0.88)}px "Helvetica", "Arial", sans-serif`;
+  context.fillText(value, labelCanvasSize / 2, labelCanvasSize / 2);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.anisotropy = 4;
@@ -352,7 +352,7 @@ export default function SandpaperNumeralsScene({
   const recognitionRef = useRef<any>(null);
   const awaitingAnswerRef = useRef(false);
 
-  const clickOrder = useMemo(() => [2, 1, 2], []);
+  const clickOrder = useMemo(() => [2, 1, 0], []);
   const nameOrder = useMemo(() => [0, 1, 2], []);
 
   const currentTarget =
