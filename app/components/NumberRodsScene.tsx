@@ -1,7 +1,7 @@
 "use client";
 
 import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, SoftShadows } from "@react-three/drei";
+import { OrbitControls } from "@react-three/drei";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { playChime } from "../lib/sounds";
@@ -278,10 +278,11 @@ function NumberRodsContent({
         position={[2.2, 2.6, 1.8]}
         intensity={0.9}
         castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
+        shadow-mapSize-width={1024}
+        shadow-mapSize-height={1024}
         shadow-bias={-0.0002}
         shadow-normalBias={0.01}
+        shadow-radius={6}
       />
       <directionalLight position={[-2.6, 2.1, -1.2]} intensity={0.25} />
 
@@ -437,9 +438,8 @@ export default function NumberRodsScene({
     <div
       className={`w-full overflow-hidden rounded-[28px] bg-[#f7efe4] ${className ?? "h-[420px]"}`}
     >
-      <Canvas shadows="soft" camera={{ position: [0.8, 0.6, 1.6], fov: 40 }}>
+      <Canvas shadows camera={{ position: [0.8, 0.6, 1.6], fov: 40 }}>
         <color attach="background" args={["#f7efe4"]} />
-        <SoftShadows size={6} focus={0.35} samples={18} />
         <NumberRodsContent
           playing={playing}
           voiceEnabled={voiceEnabled}
