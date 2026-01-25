@@ -466,7 +466,7 @@ export default function NumberRodsScene({
           setQuizPhase("name");
           return 0;
         });
-      }, 600);
+      }, 450);
     },
     [currentTarget, quizPhase, voiceEnabled],
   );
@@ -531,7 +531,7 @@ export default function NumberRodsScene({
 
       const startedRecognition = startRecognition(advance);
       if (!startedRecognition) {
-        timeoutRef.current = window.setTimeout(advance, 1400);
+        timeoutRef.current = window.setTimeout(advance, 1100);
       }
     }
   }, [currentTarget, quizPhase, startRecognition, voiceEnabled]);
