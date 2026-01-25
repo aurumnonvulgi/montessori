@@ -18,6 +18,8 @@ type NumberRodsPresentationCanvasProps = {
   onComplete?: () => void;
 };
 
+type RodId = 1 | 2 | 3;
+
 type Phase =
   | "intro"
   | "rod1-demo"
@@ -31,7 +33,7 @@ type Phase =
 type Position = { x: number; y: number };
 
 const INTRO_SENTENCE = "I will now present the number rods";
-const rodOrder = [
+const rodOrder: { id: RodId; word: string }[] = [
   { id: 1, word: "one" },
   { id: 2, word: "two" },
   { id: 3, word: "three" },
@@ -78,7 +80,7 @@ export default function NumberRodsPresentationCanvas({
   const [layout, setLayout] = useState({ width: 0, height: 0 });
   const [phase, setPhase] = useState<Phase>("intro");
   const [rodPositions, setRodPositions] = useState<Record<number, Position>>({});
-  const [placed, setPlaced] = useState<Record<number, boolean>>({
+  const [placed, setPlaced] = useState<Record<RodId, boolean>>({
     1: false,
     2: false,
     3: false,
@@ -99,7 +101,7 @@ export default function NumberRodsPresentationCanvas({
     const minSide = Math.min(layout.width || 600, layout.height || 420);
     const segmentLength = Math.max(38, Math.min(minSide * 0.18, 74));
     const rodHeight = Math.max(14, Math.min(minSide * 0.06, 22));
-    const rodLengths = {
+    const rodLengths: Record<RodId, number> = {
       1: segmentLength,
       2: segmentLength * 2,
       3: segmentLength * 3,
@@ -109,7 +111,7 @@ export default function NumberRodsPresentationCanvas({
 
   const slotPositions = useMemo(() => {
     if (!layout.width || !layout.height) {
-      return {} as Record<number, Position>;
+      return {} as Record<RodId, Position>;
     }
     const slotX = Math.max(32, layout.width * 0.2);
     const slotY = layout.height * 0.34;
@@ -118,12 +120,12 @@ export default function NumberRodsPresentationCanvas({
       1: { x: slotX, y: slotY },
       2: { x: slotX, y: slotY + slotGap },
       3: { x: slotX, y: slotY + slotGap * 2 },
-    };
+    } as Record<RodId, Position>;
   }, [layout, metrics.rodHeight]);
 
   const startPositions = useMemo(() => {
     if (!layout.width || !layout.height) {
-      return {} as Record<number, Position>;
+      return {} as Record<RodId, Position>;
     }
     const bottomY = layout.height * 0.72;
     const safeX = (ratio: number, rodLength: number) => {
@@ -143,12 +145,12 @@ export default function NumberRodsPresentationCanvas({
         x: safeX(0.42, metrics.rodLengths[3]),
         y: bottomY - metrics.rodHeight * 1.1,
       },
-    };
+    } as Record<RodId, Position>;
   }, [layout, metrics.rodHeight, metrics.rodLengths]);
 
-  const activeRodId =
+  const activeRodId: RodId | null =
     phase === "rod1-place" ? 1 : phase === "rod2-place" ? 2 : phase === "rod3-place" ? 3 : null;
-  const demoRodId =
+  const demoRodId: RodId | null =
     phase === "rod1-demo" ? 1 : phase === "rod2-demo" ? 2 : phase === "rod3-demo" ? 3 : null;
 
   const bannerText = useMemo(() => {
@@ -357,7 +359,7 @@ export default function NumberRodsPresentationCanvas({
   }, [phase, playing, showSuccessOverlay]);
 
   const handleRodDrag = useCallback(
-    (rodId: number, data: { x: number; y: number }) => {
+    (rodId: RodId, data: { x: number; y: number }) => {
       if (activeRodId !== rodId) {
         return;
       }
@@ -370,7 +372,7 @@ export default function NumberRodsPresentationCanvas({
   );
 
   const handleRodStop = useCallback(
-    (rodId: number, data: { x: number; y: number }) => {
+    (rodId: RodId, data: { x: number; y: number }) => {
       if (activeRodId !== rodId || placed[rodId]) {
         return;
       }
