@@ -239,7 +239,7 @@ function SandpaperNumeralsContent({
               }
             }}
             position={[0, cardSize.thickness / 2 + 0.002, 0]}
-            rotation={[-Math.PI / 2, 0, Math.PI]}
+            rotation={[-Math.PI / 2, 0, 0]}
             fontSize={0.22}
             color="#e9e6df"
             anchorX="center"
@@ -465,7 +465,7 @@ export default function SandpaperNumeralsScene({
   }, []);
 
   const cameraPosition = useMemo(
-    () => [0.1, 1.05, 0.95] as [number, number, number],
+    () => [0, 1, 0.85] as [number, number, number],
     [],
   );
 
@@ -475,7 +475,7 @@ export default function SandpaperNumeralsScene({
     >
       <Canvas
         shadows
-        camera={{ position: cameraPosition, fov: 34, up: [0, 0, 1] }}
+        camera={{ position: cameraPosition, fov: 34, up: [0, 0, -1] }}
       >
         <color attach="background" args={["#f7efe4"]} />
         <SandpaperNumeralsContent
@@ -488,7 +488,7 @@ export default function SandpaperNumeralsScene({
           enablePan={false}
           enableZoom={false}
           maxPolarAngle={Math.PI / 2.1}
-          target={[0, 0, 0.1]}
+          target={[0, 0, 0.18]}
           minAzimuthAngle={-Math.PI / 2}
           maxAzimuthAngle={Math.PI / 2}
         />
