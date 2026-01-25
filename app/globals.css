@@ -32,6 +32,12 @@ body {
   background: rgba(120, 200, 140, 0.22);
   pointer-events: none;
   z-index: 40;
+  opacity: 1;
+  transition: opacity 0.8s ease;
+}
+
+.lesson-complete-overlay.fade-out {
+  opacity: 0;
 }
 
 .lesson-complete-confetti {

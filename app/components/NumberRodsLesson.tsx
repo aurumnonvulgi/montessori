@@ -1,17 +1,21 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import NumberRodsScene from "./NumberRodsScene";
 
 export default function NumberRodsLesson() {
+  const router = useRouter();
   const [lessonStarted, setLessonStarted] = useState(false);
   const [resetKey, setResetKey] = useState(0);
   const [lessonComplete, setLessonComplete] = useState(false);
+  const [fadeOut, setFadeOut] = useState(false);
 
   const startLesson = useCallback(() => {
     setLessonStarted(true);
     setResetKey((value) => value + 1);
     setLessonComplete(false);
+    setFadeOut(false);
 
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       const utterance = new SpeechSynthesisUtterance(" ");
@@ -20,6 +24,27 @@ export default function NumberRodsLesson() {
       window.speechSynthesis.speak(utterance);
     }
   }, []);
+
+  useEffect(() => {
+    if (!lessonComplete) {
+      return;
+    }
+
+    setFadeOut(false);
+
+    const fadeTimer = window.setTimeout(() => {
+      setFadeOut(true);
+    }, 2600);
+
+    const navTimer = window.setTimeout(() => {
+      router.push("/");
+    }, 3400);
+
+    return () => {
+      window.clearTimeout(fadeTimer);
+      window.clearTimeout(navTimer);
+    };
+  }, [lessonComplete, router]);
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,#f5efe6_0%,#fdfbf8_45%,#f7efe4_100%)]">
@@ -48,7 +73,7 @@ export default function NumberRodsLesson() {
         ) : null}
       </main>
       {lessonComplete ? (
-        <div className="lesson-complete-overlay">
+        <div className={`lesson-complete-overlay${fadeOut ? " fade-out" : ""}`}>
           <div className="lesson-complete-confetti">
             {Array.from({ length: 16 }).map((_, index) => (
               <span key={index} className="confetti-piece" />
