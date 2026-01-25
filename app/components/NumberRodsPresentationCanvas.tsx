@@ -109,7 +109,7 @@ export default function NumberRodsPresentationCanvas({
   const [successVisible, setSuccessVisible] = useState(false);
   const [successFade, setSuccessFade] = useState(false);
   const rodNodeRefs = useMemo(() => {
-    const refs: Record<RodId, RefObject<HTMLDivElement>> = {};
+    const refs = {} as Record<RodId, RefObject<HTMLDivElement>>;
     rodOrder.forEach((rod) => {
       refs[rod.id] = createRef<HTMLDivElement>() as RefObject<HTMLDivElement>;
     });
