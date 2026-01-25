@@ -17,7 +17,7 @@ type Step = {
   duration: number;
 };
 
-const rodCount = 10;
+const rodCount = 3;
 const numberWords = [
   "one",
   "two",
@@ -351,7 +351,7 @@ function NumberRodsContent({
       <directionalLight position={[-2.6, 2.1, -1.2]} intensity={0.25} />
 
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
-        <planeGeometry args={[3.4, 2.4]} />
+        <planeGeometry args={[3, 2]} />
         <meshStandardMaterial color="#f3e9d8" roughness={0.95} metalness={0.02} />
       </mesh>
 
@@ -616,7 +616,7 @@ export default function NumberRodsScene({
     <div
       className={`w-full overflow-hidden rounded-[28px] bg-[#f7efe4] ${className ?? "h-[420px]"}`}
     >
-      <Canvas shadows camera={{ position: [0.85, 0.58, 1.55], fov: 40 }}>
+      <Canvas shadows camera={{ position: [0.7, 0.55, 1.25], fov: 38 }}>
         <color attach="background" args={["#f7efe4"]} />
         <NumberRodsContent
           playing={playing}
