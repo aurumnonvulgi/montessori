@@ -46,6 +46,21 @@ const normalizeText = (value: string) =>
     .replace(/\s+/g, " ")
     .trim();
 
+const isIntroMatch = (transcript: string) => {
+  const normalized = normalizeText(transcript);
+  const expected = normalizeText(INTRO_SENTENCE);
+  if (!normalized) {
+    return false;
+  }
+  if (normalized === expected) {
+    return true;
+  }
+  const expectedWords = expected.split(" ");
+  const spokenWords = new Set(normalized.split(" "));
+  const matchCount = expectedWords.filter((word) => spokenWords.has(word)).length;
+  return matchCount / expectedWords.length >= 0.6;
+};
+
 const SuccessOverlay = ({ fadeOut }: { fadeOut: boolean }) => (
   <div className={`lesson-complete-overlay${fadeOut ? " fade-out" : ""}`}>
     <div className="flex h-full items-center justify-center">
@@ -71,15 +86,19 @@ export default function NumberRodsPresentationCanvas({
   className,
   onComplete,
 }: NumberRodsPresentationCanvasProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const matRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const demoTimerRef = useRef<number | null>(null);
   const successTimerRef = useRef<number | null>(null);
   const fadeTimerRef = useRef<number | null>(null);
-  const initialPositionsRef = useRef<Record<number, Position>>({});
+  const initialPositionsRef = useRef<Record<RodId, Position>>(
+    {} as Record<RodId, Position>,
+  );
   const [layout, setLayout] = useState({ width: 0, height: 0 });
   const [phase, setPhase] = useState<Phase>("intro");
-  const [rodPositions, setRodPositions] = useState<Record<number, Position>>({});
+  const [rodPositions, setRodPositions] = useState<Record<RodId, Position>>(
+    {} as Record<RodId, Position>,
+  );
   const [placed, setPlaced] = useState<Record<RodId, boolean>>({
     1: false,
     2: false,
@@ -90,7 +109,7 @@ export default function NumberRodsPresentationCanvas({
   const [successVisible, setSuccessVisible] = useState(false);
   const [successFade, setSuccessFade] = useState(false);
   const rodNodeRefs = useMemo(() => {
-    const refs: Record<number, RefObject<HTMLDivElement>> = {};
+    const refs: Record<RodId, RefObject<HTMLDivElement>> = {};
     rodOrder.forEach((rod) => {
       refs[rod.id] = createRef<HTMLDivElement>() as RefObject<HTMLDivElement>;
     });
@@ -113,9 +132,12 @@ export default function NumberRodsPresentationCanvas({
     if (!layout.width || !layout.height) {
       return {} as Record<RodId, Position>;
     }
-    const slotX = Math.max(32, layout.width * 0.2);
-    const slotY = layout.height * 0.34;
-    const slotGap = metrics.rodHeight * 1.9;
+    const slotX = Math.max(
+      24,
+      (layout.width - (metrics.rodLengths[3] + 8)) / 2,
+    );
+    const slotY = layout.height * 0.33;
+    const slotGap = metrics.rodHeight * 1.25;
     return {
       1: { x: slotX, y: slotY },
       2: { x: slotX, y: slotY + slotGap },
@@ -127,7 +149,9 @@ export default function NumberRodsPresentationCanvas({
     if (!layout.width || !layout.height) {
       return {} as Record<RodId, Position>;
     }
-    const bottomY = layout.height * 0.72;
+    const clampY = (value: number) =>
+      Math.min(layout.height - metrics.rodHeight - 8, Math.max(8, value));
+    const bottomY = clampY(layout.height - metrics.rodHeight * 2.2);
     const safeX = (ratio: number, rodLength: number) => {
       const raw = layout.width * ratio;
       return Math.min(
@@ -136,14 +160,14 @@ export default function NumberRodsPresentationCanvas({
       );
     };
     return {
-      1: { x: safeX(0.65, metrics.rodLengths[1]), y: bottomY },
+      1: { x: safeX(0.6, metrics.rodLengths[1]), y: bottomY },
       2: {
         x: safeX(0.2, metrics.rodLengths[2]),
-        y: bottomY + metrics.rodHeight * 1.4,
+        y: clampY(bottomY + metrics.rodHeight * 1.1),
       },
       3: {
         x: safeX(0.42, metrics.rodLengths[3]),
-        y: bottomY - metrics.rodHeight * 1.1,
+        y: clampY(bottomY - metrics.rodHeight * 1.0),
       },
     } as Record<RodId, Position>;
   }, [layout, metrics.rodHeight, metrics.rodLengths]);
@@ -172,6 +196,9 @@ export default function NumberRodsPresentationCanvas({
   const instructionText = phase.endsWith("place")
     ? "Place the rod on the correct spot."
     : null;
+
+  const [typedSentence, setTypedSentence] = useState(INTRO_SENTENCE);
+  const typingTimerRef = useRef<number | null>(null);
 
   const clearTimers = useCallback(() => {
     if (demoTimerRef.current) {
@@ -211,7 +238,7 @@ export default function NumberRodsPresentationCanvas({
   );
 
   useEffect(() => {
-    const element = containerRef.current;
+    const element = matRef.current;
     if (!element) {
       return;
     }
@@ -224,6 +251,43 @@ export default function NumberRodsPresentationCanvas({
     observer.observe(element);
     return () => observer.disconnect();
   }, []);
+
+  useEffect(() => {
+    if (typingTimerRef.current) {
+      window.clearInterval(typingTimerRef.current);
+      typingTimerRef.current = null;
+    }
+
+    if (!playing) {
+      setTypedSentence(INTRO_SENTENCE);
+      return;
+    }
+
+    if (phase !== "intro") {
+      setTypedSentence(bannerText);
+      return;
+    }
+
+    setTypedSentence("");
+    let index = 0;
+    typingTimerRef.current = window.setInterval(() => {
+      index += 1;
+      setTypedSentence(INTRO_SENTENCE.slice(0, index));
+      if (index >= INTRO_SENTENCE.length) {
+        if (typingTimerRef.current) {
+          window.clearInterval(typingTimerRef.current);
+          typingTimerRef.current = null;
+        }
+      }
+    }, 28);
+
+    return () => {
+      if (typingTimerRef.current) {
+        window.clearInterval(typingTimerRef.current);
+        typingTimerRef.current = null;
+      }
+    };
+  }, [bannerText, phase, playing]);
 
   useEffect(() => {
     if (!layout.width || !layout.height) {
@@ -332,15 +396,13 @@ export default function NumberRodsPresentationCanvas({
 
     recognition.onresult = (event: any) => {
       const transcript = event.results?.[0]?.[0]?.transcript ?? "";
-      const normalized = normalizeText(transcript);
-      const expected = normalizeText(INTRO_SENTENCE);
-      if (normalized === expected) {
+      if (isIntroMatch(transcript)) {
         setMicError("");
         showSuccessOverlay(() => {
           setPhase("rod1-demo");
         });
       } else {
-        setMicError("Please read the sentence exactly as shown.");
+        setMicError("Try reading the sentence again.");
       }
     };
 
@@ -406,13 +468,17 @@ export default function NumberRodsPresentationCanvas({
     [activeRodId, metrics.segmentLength, onComplete, placed, showSuccessOverlay, slotPositions],
   );
 
+  const showCaret = phase === "intro" && playing && typedSentence.length < INTRO_SENTENCE.length;
+
   return (
     <div
-      ref={containerRef}
       className={`relative w-full overflow-hidden rounded-[28px] bg-[#f5efe6] ${className ?? "h-[420px]"}`}
     >
-      <div className="absolute left-6 right-6 top-4 rounded-2xl bg-white/90 px-5 py-3 text-center text-sm font-semibold text-stone-800 shadow-sm">
-        {bannerText}
+      <div className="absolute left-6 right-6 top-4 rounded-2xl bg-white/90 px-6 py-4 text-center text-lg font-semibold text-stone-800 shadow-sm md:text-xl">
+        <span>{phase === "intro" ? typedSentence : bannerText}</span>
+        {showCaret ? (
+          <span className="ml-1 inline-block h-4 w-[2px] animate-pulse bg-stone-500 align-middle md:h-5" />
+        ) : null}
       </div>
 
       {phase === "intro" ? (
@@ -448,11 +514,11 @@ export default function NumberRodsPresentationCanvas({
 
       <div className="absolute left-8 right-8 top-36 h-[3px] rounded-full bg-white/80" />
 
-      <div className="absolute inset-x-0 bottom-4 top-36">
+      <div ref={matRef} className="absolute inset-x-0 bottom-4 top-36">
         <div className="absolute inset-0 rounded-[26px] bg-[radial-gradient(circle_at_top,#f2e6d7_0%,#efe0cd_55%,#e6d5bf_100%)]" />
         <div className="absolute left-8 right-8 top-6 h-[1px] bg-white/70" />
 
-        <div className="absolute left-8 top-8 flex flex-col gap-6">
+        <div className="absolute left-0 top-0">
           {rodOrder.map((rod) => {
             const length = metrics.rodLengths[rod.id];
             const height = metrics.rodHeight;
@@ -460,11 +526,11 @@ export default function NumberRodsPresentationCanvas({
             return (
               <div
                 key={rod.id}
-                className="rounded-full border border-dashed border-amber-300/70 bg-white/60"
+                className="rounded-md border border-dashed border-amber-300/70 bg-white/60"
                 style={{
                   width: length + 8,
                   height: height + 8,
-                  padding: 4,
+                  padding: 2,
                   opacity: placed[rod.id] ? 0.3 : 1,
                   transform: `translate(${target?.x ?? 0}px, ${target?.y ?? 0}px)`,
                 }}
@@ -498,7 +564,7 @@ export default function NumberRodsPresentationCanvas({
                   transition: animate ? "transform 0.7s ease" : "none",
                 }}
               >
-                <div className="flex h-full rounded-full shadow-md">
+                <div className="flex h-full shadow-md">
                   {Array.from({ length: rod.id }).map((_, index) => (
                     <div
                       key={index}
@@ -506,12 +572,6 @@ export default function NumberRodsPresentationCanvas({
                       style={{
                         width: metrics.segmentLength,
                         backgroundColor: index % 2 === 0 ? "#d14b3a" : "#2f67c1",
-                        borderRadius:
-                          index === 0
-                            ? "999px 0 0 999px"
-                            : index === rod.id - 1
-                              ? "0 999px 999px 0"
-                              : "0",
                       }}
                     />
                   ))}
