@@ -20,8 +20,6 @@ const cardSize = { width: 0.36, height: 0.46, thickness: 0.03 };
 const baseY = cardSize.thickness / 2;
 const slideDuration = 1.6;
 const slideDelay = 0.4;
-const traceDelay = 0.2;
-const traceDuration = 1.6;
 const quizLiftDuration = 2.2;
 const liftHeight = 0.05;
 const stackBase = new THREE.Vector3(-0.72, baseY, -0.45);
@@ -44,12 +42,10 @@ const buildTimeline = () => {
   const stages = numerals.map(() => {
     const slideStart = cursor;
     const slideEnd = slideStart + slideDuration;
-    const traceStart = slideEnd + traceDelay;
-    const traceEnd = traceStart + traceDuration;
-    cursor = traceEnd + slideDelay;
-    return { slideStart, slideEnd, traceStart, traceEnd };
+    cursor = slideEnd + slideDelay;
+    return { slideStart, slideEnd };
   });
-  const sequenceDuration = stages[stages.length - 1]?.traceEnd ?? 0;
+  const sequenceDuration = stages[stages.length - 1]?.slideEnd ?? 0;
   return { stages, sequenceDuration };
 };
 
@@ -168,8 +164,6 @@ function SandpaperNumeralsContent({
       const stage = timeline.stages[index];
       const start = stage?.slideStart ?? 0;
       const end = stage?.slideEnd ?? 0;
-      const traceStart = stage?.traceStart ?? 0;
-      const traceEnd = stage?.traceEnd ?? 0;
       const offset = stackOffsets[index] ?? stackOffsets[0];
       const stackPosition = stackBase.clone().add(offset);
       const targetPosition = new THREE.Vector3(rowX[index], baseY, rowZ);
@@ -203,22 +197,18 @@ function SandpaperNumeralsContent({
 
       const text = textRefs.current[index];
       if (text) {
-        text.visible = t >= end - 0.2;
-        const traceStarted = t >= traceStart;
-        const traceFinished = t > traceEnd;
+        const revealReady = t >= end - 0.2;
+        text.visible = revealReady;
         let textY = textSurfaceY;
         let carved = false;
 
-        if (traceStarted) {
-          if (voiceEnabled && !spokenRef.current[index]) {
-            spokenRef.current[index] = true;
-            speakText(numeralWords[index]);
-          }
-        }
-
-        if (traceFinished) {
+        if (t >= end) {
           textY = textSurfaceY - carveDepth;
           carved = true;
+        }
+        if (revealReady && voiceEnabled && !spokenRef.current[index]) {
+          spokenRef.current[index] = true;
+          speakText(numeralWords[index]);
         }
 
         text.position.y = textY;
