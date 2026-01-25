@@ -58,7 +58,13 @@ const isIntroMatch = (transcript: string) => {
   const expectedWords = expected.split(" ");
   const spokenWords = new Set(normalized.split(" "));
   const matchCount = expectedWords.filter((word) => spokenWords.has(word)).length;
-  return matchCount / expectedWords.length >= 0.6;
+  if (matchCount / expectedWords.length >= 0.5) {
+    return true;
+  }
+  const keywordMatch = ["present", "number", "rods"].every((word) =>
+    spokenWords.has(word),
+  );
+  return keywordMatch;
 };
 
 const SuccessOverlay = ({ fadeOut }: { fadeOut: boolean }) => (
