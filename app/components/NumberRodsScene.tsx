@@ -18,7 +18,7 @@ type Step = {
   duration: number;
 };
 
-const timeScale = 1.7;
+const timeScale = 1.02;
 const scale = (value: number) => value * timeScale;
 
 const steps: Step[] = [
@@ -83,10 +83,12 @@ const buildTimeline = () => {
 const timeline = buildTimeline();
 
 const voiceCues = [
-  { id: "rod1Trace", text: "this is one" },
+  { id: "rod1Lift", text: "This is one" },
+  { id: "rod1Trace", text: "one" },
+  { id: "rod2Lift", text: "This is two" },
   { id: "rod2Seg1", text: "one" },
   { id: "rod2Seg2", text: "two" },
-  { id: "rod2Full", text: "this is two" },
+  { id: "rod3Lift", text: "This is three" },
   { id: "rod3Seg1", text: "one" },
   { id: "rod3Seg2", text: "two" },
   { id: "rod3Seg3", text: "three" },
@@ -99,7 +101,6 @@ function NumberRodsContent({
 }: Omit<NumberRodsSceneProps, "className">) {
   const rodRefs = useRef<THREE.Group[]>([]);
   const segmentRefs = useRef<THREE.Mesh[][]>([[], [], []]);
-  const pointerRef = useRef<THREE.Group | null>(null);
   const startTimeRef = useRef<number | null>(null);
   const spokenRef = useRef<Record<string, boolean>>({});
   const chimeRef = useRef(false);
@@ -131,9 +132,6 @@ function NumberRodsContent({
         rod.position.set(finalX, baseY, rodZ[index]);
         rod.visible = true;
       });
-      if (pointerRef.current) {
-        pointerRef.current.visible = false;
-      }
       return;
     }
 
@@ -238,52 +236,6 @@ function NumberRodsContent({
       });
     });
 
-    if (pointerRef.current) {
-      const pointer = pointerRef.current;
-      let visible = false;
-      let fx = leftEdge;
-      let fz = rodZ[0];
-      let fy = baseY + rodHeight + 0.04;
-
-      if (t >= timeline.map.rod1Trace.start && t <= timeline.map.rod1Trace.end) {
-        const progress = clamp01((t - timeline.map.rod1Trace.start) / (timeline.map.rod1Trace.end - timeline.map.rod1Trace.start));
-        fx = leftEdge + progress * rodLengths[0];
-        fz = rodZ[0];
-        visible = true;
-      } else if (t >= timeline.map.rod2Seg1.start && t <= timeline.map.rod2Seg1.end) {
-        fx = leftEdge + segmentLength * 0.5;
-        fz = rodZ[1];
-        visible = true;
-      } else if (t >= timeline.map.rod2Seg2.start && t <= timeline.map.rod2Seg2.end) {
-        fx = leftEdge + segmentLength * 1.5;
-        fz = rodZ[1];
-        visible = true;
-      } else if (t >= timeline.map.rod2Full.start && t <= timeline.map.rod2Full.end) {
-        const progress = clamp01((t - timeline.map.rod2Full.start) / (timeline.map.rod2Full.end - timeline.map.rod2Full.start));
-        fx = leftEdge + progress * rodLengths[1];
-        fz = rodZ[1];
-        visible = true;
-      } else if (t >= timeline.map.rod3Seg1.start && t <= timeline.map.rod3Seg1.end) {
-        fx = leftEdge + segmentLength * 0.5;
-        fz = rodZ[2];
-        visible = true;
-      } else if (t >= timeline.map.rod3Seg2.start && t <= timeline.map.rod3Seg2.end) {
-        fx = leftEdge + segmentLength * 1.5;
-        fz = rodZ[2];
-        visible = true;
-      } else if (t >= timeline.map.rod3Seg3.start && t <= timeline.map.rod3Seg3.end) {
-        fx = leftEdge + segmentLength * 2.5;
-        fz = rodZ[2];
-        visible = true;
-      } else if (t >= timeline.map.finalTap.start && t <= timeline.map.finalTap.end) {
-        fx = leftEdge + segmentLength * 2.5;
-        fz = rodZ[2];
-        visible = true;
-      }
-
-      pointer.visible = visible;
-      pointer.position.set(fx, fy, fz + 0.02);
-    }
   });
 
   const rods = useMemo(
@@ -352,26 +304,6 @@ function NumberRodsContent({
         );
       })}
 
-      <group ref={pointerRef}>
-        <mesh position={[0, 0, 0]} rotation={[0, 0, -Math.PI / 2]} castShadow>
-          <cylinderGeometry args={[0.014, 0.014, 0.14, 16]} />
-          <meshStandardMaterial
-            color="#7ecf8a"
-            emissive="#6dbf7e"
-            emissiveIntensity={0.35}
-            roughness={0.4}
-          />
-        </mesh>
-        <mesh position={[0.08, 0, 0]} rotation={[0, 0, -Math.PI / 2]}>
-          <coneGeometry args={[0.03, 0.08, 16]} />
-          <meshStandardMaterial
-            color="#7ecf8a"
-            emissive="#6dbf7e"
-            emissiveIntensity={0.35}
-            roughness={0.4}
-          />
-        </mesh>
-      </group>
     </group>
   );
 }
