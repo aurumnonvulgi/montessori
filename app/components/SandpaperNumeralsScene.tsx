@@ -59,43 +59,26 @@ const getTracePoint = (index: number, progress: number) => {
   const halfW = width / 2;
   const halfH = height / 2;
   const p = clamp01(progress);
+  const z = lerp(halfH, -halfH, p);
 
   if (index === 0) {
-    return { x: 0, z: lerp(halfH, -halfH, p) };
+    return { x: 0, z };
   }
 
   if (index === 1) {
-    if (p < 0.4) {
-      const local = p / 0.4;
-      return {
-        x: lerp(-halfW, halfW, local),
-        z: halfH + 0.06 * Math.sin(Math.PI * local),
-      };
+    if (p < 0.5) {
+      return { x: lerp(-halfW, halfW, p / 0.5), z };
     }
-    if (p < 0.75) {
-      const local = (p - 0.4) / 0.35;
-      return {
-        x: lerp(halfW, -halfW, local),
-        z: lerp(halfH - 0.05, -halfH + 0.08, local),
-      };
-    }
-    const local = (p - 0.75) / 0.25;
-    return { x: lerp(-halfW, halfW, local), z: -halfH };
+    return { x: lerp(halfW, -halfW, (p - 0.5) / 0.5), z };
   }
 
-  if (p < 0.5) {
-    const local = p / 0.5;
-    return {
-      x: lerp(-halfW, halfW, local),
-      z: halfH - 0.12 * Math.sin(Math.PI * local),
-    };
+  if (p < 0.33) {
+    return { x: lerp(halfW * 0.1, halfW, p / 0.33), z };
   }
-
-  const local = (p - 0.5) / 0.5;
-  return {
-    x: lerp(-halfW, halfW, local),
-    z: -halfH + 0.12 * Math.sin(Math.PI * local),
-  };
+  if (p < 0.66) {
+    return { x: lerp(halfW, halfW * 0.1, (p - 0.33) / 0.33), z };
+  }
+  return { x: lerp(halfW * 0.1, halfW, (p - 0.66) / 0.34), z };
 };
 
 const speakText = (text: string) => {
