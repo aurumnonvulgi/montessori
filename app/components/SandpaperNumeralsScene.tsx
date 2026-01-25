@@ -33,7 +33,6 @@ const stackOffsets = [
 const rowZ = 0.38;
 const rowX = [-0.38, 0, 0.38];
 const textSurfaceY = cardSize.thickness / 2 + 0.002;
-const textRaise = 0.025;
 const carveDepth = 0.004;
 
 const smoothstep = (t: number) => t * t * (3 - 2 * t);
@@ -205,34 +204,19 @@ function SandpaperNumeralsContent({
       const text = textRefs.current[index];
       if (text) {
         text.visible = t >= end - 0.2;
-        const traceActive = t >= traceStart && t <= traceEnd;
-        const traceProgress = traceActive
-          ? clamp01((t - traceStart) / (traceEnd - traceStart))
-          : 0;
-        const raiseProgress = clamp01(traceProgress / 0.35);
-        const lowerProgress = clamp01((traceProgress - 0.35) / 0.65);
+        const traceStarted = t >= traceStart;
+        const traceFinished = t > traceEnd;
         let textY = textSurfaceY;
         let carved = false;
 
-        if (traceActive) {
-          if (traceProgress <= 0.35) {
-            textY = lerp(
-              textSurfaceY,
-              textSurfaceY + textRaise,
-              smoothstep(raiseProgress),
-            );
-          } else {
-            textY = lerp(
-              textSurfaceY + textRaise,
-              textSurfaceY - carveDepth,
-              smoothstep(lowerProgress),
-            );
-          }
+        if (traceStarted) {
           if (voiceEnabled && !spokenRef.current[index]) {
             spokenRef.current[index] = true;
             speakText(numeralWords[index]);
           }
-        } else if (t > traceEnd) {
+        }
+
+        if (traceFinished) {
           textY = textSurfaceY - carveDepth;
           carved = true;
         }
