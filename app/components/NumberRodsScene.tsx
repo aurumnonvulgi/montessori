@@ -553,7 +553,7 @@ export default function NumberRodsScene({
   );
   const targetX = leftEdge + (segmentLength * stageMax) / 2;
   const cameraPosition = useMemo(
-    () => [targetX + 0.7, 0.55, 1.25] as [number, number, number],
+    () => [targetX + 0.55, 0.5, 1.05] as [number, number, number],
     [targetX],
   );
 
@@ -790,7 +790,7 @@ export default function NumberRodsScene({
     <div
       className={`w-full overflow-hidden rounded-[28px] bg-[#f7efe4] ${className ?? "h-[420px]"}`}
     >
-      <Canvas shadows camera={{ position: cameraPosition, fov: 38 }}>
+      <Canvas shadows camera={{ position: cameraPosition, fov: 34 }}>
         <color attach="background" args={["#f7efe4"]} />
         <NumberRodsContent
           playing={playing}
@@ -806,11 +806,13 @@ export default function NumberRodsScene({
         />
         <OrbitControls
           enablePan={false}
-          enableZoom={false}
+          enableZoom
           maxPolarAngle={Math.PI / 2.1}
           minAzimuthAngle={-Math.PI / 2}
           maxAzimuthAngle={Math.PI / 2}
           target={[targetX, 0, 0]}
+          minDistance={0.85}
+          maxDistance={2}
         />
       </Canvas>
     </div>
