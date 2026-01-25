@@ -32,6 +32,10 @@ const stackOffsets = [
 ];
 const rowZ = 0.38;
 const rowX = [-0.38, 0, 0.38];
+const traceWidth = cardSize.width * 0.55;
+const traceHeight = cardSize.height * 0.7;
+const traceHalfW = traceWidth / 2;
+const traceHalfH = traceHeight / 2;
 
 const smoothstep = (t: number) => t * t * (3 - 2 * t);
 const clamp01 = (t: number) => Math.min(1, Math.max(0, t));
@@ -54,12 +58,8 @@ const buildTimeline = () => {
 const timeline = buildTimeline();
 
 const getTracePoint = (index: number, progress: number) => {
-  const width = cardSize.width * 0.55;
-  const height = cardSize.height * 0.7;
-  const halfW = width / 2;
-  const halfH = height / 2;
   const p = clamp01(progress);
-  const z = lerp(halfH, -halfH, p);
+  const z = lerp(traceHalfH, -traceHalfH, p);
 
   if (index === 0) {
     return { x: 0, z };
@@ -67,18 +67,21 @@ const getTracePoint = (index: number, progress: number) => {
 
   if (index === 1) {
     if (p < 0.5) {
-      return { x: lerp(-halfW, halfW, p / 0.5), z };
+      return { x: lerp(-traceHalfW, traceHalfW, p / 0.5), z };
     }
-    return { x: lerp(halfW, -halfW, (p - 0.5) / 0.5), z };
+    return { x: lerp(traceHalfW, -traceHalfW, (p - 0.5) / 0.5), z };
   }
 
   if (p < 0.33) {
-    return { x: lerp(halfW * 0.1, halfW, p / 0.33), z };
+    return { x: lerp(traceHalfW * 0.1, traceHalfW, p / 0.33), z };
   }
   if (p < 0.66) {
-    return { x: lerp(halfW, halfW * 0.1, (p - 0.33) / 0.33), z };
+    return { x: lerp(traceHalfW, traceHalfW * 0.1, (p - 0.33) / 0.33), z };
   }
-  return { x: lerp(halfW * 0.1, halfW, (p - 0.66) / 0.34), z };
+  return {
+    x: lerp(traceHalfW * 0.1, traceHalfW, (p - 0.66) / 0.34),
+    z,
+  };
 };
 
 const speakText = (text: string) => {
@@ -111,6 +114,7 @@ function SandpaperNumeralsContent({
   const cardMeshRefs = useRef<THREE.Mesh[]>([]);
   const textRefs = useRef<THREE.Mesh[]>([]);
   const ringRefs = useRef<THREE.Mesh[]>([]);
+  const sweepRefs = useRef<THREE.Mesh[]>([]);
   const startTimeRef = useRef<number | null>(null);
   const completedRef = useRef(false);
   const quizLiftRef = useRef<number | null>(null);
@@ -152,6 +156,10 @@ function SandpaperNumeralsContent({
         const ring = ringRefs.current[index];
         if (ring) {
           ring.visible = false;
+        }
+        const sweep = sweepRefs.current[index];
+        if (sweep) {
+          sweep.visible = false;
         }
       });
       return;
@@ -235,7 +243,7 @@ function SandpaperNumeralsContent({
 
       const ring = ringRefs.current[index];
       if (ring) {
-        if (t >= traceStart && t <= traceEnd) {
+        if (index === 0 && t >= traceStart && t <= traceEnd) {
           const progress = clamp01((t - traceStart) / (traceEnd - traceStart));
           const point = getTracePoint(index, progress);
           const startColor = new THREE.Color("#f8f4e8");
@@ -249,6 +257,25 @@ function SandpaperNumeralsContent({
           ring.visible = true;
         } else {
           ring.visible = false;
+        }
+      }
+
+      const sweep = sweepRefs.current[index];
+      if (sweep) {
+        if (index === 1 && t >= traceStart && t <= traceEnd) {
+          const progress = clamp01((t - traceStart) / (traceEnd - traceStart));
+          const startColor = new THREE.Color("#f8f4e8");
+          const endColor = new THREE.Color("#f8d85b");
+          const sweepMaterial = sweep.material as THREE.MeshStandardMaterial;
+          sweepMaterial.color.copy(startColor).lerp(endColor, progress);
+          sweepMaterial.emissive.copy(sweepMaterial.color);
+          sweepMaterial.emissiveIntensity = 0.3 * progress;
+          const sweepZ = lerp(traceHalfH, -traceHalfH, progress);
+          sweep.position.set(0, cardSize.thickness / 2 + 0.01, sweepZ);
+          sweep.rotation.set(-Math.PI / 2, 0, progress * Math.PI * 0.6);
+          sweep.visible = true;
+        } else {
+          sweep.visible = false;
         }
       }
     });
@@ -331,6 +358,23 @@ function SandpaperNumeralsContent({
               color="#f8f4e8"
               roughness={0.4}
               metalness={0.1}
+            />
+          </mesh>
+          <mesh
+            ref={(el) => {
+              if (el) {
+                sweepRefs.current[index] = el;
+              }
+            }}
+            visible={false}
+          >
+            <planeGeometry args={[traceWidth * 0.75, traceHeight * 0.08]} />
+            <meshStandardMaterial
+              color="#f8f4e8"
+              roughness={0.35}
+              metalness={0.1}
+              transparent
+              opacity={0.85}
             />
           </mesh>
         </group>
