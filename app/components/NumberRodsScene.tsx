@@ -31,14 +31,14 @@ const numberWords = [
   "ten",
 ];
 
-const timeScale = 1;
+const timeScale = 1.18;
 const scale = (value: number) => value * timeScale;
 const durations = {
   slide: 1.5,
   lift: 0.7,
   settle: 0.5,
   glowHold: 0.35,
-  count: 0.55,
+  count: 0.8,
   finalLift: 0.6,
   finalSettle: 0.4,
   pause: 0.25,
@@ -307,8 +307,11 @@ function NumberRodsContent({
           ? clamp01((t - countRange.start) / (countRange.end - countRange.start))
           : 0;
         const segmentPulse = isCountActive
-          ? 0.7 * Math.abs(Math.sin(countProgress * Math.PI * 2))
+          ? 0.45 * Math.abs(Math.sin(countProgress * Math.PI * 2))
           : 0;
+        const segmentScale = isCountActive
+          ? 1 + 0.03 * Math.sin(countProgress * Math.PI * 2)
+          : 1;
         const quizGlow = isQuizLift && quizLiftValue > 0 ? 0.6 : 0;
         const emissiveIntensity = Math.max(
           glowUp,
@@ -319,6 +322,7 @@ function NumberRodsContent({
         );
         material.emissive.copy(baseColor);
         material.emissiveIntensity = emissiveIntensity;
+        segment.scale.set(segmentScale, segmentScale, segmentScale);
       });
     });
 
