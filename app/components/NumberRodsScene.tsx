@@ -651,7 +651,13 @@ export default function NumberRodsScene({
           onQuizComplete={onQuizComplete}
           onRodSelect={handleRodSelect}
         />
-        <OrbitControls enablePan={false} enableZoom={false} maxPolarAngle={Math.PI / 2.1} />
+        <OrbitControls
+          enablePan={false}
+          enableZoom={false}
+          maxPolarAngle={Math.PI / 2.1}
+          minAzimuthAngle={-Math.PI / 2}
+          maxAzimuthAngle={Math.PI / 2}
+        />
       </Canvas>
     </div>
   );

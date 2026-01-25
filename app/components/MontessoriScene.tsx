@@ -58,7 +58,12 @@ export default function MontessoriScene({ accentColor = "#e8b7bf" }: MontessoriS
           <planeGeometry args={[6, 6]} />
           <meshStandardMaterial color="#efe1cf" />
         </mesh>
-        <OrbitControls enablePan={false} maxPolarAngle={Math.PI / 2.1} />
+        <OrbitControls
+          enablePan={false}
+          maxPolarAngle={Math.PI / 2.1}
+          minAzimuthAngle={-Math.PI / 2}
+          maxAzimuthAngle={Math.PI / 2}
+        />
       </Canvas>
     </div>
   );
