@@ -41,7 +41,7 @@ export default function NumberRodsLesson() {
           <button
             type="button"
             onClick={startLesson}
-            className="mt-auto w-full rounded-3xl bg-[#e87474] py-4 text-sm font-semibold uppercase tracking-[0.25em] text-white shadow-lg transition hover:bg-[#de6666]"
+            className="mt-auto w-full rounded-3xl bg-[#cf5f5f] py-4 text-sm font-semibold uppercase tracking-[0.25em] text-white shadow-lg transition hover:bg-[#c15454]"
           >
             Start
           </button>
