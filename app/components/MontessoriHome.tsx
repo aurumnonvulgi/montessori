@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import DraggableRod from "./DraggableRod";
 import MontessoriScene from "./MontessoriScene";
+import RodQuote from "./RodQuote";
 import { fetchMaterials, Material, MaterialSource } from "../lib/materials";
 import { playChime } from "../lib/sounds";
 import { useProgressStore } from "../store/useProgressStore";
@@ -134,6 +135,8 @@ export default function MontessoriHome() {
             </p>
           </motion.div>
         </section>
+
+        <RodQuote />
 
         <section id="focus" className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
           <div className="rounded-[32px] border border-stone-200 bg-white/80 p-6">
