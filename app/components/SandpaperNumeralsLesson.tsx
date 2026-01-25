@@ -39,6 +39,10 @@ export default function SandpaperNumeralsLesson() {
     }
   }, [clearConfettiTimers]);
 
+  const goHome = useCallback(() => {
+    router.push("/");
+  }, [router]);
+
   const handleLessonComplete = useCallback(() => {
     clearConfettiTimers();
     setConfettiVisible(true);
@@ -88,7 +92,15 @@ export default function SandpaperNumeralsLesson() {
           >
             Start
           </button>
-        ) : null}
+        ) : (
+          <button
+            type="button"
+            onClick={goHome}
+            className="mt-auto w-full rounded-3xl bg-[#2f67c1] py-4 text-sm font-semibold uppercase tracking-[0.25em] text-white shadow-lg transition hover:bg-[#295aad]"
+          >
+            Home
+          </button>
+        )}
       </main>
       {confettiVisible ? (
         <div className={`lesson-complete-overlay${fadeOut ? " fade-out" : ""}`}>
