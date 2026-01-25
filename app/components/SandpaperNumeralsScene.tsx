@@ -5,6 +5,7 @@ import { OrbitControls } from "@react-three/drei";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { playChime } from "../lib/sounds";
+import { primeSpeechVoices, speakWithPreferredVoice } from "../lib/speech";
 
 type SandpaperNumeralsSceneProps = {
   playing: boolean;
@@ -86,13 +87,7 @@ const speakText = (text: string) => {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) {
     return;
   }
-
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.rate = 0.85;
-  utterance.pitch = 0.95;
-  utterance.volume = 0.8;
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(utterance);
+  speakWithPreferredVoice(text, { rate: 0.85, pitch: 0.95, volume: 0.8 });
 };
 
 type SandpaperNumeralsContentProps = {
@@ -366,6 +361,10 @@ export default function SandpaperNumeralsScene({
   className,
   onLessonComplete,
 }: SandpaperNumeralsSceneProps) {
+  useEffect(() => {
+    primeSpeechVoices();
+  }, []);
+
   const [quizIndex, setQuizIndex] = useState<number | null>(null);
   const [quizPhase, setQuizPhase] = useState<QuizPhase>(null);
   const [quizLiftIndex, setQuizLiftIndex] = useState<number | null>(null);

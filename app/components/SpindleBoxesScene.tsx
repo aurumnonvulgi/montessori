@@ -4,6 +4,7 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
+import { primeSpeechVoices, speakWithPreferredVoice } from "../lib/speech";
 
 type SpindleBoxesSceneProps = {
   playing: boolean;
@@ -121,12 +122,7 @@ const speakText = (text: string) => {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) {
     return;
   }
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.rate = 0.85;
-  utterance.pitch = 0.95;
-  utterance.volume = 0.8;
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(utterance);
+  speakWithPreferredVoice(text, { rate: 0.85, pitch: 0.95, volume: 0.8 });
 };
 
 function SpindleBoxesContent({
@@ -134,6 +130,10 @@ function SpindleBoxesContent({
   voiceEnabled,
   onLessonComplete,
 }: Omit<SpindleBoxesSceneProps, "className">) {
+  useEffect(() => {
+    primeSpeechVoices();
+  }, []);
+
   const spindleRefs = useRef<THREE.Mesh[]>([]);
   const startTimeRef = useRef<number | null>(null);
   const completedRef = useRef(false);

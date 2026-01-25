@@ -12,7 +12,7 @@ export default function NumberRodsPresentationPreview({
       className={`relative h-full w-full overflow-hidden rounded-[28px] bg-[radial-gradient(circle_at_top,#f6efe4_0%,#f0e1cf_60%,#e6d4bd_100%)] ${className ?? ""}`}
     >
       <div className="absolute left-5 right-5 top-5 rounded-xl bg-white/90 px-4 py-3 text-center text-xs font-semibold text-stone-700 shadow-sm">
-        I will now present the number rods
+        I will introduce to you the number rods.
       </div>
       <div className="absolute left-1/2 top-16 w-[80%] -translate-x-1/2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-red-600">
         Please read the above sentence

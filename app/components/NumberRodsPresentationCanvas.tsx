@@ -10,6 +10,7 @@ import {
   type RefObject,
 } from "react";
 import Draggable from "react-draggable";
+import { getPreferredVoice, primeSpeechVoices } from "../lib/speech";
 
 type NumberRodsPresentationCanvasProps = {
   playing: boolean;
@@ -32,7 +33,7 @@ type Phase =
 
 type Position = { x: number; y: number };
 
-const INTRO_SENTENCE = "I will now present the number rods";
+const INTRO_SENTENCE = "I will introduce to you the number rods.";
 const rodOrder: { id: RodId; word: string }[] = [
   { id: 1, word: "one" },
   { id: 2, word: "two" },
@@ -61,7 +62,7 @@ const isIntroMatch = (transcript: string) => {
   if (matchCount / expectedWords.length >= 0.5) {
     return true;
   }
-  const keywordMatch = ["present", "number", "rods"].every((word) =>
+  const keywordMatch = ["introduce", "number", "rods"].every((word) =>
     spokenWords.has(word),
   );
   return keywordMatch;
@@ -548,6 +549,10 @@ export default function NumberRodsPresentationCanvas({
           return;
         }
         const utterance = new SpeechSynthesisUtterance(text);
+        const preferredVoice = getPreferredVoice("en-US");
+        if (preferredVoice) {
+          utterance.voice = preferredVoice;
+        }
         utterance.rate = rate;
         utterance.pitch = 0.95;
         utterance.volume = 0.9;
@@ -627,6 +632,10 @@ export default function NumberRodsPresentationCanvas({
   );
 
   const showCaret = phase === "intro" && playing && typedSentence.length < INTRO_SENTENCE.length;
+
+  useEffect(() => {
+    primeSpeechVoices();
+  }, []);
 
   useEffect(() => {
     if (phase === "intro" && playing) {
