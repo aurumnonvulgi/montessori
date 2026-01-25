@@ -8,8 +8,9 @@ import { playChime } from "../lib/sounds";
 type NumberRodsSceneProps = {
   playing: boolean;
   voiceEnabled: boolean;
+  stageIndex?: number;
   onComplete?: () => void;
-  onQuizComplete?: () => void;
+  onStageComplete?: () => void;
   className?: string;
 };
 
@@ -18,7 +19,6 @@ type Step = {
   duration: number;
 };
 
-const rodCount = 3;
 const numberWords = [
   "one",
   "two",
@@ -31,6 +31,14 @@ const numberWords = [
   "nine",
   "ten",
 ];
+export const NUMBER_ROD_STAGES = [
+  [1, 2, 3],
+  [4, 5, 6],
+  [7, 8, 9],
+  [10],
+];
+const maxRodCount = numberWords.length;
+const anchorSegments = NUMBER_ROD_STAGES[0].length;
 
 const timeScale = 1.18;
 const scale = (value: number) => value * timeScale;
@@ -47,40 +55,62 @@ const durations = {
   pause: 0.25,
 };
 
-const steps: Step[] = [];
-for (let rod = 1; rod <= rodCount; rod += 1) {
-  steps.push({ id: `rod${rod}Slide`, duration: scale(durations.slide) });
-  steps.push({ id: `rod${rod}Stop`, duration: scale(durations.stop) });
-  steps.push({ id: `rod${rod}PreGlow`, duration: scale(durations.preGlow) });
-  steps.push({ id: `rod${rod}Lift`, duration: scale(durations.lift) });
-  steps.push({ id: `rod${rod}Settle`, duration: scale(durations.settle) });
-  for (let segment = 1; segment <= rod; segment += 1) {
+const buildStepsForRods = (rods: number[]) => {
+  const steps: Step[] = [];
+  rods.forEach((rod, index) => {
+    steps.push({ id: `rod${rod}Slide`, duration: scale(durations.slide) });
+    steps.push({ id: `rod${rod}Stop`, duration: scale(durations.stop) });
+    steps.push({ id: `rod${rod}PreGlow`, duration: scale(durations.preGlow) });
+    steps.push({ id: `rod${rod}Lift`, duration: scale(durations.lift) });
+    steps.push({ id: `rod${rod}Settle`, duration: scale(durations.settle) });
+    for (let segment = 1; segment <= rod; segment += 1) {
+      steps.push({
+        id: `rod${rod}Count${segment}`,
+        duration: scale(durations.count),
+      });
+    }
     steps.push({
-      id: `rod${rod}Count${segment}`,
-      duration: scale(durations.count),
+      id: `rod${rod}FinalLift`,
+      duration: scale(durations.finalLift),
     });
-  }
-  steps.push({ id: `rod${rod}FinalLift`, duration: scale(durations.finalLift) });
-  steps.push({ id: `rod${rod}FinalSettle`, duration: scale(durations.finalSettle) });
-  if (rod < rodCount) {
-    steps.push({ id: `rod${rod}Pause`, duration: scale(durations.pause) });
-  }
-}
+    steps.push({
+      id: `rod${rod}FinalSettle`,
+      duration: scale(durations.finalSettle),
+    });
+    if (index < rods.length - 1) {
+      steps.push({ id: `rod${rod}Pause`, duration: scale(durations.pause) });
+    }
+  });
+  return steps;
+};
 
 const segmentLength = 0.2;
 const rodHeight = 0.04;
 const rodDepth = 0.05;
 const liftHeight = 0.02;
-const maxSegments = rodCount;
-const maxLength = segmentLength * maxSegments;
-const leftEdge = -maxLength / 2;
-const slideStartX = leftEdge - maxLength - 0.6;
+const anchorLength = segmentLength * anchorSegments;
+const leftEdge = -anchorLength / 2;
+const slideStartX = leftEdge - anchorLength - 0.6;
+const getPlaneWidth = (maxSegmentsInStage: number) => {
+  const stageLength = segmentLength * maxSegmentsInStage;
+  const maxRightEdge = leftEdge + stageLength;
+  const planeHalfWidth = Math.max(Math.abs(leftEdge), Math.abs(maxRightEdge)) + 0.2;
+  return Math.max(3, planeHalfWidth * 2);
+};
 const rodGap = rodDepth;
 const rodSpacing = rodDepth + rodGap;
-const rodZ = Array.from({ length: rodCount }, (_, index) => {
-  const offset = (rodCount - 1) / 2 - index;
-  return offset * rodSpacing;
-});
+const rodZ = (() => {
+  const positions = Array.from({ length: maxRodCount }, () => 0);
+  const anchorCount = Math.min(anchorSegments, maxRodCount);
+  for (let index = 0; index < anchorCount; index += 1) {
+    const offset = (anchorSegments - 1) / 2 - index;
+    positions[index] = offset * rodSpacing;
+  }
+  for (let index = anchorCount; index < maxRodCount; index += 1) {
+    positions[index] = positions[index - 1] - rodSpacing;
+  }
+  return positions;
+})();
 const baseY = rodHeight / 2 + 0.02;
 
 const smoothstep = (t: number) => t * t * (3 - 2 * t);
@@ -100,7 +130,7 @@ const speakText = (text: string) => {
   window.speechSynthesis.speak(utterance);
 };
 
-const buildTimeline = () => {
+const buildTimeline = (steps: Step[]) => {
   let cursor = 0;
   const map: Record<string, { start: number; end: number }> = {};
   steps.forEach((step) => {
@@ -111,24 +141,37 @@ const buildTimeline = () => {
   return { map, total: cursor };
 };
 
-const timeline = buildTimeline();
-
-const voiceCues: { id: string; text: string; offset?: number }[] = [];
-for (let rod = 1; rod <= rodCount; rod += 1) {
-  voiceCues.push({
-    id: `rod${rod}Lift`,
-    text: `This is ${numberWords[rod - 1]}`,
-  });
-  for (let segment = 1; segment <= rod; segment += 1) {
+const buildVoiceCues = (rods: number[]) => {
+  const voiceCues: { id: string; text: string; offset?: number }[] = [];
+  rods.forEach((rod) => {
     voiceCues.push({
-      id: `rod${rod}Count${segment}`,
-      text: numberWords[segment - 1],
-      offset: scale(0.12),
+      id: `rod${rod}Lift`,
+      text: `This is ${numberWords[rod - 1]}`,
     });
-  }
-}
+    for (let segment = 1; segment <= rod; segment += 1) {
+      voiceCues.push({
+        id: `rod${rod}Count${segment}`,
+        text: numberWords[segment - 1],
+        offset: scale(0.12),
+      });
+    }
+  });
+  return voiceCues;
+};
+
+type Timeline = {
+  map: Record<string, { start: number; end: number }>;
+  total: number;
+};
+
+type VoiceCue = { id: string; text: string; offset?: number };
 
 type NumberRodsContentProps = Omit<NumberRodsSceneProps, "className"> & {
+  timeline: Timeline;
+  voiceCues: VoiceCue[];
+  stageRods: number[];
+  revealedCount: number;
+  stageKey: number;
   quizLiftRod: number | null;
   onRodSelect: (index: number) => void;
 };
@@ -136,14 +179,18 @@ type NumberRodsContentProps = Omit<NumberRodsSceneProps, "className"> & {
 function NumberRodsContent({
   playing,
   voiceEnabled,
+  timeline,
+  voiceCues,
+  stageRods,
+  revealedCount,
+  stageKey,
   quizLiftRod,
   onComplete,
-  onQuizComplete,
   onRodSelect,
 }: NumberRodsContentProps) {
   const rodRefs = useRef<THREE.Group[]>([]);
   const segmentRefs = useRef<THREE.Mesh[][]>(
-    Array.from({ length: rodCount }, () => []),
+    Array.from({ length: maxRodCount }, () => []),
   );
   const startTimeRef = useRef<number | null>(null);
   const spokenRef = useRef<Record<string, boolean>>({});
@@ -159,8 +206,16 @@ function NumberRodsContent({
       if (typeof window !== "undefined" && "speechSynthesis" in window) {
         window.speechSynthesis.cancel();
       }
+      return;
     }
-  }, [playing]);
+
+    startTimeRef.current = null;
+    spokenRef.current = {};
+    completedRef.current = false;
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+  }, [playing, stageKey]);
 
   useEffect(() => {
     quizLiftRef.current = quizLiftRod;
@@ -174,7 +229,7 @@ function NumberRodsContent({
 
     if (!playing) {
       const rodLengths = Array.from(
-        { length: rodCount },
+        { length: maxRodCount },
         (_, index) => segmentLength * (index + 1),
       );
       rodLengths.forEach((length, index) => {
@@ -182,9 +237,22 @@ function NumberRodsContent({
         if (!rod) {
           return;
         }
+        if (index >= anchorSegments) {
+          rod.visible = false;
+          return;
+        }
         const finalX = leftEdge + length / 2;
         rod.position.set(finalX, baseY, rodZ[index]);
         rod.visible = true;
+        const rodSegments = segmentRefs.current[index] ?? [];
+        rodSegments.forEach((segment) => {
+          if (!segment) {
+            return;
+          }
+          const material = segment.material as THREE.MeshStandardMaterial;
+          material.emissiveIntensity = 0;
+          segment.scale.set(1, 1, 1);
+        });
       });
       return;
     }
@@ -215,7 +283,7 @@ function NumberRodsContent({
     }
 
     const rodLengths = Array.from(
-      { length: rodCount },
+      { length: maxRodCount },
       (_, index) => segmentLength * (index + 1),
     );
     const quizLiftIndex = quizLiftRef.current;
@@ -233,19 +301,51 @@ function NumberRodsContent({
       }
 
       const rodNumber = index + 1;
+      const isStageRod = stageRods.includes(rodNumber);
       const slideKey = `rod${rodNumber}Slide`;
       const preGlowKey = `rod${rodNumber}PreGlow`;
       const liftKey = `rod${rodNumber}Lift`;
       const settleKey = `rod${rodNumber}Settle`;
       const finalLiftKey = `rod${rodNumber}FinalLift`;
       const finalSettleKey = `rod${rodNumber}FinalSettle`;
+      const finalX = leftEdge + length / 2;
+
+      if (!isStageRod) {
+        if (rodNumber <= revealedCount) {
+          rod.position.set(finalX, baseY, rodZ[index]);
+          rod.visible = true;
+        } else {
+          rod.visible = false;
+        }
+        const rodSegments = segmentRefs.current[index] ?? [];
+        rodSegments.forEach((segment) => {
+          if (!segment) {
+            return;
+          }
+          const material = segment.material as THREE.MeshStandardMaterial;
+          material.emissiveIntensity = 0;
+          segment.scale.set(1, 1, 1);
+        });
+        return;
+      }
+
       const slideRange = timeline.map[slideKey];
       const preGlowRange = timeline.map[preGlowKey];
       const liftRange = timeline.map[liftKey];
       const settleRange = timeline.map[settleKey];
       const finalLiftRange = timeline.map[finalLiftKey];
       const finalSettleRange = timeline.map[finalSettleKey];
-      const finalX = leftEdge + length / 2;
+      if (
+        !slideRange ||
+        !preGlowRange ||
+        !liftRange ||
+        !settleRange ||
+        !finalLiftRange ||
+        !finalSettleRange
+      ) {
+        rod.visible = false;
+        return;
+      }
 
       let x = slideStartX;
       if (t >= slideRange.end) {
@@ -302,6 +402,11 @@ function NumberRodsContent({
         const baseColor = material.color;
         const countKey = `rod${rodNumber}Count${segmentIndex + 1}`;
         const countRange = timeline.map[countKey];
+        if (!countRange) {
+          material.emissiveIntensity = 0;
+          segment.scale.set(1, 1, 1);
+          return;
+        }
         const isCountActive = t >= countRange.start && t <= countRange.end;
         const countProgress = isCountActive
           ? clamp01((t - countRange.start) / (countRange.end - countRange.start))
@@ -325,7 +430,7 @@ function NumberRodsContent({
 
   const rods = useMemo(
     () =>
-      Array.from({ length: rodCount }, (_, index) => ({
+      Array.from({ length: maxRodCount }, (_, index) => ({
         segments: index + 1,
         label: numberWords[index],
       })),
@@ -333,6 +438,13 @@ function NumberRodsContent({
   );
 
   const rodColors = ["#3d7dd9", "#d95a4e"]; // blue, red
+  const planeWidth = useMemo(() => {
+    const stageMax = stageRods.reduce(
+      (max, rod) => Math.max(max, rod),
+      anchorSegments,
+    );
+    return getPlaneWidth(stageMax);
+  }, [stageRods]);
 
   return (
     <group>
@@ -350,7 +462,7 @@ function NumberRodsContent({
       <directionalLight position={[-2.6, 2.1, -1.2]} intensity={0.25} />
 
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
-        <planeGeometry args={[3, 2]} />
+        <planeGeometry args={[planeWidth, 2]} />
         <meshStandardMaterial color="#f3e9d8" roughness={0.95} metalness={0.02} />
       </mesh>
 
@@ -406,18 +518,31 @@ function NumberRodsContent({
   );
 }
 
-const clickOrder = [2, 1, 0];
-const nameOrder = [0, 1, 2];
 const rodNames = numberWords;
 type QuizPhase = "click" | "name" | null;
 
 export default function NumberRodsScene({
   playing,
   voiceEnabled,
+  stageIndex = 0,
   onComplete,
-  onQuizComplete,
+  onStageComplete,
   className,
 }: NumberRodsSceneProps) {
+  const stageRods = useMemo(
+    () => NUMBER_ROD_STAGES[stageIndex] ?? NUMBER_ROD_STAGES[0],
+    [stageIndex],
+  );
+  const stageSteps = useMemo(() => buildStepsForRods(stageRods), [stageRods]);
+  const timeline = useMemo(() => buildTimeline(stageSteps), [stageSteps]);
+  const voiceCues = useMemo(() => buildVoiceCues(stageRods), [stageRods]);
+  const clickOrder = useMemo(
+    () => [...stageRods].reverse().map((rod) => rod - 1),
+    [stageRods],
+  );
+  const nameOrder = useMemo(() => stageRods.map((rod) => rod - 1), [stageRods]);
+  const revealedCount = stageRods.length > 0 ? stageRods[0] - 1 : 0;
+
   const [quizIndex, setQuizIndex] = useState<number | null>(null);
   const [quizPhase, setQuizPhase] = useState<QuizPhase>(null);
   const [quizLiftRod, setQuizLiftRod] = useState<number | null>(null);
@@ -534,25 +659,35 @@ export default function NumberRodsScene({
     [currentTarget, quizPhase, voiceEnabled],
   );
 
+  const resetQuizState = useCallback(() => {
+    quizDoneRef.current = false;
+    quizCompleteRef.current = false;
+    promptRef.current = {};
+    awaitingAnswerRef.current = false;
+    setQuizIndex(null);
+    setQuizPhase(null);
+    setQuizLiftRod(null);
+    if (timeoutRef.current) {
+      window.clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch {
+        // ignore
+      }
+      recognitionRef.current = null;
+    }
+  }, []);
+
   useEffect(() => {
     if (!playing) {
-      quizDoneRef.current = false;
-      quizCompleteRef.current = false;
-      promptRef.current = {};
-      awaitingAnswerRef.current = false;
-      setQuizIndex(null);
-      setQuizPhase(null);
-      setQuizLiftRod(null);
-      if (recognitionRef.current) {
-        try {
-          recognitionRef.current.stop();
-        } catch {
-          // ignore
-        }
-        recognitionRef.current = null;
-      }
+      resetQuizState();
+      return;
     }
-  }, [playing]);
+    resetQuizState();
+  }, [playing, stageIndex, resetQuizState]);
 
   useEffect(() => {
     if (currentTarget === null || !voiceEnabled || quizPhase === null) {
@@ -616,10 +751,10 @@ export default function NumberRodsScene({
       return;
     }
     quizCompleteRef.current = true;
-    if (onQuizComplete) {
-      onQuizComplete();
+    if (onStageComplete) {
+      onStageComplete();
     }
-  }, [onQuizComplete, quizPhase]);
+  }, [onStageComplete, quizPhase]);
 
   useEffect(() => {
     return () => {
@@ -646,9 +781,13 @@ export default function NumberRodsScene({
         <NumberRodsContent
           playing={playing}
           voiceEnabled={voiceEnabled}
+          timeline={timeline}
+          voiceCues={voiceCues}
+          stageRods={stageRods}
+          revealedCount={revealedCount}
+          stageKey={stageIndex}
           quizLiftRod={quizLiftRod}
           onComplete={handleSequenceComplete}
-          onQuizComplete={onQuizComplete}
           onRodSelect={handleRodSelect}
         />
         <OrbitControls

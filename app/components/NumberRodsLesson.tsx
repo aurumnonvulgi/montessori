@@ -1,20 +1,34 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import NumberRodsScene from "./NumberRodsScene";
+import { useCallback, useEffect, useRef, useState } from "react";
+import NumberRodsScene, { NUMBER_ROD_STAGES } from "./NumberRodsScene";
 
 export default function NumberRodsLesson() {
-  const router = useRouter();
   const [lessonStarted, setLessonStarted] = useState(false);
   const [resetKey, setResetKey] = useState(0);
-  const [lessonComplete, setLessonComplete] = useState(false);
+  const [stageIndex, setStageIndex] = useState(0);
+  const [confettiVisible, setConfettiVisible] = useState(false);
   const [fadeOut, setFadeOut] = useState(false);
+  const fadeTimerRef = useRef<number | null>(null);
+  const advanceTimerRef = useRef<number | null>(null);
+
+  const clearConfettiTimers = useCallback(() => {
+    if (fadeTimerRef.current) {
+      window.clearTimeout(fadeTimerRef.current);
+      fadeTimerRef.current = null;
+    }
+    if (advanceTimerRef.current) {
+      window.clearTimeout(advanceTimerRef.current);
+      advanceTimerRef.current = null;
+    }
+  }, []);
 
   const startLesson = useCallback(() => {
+    clearConfettiTimers();
     setLessonStarted(true);
     setResetKey((value) => value + 1);
-    setLessonComplete(false);
+    setStageIndex(0);
+    setConfettiVisible(false);
     setFadeOut(false);
 
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
@@ -23,28 +37,31 @@ export default function NumberRodsLesson() {
       window.speechSynthesis.cancel();
       window.speechSynthesis.speak(utterance);
     }
-  }, []);
+  }, [clearConfettiTimers]);
 
-  useEffect(() => {
-    if (!lessonComplete) {
-      return;
-    }
-
+  const handleStageComplete = useCallback(() => {
+    clearConfettiTimers();
+    setConfettiVisible(true);
     setFadeOut(false);
 
-    const fadeTimer = window.setTimeout(() => {
+    fadeTimerRef.current = window.setTimeout(() => {
       setFadeOut(true);
     }, 2600);
 
-    const navTimer = window.setTimeout(() => {
-      router.push("/");
+    advanceTimerRef.current = window.setTimeout(() => {
+      setConfettiVisible(false);
+      setFadeOut(false);
+      setStageIndex((prev) =>
+        prev < NUMBER_ROD_STAGES.length - 1 ? prev + 1 : prev,
+      );
     }, 3400);
+  }, [clearConfettiTimers]);
 
+  useEffect(() => {
     return () => {
-      window.clearTimeout(fadeTimer);
-      window.clearTimeout(navTimer);
+      clearConfettiTimers();
     };
-  }, [lessonComplete, router]);
+  }, [clearConfettiTimers]);
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,#f5efe6_0%,#fdfbf8_45%,#f7efe4_100%)]">
@@ -55,10 +72,11 @@ export default function NumberRodsLesson() {
         </div>
 
         <NumberRodsScene
-          key={resetKey}
+          key={`${resetKey}-${stageIndex}`}
           playing={lessonStarted}
           voiceEnabled={lessonStarted}
-          onQuizComplete={() => setLessonComplete(true)}
+          stageIndex={stageIndex}
+          onStageComplete={handleStageComplete}
           className="h-[70vh] min-h-[520px]"
         />
 
@@ -72,7 +90,7 @@ export default function NumberRodsLesson() {
           </button>
         ) : null}
       </main>
-      {lessonComplete ? (
+      {confettiVisible ? (
         <div className={`lesson-complete-overlay${fadeOut ? " fade-out" : ""}`}>
           <div className="lesson-complete-confetti">
             {Array.from({ length: 16 }).map((_, index) => (
