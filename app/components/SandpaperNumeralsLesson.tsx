@@ -10,6 +10,13 @@ export default function SandpaperNumeralsLesson() {
   const startLesson = useCallback(() => {
     setLessonStarted(true);
     setResetKey((value) => value + 1);
+
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      const utterance = new SpeechSynthesisUtterance(" ");
+      utterance.volume = 0;
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utterance);
+    }
   }, []);
 
   return (
@@ -23,6 +30,7 @@ export default function SandpaperNumeralsLesson() {
         <SandpaperNumeralsScene
           key={resetKey}
           playing={lessonStarted}
+          voiceEnabled={lessonStarted}
           className="h-[68vh] min-h-[500px]"
         />
 
