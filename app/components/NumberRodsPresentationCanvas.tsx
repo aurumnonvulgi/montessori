@@ -90,7 +90,7 @@ export default function NumberRodsPresentationCanvas({
   const rodNodeRefs = useMemo(() => {
     const refs: Record<number, RefObject<HTMLDivElement>> = {};
     rodOrder.forEach((rod) => {
-      refs[rod.id] = createRef<HTMLDivElement>();
+      refs[rod.id] = createRef<HTMLDivElement>() as RefObject<HTMLDivElement>;
     });
     return refs;
   }, []);
