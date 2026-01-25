@@ -18,9 +18,9 @@ const numerals = ["1", "2", "3"];
 const numeralWords = ["one", "two", "three"];
 const cardSize = { width: 0.36, height: 0.46, thickness: 0.03 };
 const baseY = cardSize.thickness / 2;
-const slideDuration = 1.6;
-const slideDelay = 0.4;
-const quizLiftDuration = 2.2;
+const slideDuration = 2.2;
+const slideDelay = 0.6;
+const quizLiftDuration = 2.6;
 const liftHeight = 0.05;
 const stackBase = new THREE.Vector3(-0.72, baseY, -0.45);
 const stackOffsets = [
@@ -28,10 +28,9 @@ const stackOffsets = [
   new THREE.Vector3(0.05, 0.002, 0.05),
   new THREE.Vector3(0.1, 0.003, 0.1),
 ];
-const rowZ = 0.38;
-const rowX = [-0.38, 0, 0.38];
+const rowZ = 0.42;
+const rowX = [-0.48, 0, 0.48];
 const textSurfaceY = cardSize.thickness / 2 + 0.002;
-const carveDepth = 0.004;
 const labelSize = {
   width: cardSize.width * 0.46,
   height: cardSize.height * 0.6,
@@ -154,13 +153,13 @@ function SandpaperNumeralsContent({
         card.scale.set(1, 1, 1);
         const text = textRefs.current[index];
         if (text) {
-          text.visible = false;
+          text.visible = playing;
           text.position.set(0, textSurfaceY, 0);
           const material = text.material as THREE.MeshStandardMaterial;
           if (material?.color) {
-            material.color.set("#e9e6df");
-            material.emissive.set("#e9e6df");
-            material.emissiveIntensity = 0;
+            material.color.set("#ffffff");
+            material.emissive.set("#ffffff");
+            material.emissiveIntensity = 0.2;
           }
         }
         const mesh = cardMeshRefs.current[index];
@@ -237,26 +236,17 @@ function SandpaperNumeralsContent({
 
       const text = textRefs.current[index];
       if (text) {
-        const revealReady = t >= end - 0.2;
-        text.visible = revealReady;
-        let textY = textSurfaceY;
-        let carved = false;
-
-        if (t >= end) {
-          textY = textSurfaceY - carveDepth;
-          carved = true;
-        }
-        if (revealReady && voiceEnabled && !spokenRef.current[index]) {
+        text.visible = playing;
+        if (t >= end && voiceEnabled && !spokenRef.current[index]) {
           spokenRef.current[index] = true;
           speakText(numeralWords[index]);
         }
-
-        text.position.y = textY;
+        text.position.y = textSurfaceY;
         const material = text.material as THREE.MeshStandardMaterial;
         if (material?.color) {
-          material.color.set(carved ? "#d6d0c4" : "#e9e6df");
-          material.emissive.set(material.color);
-          material.emissiveIntensity = carved ? 0.15 : 0;
+          material.color.set("#ffffff");
+          material.emissive.set("#ffffff");
+          material.emissiveIntensity = 0.2;
         }
       }
 
@@ -285,7 +275,7 @@ function SandpaperNumeralsContent({
       <directionalLight position={[-2.4, 2, -1.2]} intensity={0.2} />
 
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
-        <planeGeometry args={[2.2, 1.7]} />
+        <planeGeometry args={[2.6, 1.9]} />
         <meshStandardMaterial color="#f3e9d8" roughness={0.95} metalness={0.02} />
       </mesh>
 
@@ -329,8 +319,9 @@ function SandpaperNumeralsContent({
           >
             <planeGeometry args={[labelSize.width, labelSize.height]} />
             <meshStandardMaterial
-              color="#e9e6df"
-              emissive="#e9e6df"
+              color="#ffffff"
+              emissive="#ffffff"
+              emissiveIntensity={0.2}
               transparent
               alphaTest={0.1}
               map={numeralTextures[index] ?? null}
@@ -356,7 +347,7 @@ export default function SandpaperNumeralsScene({
   const recognitionRef = useRef<any>(null);
   const awaitingAnswerRef = useRef(false);
 
-  const clickOrder = useMemo(() => [2, 1, 0], []);
+  const clickOrder = useMemo(() => [2, 1, 2], []);
   const nameOrder = useMemo(() => [0, 1, 2], []);
 
   const currentTarget =
@@ -554,7 +545,7 @@ export default function SandpaperNumeralsScene({
   }, []);
 
   const cameraPosition = useMemo(
-    () => [0, 1.1, 1.15] as [number, number, number],
+    () => [0, 1.22, 1.45] as [number, number, number],
     [],
   );
 
@@ -562,7 +553,7 @@ export default function SandpaperNumeralsScene({
     <div
       className={`w-full overflow-hidden rounded-[28px] bg-[#f7efe4] ${className ?? "h-[420px]"}`}
     >
-      <Canvas shadows camera={{ position: cameraPosition, fov: 34 }}>
+      <Canvas shadows camera={{ position: cameraPosition, fov: 30 }}>
         <color attach="background" args={["#f7efe4"]} />
         <SandpaperNumeralsContent
           playing={playing}
@@ -575,11 +566,11 @@ export default function SandpaperNumeralsScene({
           enablePan={false}
           enableZoom
           maxPolarAngle={Math.PI / 2.1}
-          target={[0, 0, 0.2]}
+          target={[0, 0, 0.25]}
           minAzimuthAngle={-(Math.PI * 65) / 180}
           maxAzimuthAngle={(Math.PI * 65) / 180}
-          minDistance={1.6}
-          maxDistance={2.6}
+          minDistance={1.9}
+          maxDistance={3.2}
         />
       </Canvas>
     </div>
