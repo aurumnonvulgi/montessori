@@ -6,10 +6,12 @@ import NumberRodsScene from "./NumberRodsScene";
 export default function NumberRodsLesson() {
   const [lessonStarted, setLessonStarted] = useState(false);
   const [resetKey, setResetKey] = useState(0);
+  const [lessonComplete, setLessonComplete] = useState(false);
 
   const startLesson = useCallback(() => {
     setLessonStarted(true);
     setResetKey((value) => value + 1);
+    setLessonComplete(false);
 
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       const utterance = new SpeechSynthesisUtterance(" ");
@@ -31,17 +33,29 @@ export default function NumberRodsLesson() {
           key={resetKey}
           playing={lessonStarted}
           voiceEnabled={lessonStarted}
+          onQuizComplete={() => setLessonComplete(true)}
           className="h-[70vh] min-h-[520px]"
         />
 
-        <button
-          type="button"
-          onClick={startLesson}
-          className="mt-auto w-full rounded-3xl bg-stone-900 py-4 text-sm font-semibold uppercase tracking-[0.25em] text-white shadow-lg transition hover:bg-stone-800"
-        >
-          Start
-        </button>
+        {!lessonStarted ? (
+          <button
+            type="button"
+            onClick={startLesson}
+            className="mt-auto w-full rounded-3xl bg-[#e87474] py-4 text-sm font-semibold uppercase tracking-[0.25em] text-white shadow-lg transition hover:bg-[#de6666]"
+          >
+            Start
+          </button>
+        ) : null}
       </main>
+      {lessonComplete ? (
+        <div className="lesson-complete-overlay">
+          <div className="lesson-complete-confetti">
+            {Array.from({ length: 16 }).map((_, index) => (
+              <span key={index} className="confetti-piece" />
+            ))}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

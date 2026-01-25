@@ -9,6 +9,7 @@ type NumberRodsSceneProps = {
   playing: boolean;
   voiceEnabled: boolean;
   onComplete?: () => void;
+  onQuizComplete?: () => void;
   className?: string;
 };
 
@@ -38,7 +39,7 @@ const durations = {
   lift: 0.7,
   settle: 0.5,
   glowHold: 0.35,
-  count: 0.8,
+  count: 0.95,
   finalLift: 0.6,
   finalSettle: 0.4,
   pause: 0.25,
@@ -133,6 +134,7 @@ function NumberRodsContent({
   voiceEnabled,
   quizLiftRod,
   onComplete,
+  onQuizComplete,
   onRodSelect,
 }: NumberRodsContentProps) {
   const rodRefs = useRef<THREE.Group[]>([]);
@@ -307,10 +309,10 @@ function NumberRodsContent({
           ? clamp01((t - countRange.start) / (countRange.end - countRange.start))
           : 0;
         const segmentPulse = isCountActive
-          ? 0.45 * Math.abs(Math.sin(countProgress * Math.PI * 2))
+          ? 0.35 * Math.abs(Math.sin(countProgress * Math.PI * 2))
           : 0;
         const segmentScale = isCountActive
-          ? 1 + 0.03 * Math.sin(countProgress * Math.PI * 2)
+          ? 1 + 0.02 * Math.sin(countProgress * Math.PI * 2)
           : 1;
         const quizGlow = isQuizLift && quizLiftValue > 0 ? 0.6 : 0;
         const emissiveIntensity = Math.max(
@@ -420,12 +422,14 @@ export default function NumberRodsScene({
   playing,
   voiceEnabled,
   onComplete,
+  onQuizComplete,
   className,
 }: NumberRodsSceneProps) {
   const [quizIndex, setQuizIndex] = useState<number | null>(null);
   const [quizPhase, setQuizPhase] = useState<QuizPhase>(null);
   const [quizLiftRod, setQuizLiftRod] = useState<number | null>(null);
   const quizDoneRef = useRef(false);
+  const quizCompleteRef = useRef(false);
   const promptRef = useRef<Record<string, boolean>>({});
   const timeoutRef = useRef<number | null>(null);
   const recognitionRef = useRef<any>(null);
@@ -515,10 +519,12 @@ export default function NumberRodsScene({
       }
 
       playChime();
+      setQuizLiftRod(index);
       if (timeoutRef.current) {
         window.clearTimeout(timeoutRef.current);
       }
       timeoutRef.current = window.setTimeout(() => {
+        setQuizLiftRod(null);
         setQuizIndex((prev) => {
           if (prev === null) {
             return null;
@@ -538,6 +544,7 @@ export default function NumberRodsScene({
   useEffect(() => {
     if (!playing) {
       quizDoneRef.current = false;
+      quizCompleteRef.current = false;
       promptRef.current = {};
       awaitingAnswerRef.current = false;
       setQuizIndex(null);
@@ -601,6 +608,19 @@ export default function NumberRodsScene({
   }, [currentTarget, quizPhase, startRecognition, voiceEnabled]);
 
   useEffect(() => {
+    if (quizPhase !== null) {
+      return;
+    }
+    if (!quizDoneRef.current || quizCompleteRef.current) {
+      return;
+    }
+    quizCompleteRef.current = true;
+    if (onQuizComplete) {
+      onQuizComplete();
+    }
+  }, [onQuizComplete, quizPhase]);
+
+  useEffect(() => {
     return () => {
       if (timeoutRef.current) {
         window.clearTimeout(timeoutRef.current);
@@ -627,6 +647,7 @@ export default function NumberRodsScene({
           voiceEnabled={voiceEnabled}
           quizLiftRod={quizLiftRod}
           onComplete={handleSequenceComplete}
+          onQuizComplete={onQuizComplete}
           onRodSelect={handleRodSelect}
         />
         <OrbitControls enablePan={false} enableZoom={false} maxPolarAngle={Math.PI / 2.1} />
