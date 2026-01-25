@@ -343,7 +343,7 @@ function NumberRodsContent({
   );
 }
 
-const quizOrder = [2, 1];
+const quizOrder = [0, 1, 2];
 const rodNames = ["one", "two", "three"];
 
 export default function NumberRodsScene({
@@ -357,6 +357,8 @@ export default function NumberRodsScene({
   const quizDoneRef = useRef(false);
   const promptRef = useRef<Record<number, boolean>>({});
   const timeoutRef = useRef<number | null>(null);
+  const recognitionRef = useRef<any>(null);
+  const awaitingAnswerRef = useRef(false);
 
   const currentTarget = quizIndex !== null ? quizOrder[quizIndex] : null;
 
@@ -370,9 +372,61 @@ export default function NumberRodsScene({
     }
   }, [onComplete]);
 
+  const startRecognition = useCallback((onFinished: () => void) => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+
+    const speechWindow = window as unknown as {
+      SpeechRecognition?: any;
+      webkitSpeechRecognition?: any;
+    };
+    const SpeechRecognition =
+      speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      return false;
+    }
+
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch {
+        // ignore
+      }
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    let done = false;
+    const finish = () => {
+      if (done) {
+        return;
+      }
+      done = true;
+      recognitionRef.current = null;
+      onFinished();
+    };
+
+    recognition.onresult = finish;
+    recognition.onerror = finish;
+    recognition.onend = finish;
+
+    recognitionRef.current = recognition;
+    recognition.start();
+    return true;
+  }, []);
+
   const handleRodSelect = useCallback(
     (index: number) => {
       if (currentTarget === null) {
+        return;
+      }
+
+      if (awaitingAnswerRef.current) {
         return;
       }
 
@@ -383,16 +437,15 @@ export default function NumberRodsScene({
         return;
       }
 
+      awaitingAnswerRef.current = true;
       if (voiceEnabled) {
-        speakText(rodNames[index]);
+        speakText("What is this?");
       }
       playChime();
       setQuizLiftRod(index);
 
-      if (timeoutRef.current) {
-        window.clearTimeout(timeoutRef.current);
-      }
-      timeoutRef.current = window.setTimeout(() => {
+      const advance = () => {
+        awaitingAnswerRef.current = false;
         setQuizLiftRod(null);
         setQuizIndex((prev) => {
           if (prev === null) {
@@ -401,17 +454,35 @@ export default function NumberRodsScene({
           const next = prev + 1;
           return next < quizOrder.length ? next : null;
         });
-      }, 1200);
+      };
+
+      if (timeoutRef.current) {
+        window.clearTimeout(timeoutRef.current);
+      }
+
+      const startedRecognition = voiceEnabled ? startRecognition(advance) : false;
+      if (!startedRecognition) {
+        timeoutRef.current = window.setTimeout(advance, 1400);
+      }
     },
-    [currentTarget, voiceEnabled],
+    [currentTarget, startRecognition, voiceEnabled],
   );
 
   useEffect(() => {
     if (!playing) {
       quizDoneRef.current = false;
       promptRef.current = {};
+      awaitingAnswerRef.current = false;
       setQuizIndex(null);
       setQuizLiftRod(null);
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {
+          // ignore
+        }
+        recognitionRef.current = null;
+      }
     }
   }, [playing]);
 
@@ -431,6 +502,14 @@ export default function NumberRodsScene({
       if (timeoutRef.current) {
         window.clearTimeout(timeoutRef.current);
       }
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {
+          // ignore
+        }
+        recognitionRef.current = null;
+      }
     };
   }, []);
 
@@ -438,7 +517,7 @@ export default function NumberRodsScene({
     <div
       className={`w-full overflow-hidden rounded-[28px] bg-[#f7efe4] ${className ?? "h-[420px]"}`}
     >
-      <Canvas shadows camera={{ position: [0.8, 0.6, 1.6], fov: 40 }}>
+      <Canvas shadows camera={{ position: [0.7, 0.55, 1.25], fov: 38 }}>
         <color attach="background" args={["#f7efe4"]} />
         <NumberRodsContent
           playing={playing}
