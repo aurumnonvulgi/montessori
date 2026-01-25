@@ -34,11 +34,13 @@ const numberWords = [
 
 const timeScale = 1.18;
 const scale = (value: number) => value * timeScale;
+const quizLiftDuration = 2.2;
 const durations = {
   slide: 1.5,
+  stop: 0.3,
+  preGlow: 0.4,
   lift: 0.7,
   settle: 0.5,
-  glowHold: 0.35,
   count: 0.75,
   finalLift: 0.6,
   finalSettle: 0.4,
@@ -48,9 +50,10 @@ const durations = {
 const steps: Step[] = [];
 for (let rod = 1; rod <= rodCount; rod += 1) {
   steps.push({ id: `rod${rod}Slide`, duration: scale(durations.slide) });
+  steps.push({ id: `rod${rod}Stop`, duration: scale(durations.stop) });
+  steps.push({ id: `rod${rod}PreGlow`, duration: scale(durations.preGlow) });
   steps.push({ id: `rod${rod}Lift`, duration: scale(durations.lift) });
   steps.push({ id: `rod${rod}Settle`, duration: scale(durations.settle) });
-  steps.push({ id: `rod${rod}GlowHold`, duration: scale(durations.glowHold) });
   for (let segment = 1; segment <= rod; segment += 1) {
     steps.push({
       id: `rod${rod}Count${segment}`,
@@ -219,7 +222,6 @@ function NumberRodsContent({
     const quizLiftStart = quizLiftStartRef.current;
     const quizLiftElapsed =
       quizLiftIndex !== null && quizLiftStart !== null ? now - quizLiftStart : 0;
-    const quizLiftDuration = 1.8;
     const quizLiftValue =
       quizLiftIndex !== null && quizLiftElapsed < quizLiftDuration
         ? Math.sin((quizLiftElapsed / quizLiftDuration) * Math.PI) * 0.03
@@ -232,15 +234,15 @@ function NumberRodsContent({
 
       const rodNumber = index + 1;
       const slideKey = `rod${rodNumber}Slide`;
+      const preGlowKey = `rod${rodNumber}PreGlow`;
       const liftKey = `rod${rodNumber}Lift`;
       const settleKey = `rod${rodNumber}Settle`;
-      const glowHoldKey = `rod${rodNumber}GlowHold`;
       const finalLiftKey = `rod${rodNumber}FinalLift`;
       const finalSettleKey = `rod${rodNumber}FinalSettle`;
       const slideRange = timeline.map[slideKey];
+      const preGlowRange = timeline.map[preGlowKey];
       const liftRange = timeline.map[liftKey];
       const settleRange = timeline.map[settleKey];
-      const glowHoldRange = timeline.map[glowHoldKey];
       const finalLiftRange = timeline.map[finalLiftKey];
       const finalSettleRange = timeline.map[finalSettleKey];
       const finalX = leftEdge + length / 2;
@@ -277,15 +279,9 @@ function NumberRodsContent({
         y += quizLiftValue;
       }
 
-      const glowUp =
-        t >= liftRange.start && t <= liftRange.end
-          ? 0.65
-          : t >= settleRange.start && t <= settleRange.end
-            ? 0.65 * (1 - clamp01((t - settleRange.start) / (settleRange.end - settleRange.start)))
-            : 0;
-      const glowHold =
-        t >= glowHoldRange.start && t <= glowHoldRange.end
-          ? 0.5
+      const preGlow =
+        t >= preGlowRange.start && t <= settleRange.end
+          ? 0.55
           : 0;
       const finalGlow =
         t >= finalLiftRange.start && t <= finalLiftRange.end
@@ -310,12 +306,11 @@ function NumberRodsContent({
         const countProgress = isCountActive
           ? clamp01((t - countRange.start) / (countRange.end - countRange.start))
           : 0;
-        const segmentPulse = isCountActive ? 0.25 : 0;
-        const segmentScale = isCountActive ? 1.02 : 1;
+        const segmentPulse = isCountActive ? 0.28 : 0;
+        const segmentScale = isCountActive ? 1.015 : 1;
         const quizGlow = isQuizLift && quizLiftValue > 0 ? 0.6 : 0;
         const emissiveIntensity = Math.max(
-          glowUp,
-          glowHold,
+          preGlow,
           finalGlow,
           segmentPulse,
           quizGlow,
@@ -534,7 +529,7 @@ export default function NumberRodsScene({
           setQuizPhase("name");
           return 0;
         });
-      }, 450);
+      }, quizLiftDuration * 1000);
     },
     [currentTarget, quizPhase, voiceEnabled],
   );
@@ -598,9 +593,17 @@ export default function NumberRodsScene({
         window.clearTimeout(timeoutRef.current);
       }
 
-      const startedRecognition = startRecognition(advance);
+      const minDelayMs = quizLiftDuration * 1000;
+      const startedAt = performance.now();
+      const finishAfterDelay = () => {
+        const elapsed = performance.now() - startedAt;
+        const wait = Math.max(0, minDelayMs - elapsed);
+        timeoutRef.current = window.setTimeout(advance, wait);
+      };
+
+      const startedRecognition = startRecognition(finishAfterDelay);
       if (!startedRecognition) {
-        timeoutRef.current = window.setTimeout(advance, 1600);
+        finishAfterDelay();
       }
     }
   }, [currentTarget, quizPhase, startRecognition, voiceEnabled]);
