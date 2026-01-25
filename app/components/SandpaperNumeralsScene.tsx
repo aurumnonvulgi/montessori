@@ -16,8 +16,8 @@ type QuizPhase = "click" | "name" | null;
 
 const numerals = ["1", "2", "3"];
 const numeralWords = ["one", "two", "three"];
-const cardSize = { width: 0.36, height: 0.46, depth: 0.03 };
-const baseY = cardSize.depth / 2;
+const cardSize = { width: 0.36, height: 0.46, thickness: 0.03 };
+const baseY = cardSize.thickness / 2;
 const slideDuration = 1.6;
 const slideDelay = 0.6;
 const sequenceDuration =
@@ -92,7 +92,7 @@ function SandpaperNumeralsContent({
         const offset = stackOffsets[index] ?? stackOffsets[0];
         const position = stackBase.clone().add(offset);
         card.position.copy(position);
-        card.rotation.set(-Math.PI / 2, 0, -0.08);
+        card.rotation.set(0, -0.22, 0);
         card.scale.set(1, 1, 1);
         const text = textRefs.current[index];
         if (text) {
@@ -142,11 +142,11 @@ function SandpaperNumeralsContent({
       const stackPosition = stackBase.clone().add(offset);
       const targetPosition = new THREE.Vector3(rowX[index], baseY, rowZ);
       let position = stackPosition;
-      let tilt = -0.08;
+      let yaw = -0.22;
 
       if (t >= end) {
         position = targetPosition;
-        tilt = 0;
+        yaw = 0;
       } else if (t >= start) {
         const progress = clamp01((t - start) / slideDuration);
         const eased = smoothstep(progress);
@@ -155,7 +155,7 @@ function SandpaperNumeralsContent({
           baseY,
           lerp(stackPosition.z, targetPosition.z, eased),
         );
-        tilt = lerp(-0.08, 0, eased);
+        yaw = lerp(-0.22, 0, eased);
       }
 
       let y = position.y;
@@ -165,7 +165,7 @@ function SandpaperNumeralsContent({
       y = Math.max(baseY, y);
 
       card.position.set(position.x, y, position.z);
-      card.rotation.set(-Math.PI / 2, 0, tilt);
+      card.rotation.set(0, yaw, 0);
       const scale = quizLiftIndexValue === index ? 1.02 : 1;
       card.scale.set(scale, scale, scale);
 
@@ -225,7 +225,7 @@ function SandpaperNumeralsContent({
               }
             }}
           >
-            <boxGeometry args={[cardSize.width, cardSize.depth, cardSize.height]} />
+            <boxGeometry args={[cardSize.width, cardSize.thickness, cardSize.height]} />
             <meshStandardMaterial
               color="#1f7a3c"
               roughness={0.5}
@@ -238,7 +238,7 @@ function SandpaperNumeralsContent({
                 textRefs.current[index] = el;
               }
             }}
-            position={[0, cardSize.depth / 2 + 0.002, 0]}
+            position={[0, cardSize.thickness / 2 + 0.002, 0]}
             rotation={[-Math.PI / 2, 0, 0]}
             fontSize={0.22}
             color="#e9e6df"
@@ -465,7 +465,7 @@ export default function SandpaperNumeralsScene({
   }, []);
 
   const cameraPosition = useMemo(
-    () => [0.2, 0.7, 1.25] as [number, number, number],
+    () => [0.1, 1.05, 0.95] as [number, number, number],
     [],
   );
 
@@ -473,7 +473,10 @@ export default function SandpaperNumeralsScene({
     <div
       className={`w-full overflow-hidden rounded-[28px] bg-[#f7efe4] ${className ?? "h-[420px]"}`}
     >
-      <Canvas shadows camera={{ position: cameraPosition, fov: 36 }}>
+      <Canvas
+        shadows
+        camera={{ position: cameraPosition, fov: 34, up: [0, 0, 1] }}
+      >
         <color attach="background" args={["#f7efe4"]} />
         <SandpaperNumeralsContent
           playing={playing}
@@ -481,7 +484,12 @@ export default function SandpaperNumeralsScene({
           onComplete={handleSequenceComplete}
           onSelect={handleCardSelect}
         />
-        <OrbitControls enablePan={false} enableZoom={false} maxPolarAngle={Math.PI / 2.1} />
+        <OrbitControls
+          enablePan={false}
+          enableZoom={false}
+          maxPolarAngle={Math.PI / 2.1}
+          target={[0, 0, 0.1]}
+        />
       </Canvas>
     </div>
   );
