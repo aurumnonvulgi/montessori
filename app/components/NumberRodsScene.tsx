@@ -10,6 +10,7 @@ type NumberRodsSceneProps = {
   playing: boolean;
   voiceEnabled: boolean;
   onComplete?: () => void;
+  className?: string;
 };
 
 type Step = {
@@ -17,24 +18,27 @@ type Step = {
   duration: number;
 };
 
+const timeScale = 1.7;
+const scale = (value: number) => value * timeScale;
+
 const steps: Step[] = [
-  { id: "rod1Slide", duration: 2 },
-  { id: "rod1Lift", duration: 1 },
-  { id: "rod1Settle", duration: 0.6 },
-  { id: "rod1Trace", duration: 2.2 },
-  { id: "rod2Slide", duration: 2 },
-  { id: "rod2Lift", duration: 1 },
-  { id: "rod2Settle", duration: 0.5 },
-  { id: "rod2Seg1", duration: 0.9 },
-  { id: "rod2Seg2", duration: 0.9 },
-  { id: "rod2Full", duration: 1.3 },
-  { id: "rod3Slide", duration: 2 },
-  { id: "rod3Lift", duration: 1 },
-  { id: "rod3Settle", duration: 0.5 },
-  { id: "rod3Seg1", duration: 0.9 },
-  { id: "rod3Seg2", duration: 0.9 },
-  { id: "rod3Seg3", duration: 0.9 },
-  { id: "finalTap", duration: 1.1 },
+  { id: "rod1Slide", duration: scale(2) },
+  { id: "rod1Lift", duration: scale(1) },
+  { id: "rod1Settle", duration: scale(0.6) },
+  { id: "rod1Trace", duration: scale(2.2) },
+  { id: "rod2Slide", duration: scale(2) },
+  { id: "rod2Lift", duration: scale(1) },
+  { id: "rod2Settle", duration: scale(0.5) },
+  { id: "rod2Seg1", duration: scale(0.9) },
+  { id: "rod2Seg2", duration: scale(0.9) },
+  { id: "rod2Full", duration: scale(1.3) },
+  { id: "rod3Slide", duration: scale(2) },
+  { id: "rod3Lift", duration: scale(1) },
+  { id: "rod3Settle", duration: scale(0.5) },
+  { id: "rod3Seg1", duration: scale(0.9) },
+  { id: "rod3Seg2", duration: scale(0.9) },
+  { id: "rod3Seg3", duration: scale(0.9) },
+  { id: "finalTap", duration: scale(1.1) },
 ];
 
 const segmentLength = 0.2;
@@ -88,10 +92,14 @@ const voiceCues = [
   { id: "rod3Seg3", text: "three" },
 ];
 
-function NumberRodsContent({ playing, voiceEnabled, onComplete }: NumberRodsSceneProps) {
+function NumberRodsContent({
+  playing,
+  voiceEnabled,
+  onComplete,
+}: Omit<NumberRodsSceneProps, "className">) {
   const rodRefs = useRef<THREE.Group[]>([]);
   const segmentRefs = useRef<THREE.Mesh[][]>([[], [], []]);
-  const fingerRef = useRef<THREE.Group | null>(null);
+  const pointerRef = useRef<THREE.Group | null>(null);
   const startTimeRef = useRef<number | null>(null);
   const spokenRef = useRef<Record<string, boolean>>({});
   const chimeRef = useRef(false);
@@ -123,8 +131,8 @@ function NumberRodsContent({ playing, voiceEnabled, onComplete }: NumberRodsScen
         rod.position.set(finalX, baseY, rodZ[index]);
         rod.visible = true;
       });
-      if (fingerRef.current) {
-        fingerRef.current.visible = false;
+      if (pointerRef.current) {
+        pointerRef.current.visible = false;
       }
       return;
     }
@@ -225,17 +233,13 @@ function NumberRodsContent({ playing, voiceEnabled, onComplete }: NumberRodsScen
 
         const segmentPulse = segmentHighlight ? 0.6 + 0.25 * Math.sin(now * 6) : 0;
         const emissiveIntensity = Math.max(glowUp, glowPulse, segmentPulse);
-        if (segmentPulse > 0) {
-          material.emissive.copy(baseColor);
-        } else {
-          material.emissive.set("#f7d27d");
-        }
+        material.emissive.copy(baseColor);
         material.emissiveIntensity = emissiveIntensity;
       });
     });
 
-    if (fingerRef.current) {
-      const finger = fingerRef.current;
+    if (pointerRef.current) {
+      const pointer = pointerRef.current;
       let visible = false;
       let fx = leftEdge;
       let fz = rodZ[0];
@@ -277,8 +281,8 @@ function NumberRodsContent({ playing, voiceEnabled, onComplete }: NumberRodsScen
         visible = true;
       }
 
-      finger.visible = visible;
-      finger.position.set(fx, fy, fz + 0.02);
+      pointer.visible = visible;
+      pointer.position.set(fx, fy, fz + 0.02);
     }
   });
 
@@ -338,7 +342,7 @@ function NumberRodsContent({ playing, voiceEnabled, onComplete }: NumberRodsScen
                     color={color}
                     roughness={0.35}
                     metalness={0.05}
-                    emissive="#f7d27d"
+                    emissive={color}
                     emissiveIntensity={0}
                   />
                 </mesh>
@@ -348,26 +352,47 @@ function NumberRodsContent({ playing, voiceEnabled, onComplete }: NumberRodsScen
         );
       })}
 
-      <group ref={fingerRef}>
-        <mesh position={[0, 0, 0]} castShadow>
-          <sphereGeometry args={[0.03, 20, 20]} />
-          <meshStandardMaterial color="#f2c9a0" roughness={0.4} />
+      <group ref={pointerRef}>
+        <mesh position={[0, 0, 0]} rotation={[0, 0, -Math.PI / 2]} castShadow>
+          <cylinderGeometry args={[0.014, 0.014, 0.14, 16]} />
+          <meshStandardMaterial
+            color="#7ecf8a"
+            emissive="#6dbf7e"
+            emissiveIntensity={0.35}
+            roughness={0.4}
+          />
         </mesh>
-        <mesh position={[-0.05, 0, 0]}>
-          <capsuleGeometry args={[0.015, 0.1, 6, 12]} />
-          <meshStandardMaterial color="#f2c9a0" roughness={0.4} />
+        <mesh position={[0.08, 0, 0]} rotation={[0, 0, -Math.PI / 2]}>
+          <coneGeometry args={[0.03, 0.08, 16]} />
+          <meshStandardMaterial
+            color="#7ecf8a"
+            emissive="#6dbf7e"
+            emissiveIntensity={0.35}
+            roughness={0.4}
+          />
         </mesh>
       </group>
     </group>
   );
 }
 
-export default function NumberRodsScene({ playing, voiceEnabled, onComplete }: NumberRodsSceneProps) {
+export default function NumberRodsScene({
+  playing,
+  voiceEnabled,
+  onComplete,
+  className,
+}: NumberRodsSceneProps) {
   return (
-    <div className="h-[420px] w-full overflow-hidden rounded-[28px] bg-[#f7efe4]">
+    <div
+      className={`w-full overflow-hidden rounded-[28px] bg-[#f7efe4] ${className ?? "h-[420px]"}`}
+    >
       <Canvas shadows camera={{ position: [0.8, 0.6, 1.6], fov: 40 }}>
         <color attach="background" args={["#f7efe4"]} />
-        <NumberRodsContent playing={playing} voiceEnabled={voiceEnabled} onComplete={onComplete} />
+        <NumberRodsContent
+          playing={playing}
+          voiceEnabled={voiceEnabled}
+          onComplete={onComplete}
+        />
         <OrbitControls enablePan={false} enableZoom={false} maxPolarAngle={Math.PI / 2.1} />
       </Canvas>
     </div>
