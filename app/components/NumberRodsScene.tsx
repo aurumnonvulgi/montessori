@@ -17,40 +17,66 @@ type Step = {
   duration: number;
 };
 
-const timeScale = 1.2;
-const scale = (value: number) => value * timeScale;
-
-const steps: Step[] = [
-  { id: "rod1Slide", duration: scale(2) },
-  { id: "rod1Lift", duration: scale(1) },
-  { id: "rod1Settle", duration: scale(0.6) },
-  { id: "rod1Trace", duration: scale(2.2) },
-  { id: "rod2Slide", duration: scale(2) },
-  { id: "rod2Lift", duration: scale(1) },
-  { id: "rod2Settle", duration: scale(0.5) },
-  { id: "rod2Seg1", duration: scale(0.9) },
-  { id: "rod2Seg2", duration: scale(0.9) },
-  { id: "rod2Full", duration: scale(1.3) },
-  { id: "rod3Slide", duration: scale(2) },
-  { id: "rod3Lift", duration: scale(1) },
-  { id: "rod3Settle", duration: scale(0.5) },
-  { id: "rod3Seg1", duration: scale(0.9) },
-  { id: "rod3Seg2", duration: scale(0.9) },
-  { id: "rod3Seg3", duration: scale(0.9) },
-  { id: "finalTap", duration: scale(1.1) },
+const rodCount = 10;
+const numberWords = [
+  "one",
+  "two",
+  "three",
+  "four",
+  "five",
+  "six",
+  "seven",
+  "eight",
+  "nine",
+  "ten",
 ];
+
+const timeScale = 1;
+const scale = (value: number) => value * timeScale;
+const durations = {
+  slide: 1.5,
+  lift: 0.7,
+  settle: 0.5,
+  glowHold: 0.35,
+  count: 0.55,
+  finalLift: 0.6,
+  finalSettle: 0.4,
+  pause: 0.25,
+};
+
+const steps: Step[] = [];
+for (let rod = 1; rod <= rodCount; rod += 1) {
+  steps.push({ id: `rod${rod}Slide`, duration: scale(durations.slide) });
+  steps.push({ id: `rod${rod}Lift`, duration: scale(durations.lift) });
+  steps.push({ id: `rod${rod}Settle`, duration: scale(durations.settle) });
+  steps.push({ id: `rod${rod}GlowHold`, duration: scale(durations.glowHold) });
+  for (let segment = 1; segment <= rod; segment += 1) {
+    steps.push({
+      id: `rod${rod}Count${segment}`,
+      duration: scale(durations.count),
+    });
+  }
+  steps.push({ id: `rod${rod}FinalLift`, duration: scale(durations.finalLift) });
+  steps.push({ id: `rod${rod}FinalSettle`, duration: scale(durations.finalSettle) });
+  if (rod < rodCount) {
+    steps.push({ id: `rod${rod}Pause`, duration: scale(durations.pause) });
+  }
+}
 
 const segmentLength = 0.2;
 const rodHeight = 0.04;
 const rodDepth = 0.05;
 const liftHeight = 0.02;
-const maxSegments = 3;
+const maxSegments = rodCount;
 const maxLength = segmentLength * maxSegments;
 const leftEdge = -maxLength / 2;
 const slideStartX = leftEdge - maxLength - 0.6;
 const rodGap = rodDepth;
 const rodSpacing = rodDepth + rodGap;
-const rodZ = [rodSpacing, 0, -rodSpacing];
+const rodZ = Array.from({ length: rodCount }, (_, index) => {
+  const offset = (rodCount - 1) / 2 - index;
+  return offset * rodSpacing;
+});
 const baseY = rodHeight / 2 + 0.02;
 
 const smoothstep = (t: number) => t * t * (3 - 2 * t);
@@ -83,17 +109,19 @@ const buildTimeline = () => {
 
 const timeline = buildTimeline();
 
-const voiceCues = [
-  { id: "rod1Lift", text: "This is one" },
-  { id: "rod1Trace", text: "one" },
-  { id: "rod2Lift", text: "This is two" },
-  { id: "rod2Seg1", text: "one" },
-  { id: "rod2Seg2", text: "two" },
-  { id: "rod3Lift", text: "This is three" },
-  { id: "rod3Seg1", text: "one" },
-  { id: "rod3Seg2", text: "two" },
-  { id: "rod3Seg3", text: "three" },
-];
+const voiceCues: { id: string; text: string }[] = [];
+for (let rod = 1; rod <= rodCount; rod += 1) {
+  voiceCues.push({
+    id: `rod${rod}Lift`,
+    text: `This is ${numberWords[rod - 1]}`,
+  });
+  for (let segment = 1; segment <= rod; segment += 1) {
+    voiceCues.push({
+      id: `rod${rod}Count${segment}`,
+      text: numberWords[segment - 1],
+    });
+  }
+}
 
 type NumberRodsContentProps = Omit<NumberRodsSceneProps, "className"> & {
   quizLiftRod: number | null;
@@ -108,7 +136,9 @@ function NumberRodsContent({
   onRodSelect,
 }: NumberRodsContentProps) {
   const rodRefs = useRef<THREE.Group[]>([]);
-  const segmentRefs = useRef<THREE.Mesh[][]>([[], [], []]);
+  const segmentRefs = useRef<THREE.Mesh[][]>(
+    Array.from({ length: rodCount }, () => []),
+  );
   const startTimeRef = useRef<number | null>(null);
   const spokenRef = useRef<Record<string, boolean>>({});
   const quizLiftRef = useRef<number | null>(null);
@@ -137,7 +167,10 @@ function NumberRodsContent({
     const now = state.clock.getElapsedTime();
 
     if (!playing) {
-      const rodLengths = [1, 2, 3].map((count) => segmentLength * count);
+      const rodLengths = Array.from(
+        { length: rodCount },
+        (_, index) => segmentLength * (index + 1),
+      );
       rodLengths.forEach((length, index) => {
         const rod = rodRefs.current[index];
         if (!rod) {
@@ -175,7 +208,10 @@ function NumberRodsContent({
       });
     }
 
-    const rodLengths = [1, 2, 3].map((count) => segmentLength * count);
+    const rodLengths = Array.from(
+      { length: rodCount },
+      (_, index) => segmentLength * (index + 1),
+    );
     const quizLiftIndex = quizLiftRef.current;
     const quizLiftStart = quizLiftStartRef.current;
     const quizLiftElapsed =
@@ -184,23 +220,25 @@ function NumberRodsContent({
       quizLiftIndex !== null && quizLiftElapsed < 1.2
         ? Math.sin((quizLiftElapsed / 1.2) * Math.PI) * 0.03
         : 0;
-    const glowPulse =
-      t >= timeline.map.finalTap.start && t <= timeline.map.finalTap.end
-        ? 0.4 + 0.25 * Math.sin(now * 6)
-        : 0;
-
     rodLengths.forEach((length, index) => {
       const rod = rodRefs.current[index];
       if (!rod) {
         return;
       }
 
-      const slideKey = `rod${index + 1}Slide`;
-      const liftKey = `rod${index + 1}Lift`;
-      const settleKey = `rod${index + 1}Settle`;
+      const rodNumber = index + 1;
+      const slideKey = `rod${rodNumber}Slide`;
+      const liftKey = `rod${rodNumber}Lift`;
+      const settleKey = `rod${rodNumber}Settle`;
+      const glowHoldKey = `rod${rodNumber}GlowHold`;
+      const finalLiftKey = `rod${rodNumber}FinalLift`;
+      const finalSettleKey = `rod${rodNumber}FinalSettle`;
       const slideRange = timeline.map[slideKey];
       const liftRange = timeline.map[liftKey];
       const settleRange = timeline.map[settleKey];
+      const glowHoldRange = timeline.map[glowHoldKey];
+      const finalLiftRange = timeline.map[finalLiftKey];
+      const finalSettleRange = timeline.map[finalSettleKey];
       const finalX = leftEdge + length / 2;
 
       let x = slideStartX;
@@ -212,7 +250,18 @@ function NumberRodsContent({
       }
 
       let y = baseY;
-      if (t >= liftRange.start && t <= liftRange.end) {
+      if (t >= finalLiftRange.start && t <= finalLiftRange.end) {
+        const progress = clamp01(
+          (t - finalLiftRange.start) / (finalLiftRange.end - finalLiftRange.start),
+        );
+        y = baseY + liftHeight * smoothstep(progress);
+      } else if (t >= finalSettleRange.start && t <= finalSettleRange.end) {
+        const progress = clamp01(
+          (t - finalSettleRange.start) /
+            (finalSettleRange.end - finalSettleRange.start),
+        );
+        y = baseY + liftHeight * (1 - smoothstep(progress));
+      } else if (t >= liftRange.start && t <= liftRange.end) {
         const progress = clamp01((t - liftRange.start) / (liftRange.end - liftRange.start));
         y = baseY + liftHeight * smoothstep(progress);
       } else if (t >= settleRange.start && t <= settleRange.end) {
@@ -230,6 +279,16 @@ function NumberRodsContent({
           : t >= settleRange.start && t <= settleRange.end
             ? 0.65 * (1 - clamp01((t - settleRange.start) / (settleRange.end - settleRange.start)))
             : 0;
+      const glowHold =
+        t >= glowHoldRange.start && t <= glowHoldRange.end
+          ? 0.5
+          : 0;
+      const finalGlow =
+        t >= finalLiftRange.start && t <= finalLiftRange.end
+          ? 0.7
+          : t >= finalSettleRange.start && t <= finalSettleRange.end
+            ? 0.7 * (1 - clamp01((t - finalSettleRange.start) / (finalSettleRange.end - finalSettleRange.start)))
+            : 0;
 
       rod.position.set(x, y, rodZ[index]);
       rod.visible = t >= slideRange.start - 0.1;
@@ -241,22 +300,23 @@ function NumberRodsContent({
         }
         const material = segment.material as THREE.MeshStandardMaterial;
         const baseColor = material.color;
-        const segmentHighlight =
-          (index === 0 &&
-            t >= timeline.map.rod1Trace.start &&
-            t <= timeline.map.rod1Trace.end &&
-            segmentIndex === 0) ||
-          (index === 1 &&
-            ((t >= timeline.map.rod2Seg1.start && t <= timeline.map.rod2Seg1.end && segmentIndex === 0) ||
-              (t >= timeline.map.rod2Seg2.start && t <= timeline.map.rod2Seg2.end && segmentIndex === 1))) ||
-          (index === 2 &&
-            ((t >= timeline.map.rod3Seg1.start && t <= timeline.map.rod3Seg1.end && segmentIndex === 0) ||
-              (t >= timeline.map.rod3Seg2.start && t <= timeline.map.rod3Seg2.end && segmentIndex === 1) ||
-              (t >= timeline.map.rod3Seg3.start && t <= timeline.map.rod3Seg3.end && segmentIndex === 2)));
-
-        const segmentPulse = segmentHighlight ? 0.6 + 0.25 * Math.sin(now * 6) : 0;
+        const countKey = `rod${rodNumber}Count${segmentIndex + 1}`;
+        const countRange = timeline.map[countKey];
+        const isCountActive = t >= countRange.start && t <= countRange.end;
+        const countProgress = isCountActive
+          ? clamp01((t - countRange.start) / (countRange.end - countRange.start))
+          : 0;
+        const segmentPulse = isCountActive
+          ? 0.7 * Math.abs(Math.sin(countProgress * Math.PI * 2))
+          : 0;
         const quizGlow = isQuizLift && quizLiftValue > 0 ? 0.6 : 0;
-        const emissiveIntensity = Math.max(glowUp, glowPulse, segmentPulse, quizGlow);
+        const emissiveIntensity = Math.max(
+          glowUp,
+          glowHold,
+          finalGlow,
+          segmentPulse,
+          quizGlow,
+        );
         material.emissive.copy(baseColor);
         material.emissiveIntensity = emissiveIntensity;
       });
@@ -265,11 +325,11 @@ function NumberRodsContent({
   });
 
   const rods = useMemo(
-    () => [
-      { segments: 1, label: "one" },
-      { segments: 2, label: "two" },
-      { segments: 3, label: "three" },
-    ],
+    () =>
+      Array.from({ length: rodCount }, (_, index) => ({
+        segments: index + 1,
+        label: numberWords[index],
+      })),
     [],
   );
 
@@ -291,7 +351,7 @@ function NumberRodsContent({
       <directionalLight position={[-2.6, 2.1, -1.2]} intensity={0.25} />
 
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
-        <planeGeometry args={[3, 2]} />
+        <planeGeometry args={[3.4, 2.4]} />
         <meshStandardMaterial color="#f3e9d8" roughness={0.95} metalness={0.02} />
       </mesh>
 
@@ -349,7 +409,7 @@ function NumberRodsContent({
 
 const clickOrder = [2, 1, 0];
 const nameOrder = [0, 1, 2];
-const rodNames = ["one", "two", "three"];
+const rodNames = numberWords;
 type QuizPhase = "click" | "name" | null;
 
 export default function NumberRodsScene({
@@ -556,7 +616,7 @@ export default function NumberRodsScene({
     <div
       className={`w-full overflow-hidden rounded-[28px] bg-[#f7efe4] ${className ?? "h-[420px]"}`}
     >
-      <Canvas shadows camera={{ position: [0.7, 0.55, 1.25], fov: 38 }}>
+      <Canvas shadows camera={{ position: [0.85, 0.58, 1.55], fov: 40 }}>
         <color attach="background" args={["#f7efe4"]} />
         <NumberRodsContent
           playing={playing}
