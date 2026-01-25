@@ -541,14 +541,14 @@ export default function NumberRodsPresentationCanvas({
     }
     introSequenceRef.current = true;
     setMicError("");
-    const speakLine = (text: string) =>
+    const speakLine = (text: string, rate = 0.9) =>
       new Promise<void>((resolve) => {
         if (!voiceEnabled || typeof window === "undefined" || !("speechSynthesis" in window)) {
           resolve();
           return;
         }
         const utterance = new SpeechSynthesisUtterance(text);
-        utterance.rate = 0.9;
+        utterance.rate = rate;
         utterance.pitch = 0.95;
         utterance.volume = 0.9;
         utterance.onend = () => resolve();
@@ -556,10 +556,19 @@ export default function NumberRodsPresentationCanvas({
         window.speechSynthesis.cancel();
         window.speechSynthesis.speak(utterance);
       });
+    const pause = (ms: number) =>
+      new Promise<void>((resolve) => {
+        if (typeof window === "undefined") {
+          resolve();
+          return;
+        }
+        window.setTimeout(resolve, ms);
+      });
 
     const run = async () => {
       await speakLine("Please repeat after me.");
-      await speakLine(INTRO_SENTENCE);
+      await pause(900);
+      await speakLine(INTRO_SENTENCE, 0.75);
       playBeep();
       window.setTimeout(() => {
         startRecognition();
