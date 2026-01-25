@@ -239,7 +239,7 @@ function SandpaperNumeralsContent({
               }
             }}
             position={[0, cardSize.thickness / 2 + 0.002, 0]}
-            rotation={[-Math.PI / 2, 0, 0]}
+            rotation={[-Math.PI / 2, 0, Math.PI]}
             fontSize={0.22}
             color="#e9e6df"
             anchorX="center"
