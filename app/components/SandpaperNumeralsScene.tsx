@@ -19,9 +19,9 @@ const numeralWords = ["one", "two", "three"];
 const cardSize = { width: 0.36, height: 0.46, thickness: 0.03 };
 const baseY = cardSize.thickness / 2;
 const slideDuration = 1.6;
-const slideDelay = 0.6;
-const sequenceDuration =
-  slideDuration * numerals.length + slideDelay * (numerals.length - 1);
+const slideDelay = 0.4;
+const traceDelay = 0.2;
+const traceDuration = 1.6;
 const quizLiftDuration = 2.2;
 const liftHeight = 0.05;
 const stackBase = new THREE.Vector3(-0.72, baseY, -0.45);
@@ -36,6 +36,67 @@ const rowX = [-0.38, 0, 0.38];
 const smoothstep = (t: number) => t * t * (3 - 2 * t);
 const clamp01 = (t: number) => Math.min(1, Math.max(0, t));
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+
+const buildTimeline = () => {
+  let cursor = 0;
+  const stages = numerals.map(() => {
+    const slideStart = cursor;
+    const slideEnd = slideStart + slideDuration;
+    const traceStart = slideEnd + traceDelay;
+    const traceEnd = traceStart + traceDuration;
+    cursor = traceEnd + slideDelay;
+    return { slideStart, slideEnd, traceStart, traceEnd };
+  });
+  const sequenceDuration = stages[stages.length - 1]?.traceEnd ?? 0;
+  return { stages, sequenceDuration };
+};
+
+const timeline = buildTimeline();
+
+const getTracePoint = (index: number, progress: number) => {
+  const width = cardSize.width * 0.55;
+  const height = cardSize.height * 0.7;
+  const halfW = width / 2;
+  const halfH = height / 2;
+  const p = clamp01(progress);
+
+  if (index === 0) {
+    return { x: 0, z: lerp(halfH, -halfH, p) };
+  }
+
+  if (index === 1) {
+    if (p < 0.4) {
+      const local = p / 0.4;
+      return {
+        x: lerp(-halfW, halfW, local),
+        z: halfH + 0.06 * Math.sin(Math.PI * local),
+      };
+    }
+    if (p < 0.75) {
+      const local = (p - 0.4) / 0.35;
+      return {
+        x: lerp(halfW, -halfW, local),
+        z: lerp(halfH - 0.05, -halfH + 0.08, local),
+      };
+    }
+    const local = (p - 0.75) / 0.25;
+    return { x: lerp(-halfW, halfW, local), z: -halfH };
+  }
+
+  if (p < 0.5) {
+    const local = p / 0.5;
+    return {
+      x: lerp(-halfW, halfW, local),
+      z: halfH - 0.12 * Math.sin(Math.PI * local),
+    };
+  }
+
+  const local = (p - 0.5) / 0.5;
+  return {
+    x: lerp(-halfW, halfW, local),
+    z: -halfH + 0.12 * Math.sin(Math.PI * local),
+  };
+};
 
 const speakText = (text: string) => {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) {
@@ -66,6 +127,7 @@ function SandpaperNumeralsContent({
   const cardRefs = useRef<THREE.Group[]>([]);
   const cardMeshRefs = useRef<THREE.Mesh[]>([]);
   const textRefs = useRef<THREE.Mesh[]>([]);
+  const ringRefs = useRef<THREE.Mesh[]>([]);
   const startTimeRef = useRef<number | null>(null);
   const completedRef = useRef(false);
   const quizLiftRef = useRef<number | null>(null);
@@ -104,6 +166,10 @@ function SandpaperNumeralsContent({
           material.emissive.set("#1f7a3c");
           material.emissiveIntensity = 0;
         }
+        const ring = ringRefs.current[index];
+        if (ring) {
+          ring.visible = false;
+        }
       });
       return;
     }
@@ -114,7 +180,7 @@ function SandpaperNumeralsContent({
     }
 
     const t = now - (startTimeRef.current ?? 0);
-    if (!completedRef.current && t >= sequenceDuration) {
+    if (!completedRef.current && t >= timeline.sequenceDuration) {
       completedRef.current = true;
       onComplete();
     }
@@ -136,8 +202,11 @@ function SandpaperNumeralsContent({
         return;
       }
 
-      const start = index * (slideDuration + slideDelay);
-      const end = start + slideDuration;
+      const stage = timeline.stages[index];
+      const start = stage?.slideStart ?? 0;
+      const end = stage?.slideEnd ?? 0;
+      const traceStart = stage?.traceStart ?? 0;
+      const traceEnd = stage?.traceEnd ?? 0;
       const offset = stackOffsets[index] ?? stackOffsets[0];
       const stackPosition = stackBase.clone().add(offset);
       const targetPosition = new THREE.Vector3(rowX[index], baseY, rowZ);
@@ -179,6 +248,25 @@ function SandpaperNumeralsContent({
         const material = mesh.material as THREE.MeshStandardMaterial;
         material.emissive.set("#1f7a3c");
         material.emissiveIntensity = quizLiftIndexValue === index ? 0.25 : 0;
+      }
+
+      const ring = ringRefs.current[index];
+      if (ring) {
+        if (t >= traceStart && t <= traceEnd) {
+          const progress = clamp01((t - traceStart) / (traceEnd - traceStart));
+          const point = getTracePoint(index, progress);
+          const startColor = new THREE.Color("#f8f4e8");
+          const endColor = new THREE.Color("#f8d85b");
+          const ringMaterial = ring.material as THREE.MeshStandardMaterial;
+          ringMaterial.color.copy(startColor).lerp(endColor, progress);
+          ringMaterial.emissive.copy(ringMaterial.color);
+          ringMaterial.emissiveIntensity = 0.35 * progress;
+          ring.position.set(point.x, cardSize.thickness / 2 + 0.01, point.z);
+          ring.rotation.set(-Math.PI / 2, 0, progress * Math.PI * 2);
+          ring.visible = true;
+        } else {
+          ring.visible = false;
+        }
       }
     });
   });
@@ -247,6 +335,21 @@ function SandpaperNumeralsContent({
           >
             {value}
           </Text>
+          <mesh
+            ref={(el) => {
+              if (el) {
+                ringRefs.current[index] = el;
+              }
+            }}
+            visible={false}
+          >
+            <ringGeometry args={[0.022, 0.032, 36]} />
+            <meshStandardMaterial
+              color="#f8f4e8"
+              roughness={0.4}
+              metalness={0.1}
+            />
+          </mesh>
         </group>
       ))}
     </group>
