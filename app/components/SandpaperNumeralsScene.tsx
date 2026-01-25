@@ -30,6 +30,7 @@ const stackOffsets = [
 ];
 const rowZ = 0.42;
 const rowX = [-0.48, 0, 0.48];
+const rowZOffsets = [0.02, 0, -0.02];
 const textSurfaceY = cardSize.thickness / 2 + 0.002;
 const labelSize = {
   width: cardSize.width * 0.46,
@@ -53,7 +54,7 @@ const createNumeralTexture = (value: string) => {
   context.fillStyle = "#ffffff";
   context.textAlign = "center";
   context.textBaseline = "middle";
-  context.font = `700 ${Math.floor(labelCanvasSize * 0.78)}px "Georgia", "Times New Roman", serif`;
+  context.font = `700 ${Math.floor(labelCanvasSize * 0.78)}px "Helvetica", "Arial", sans-serif`;
   context.fillText(value, labelCanvasSize / 2, labelCanvasSize * 0.56);
 
   const texture = new THREE.CanvasTexture(canvas);
@@ -205,7 +206,11 @@ function SandpaperNumeralsContent({
       const end = stage?.slideEnd ?? 0;
       const offset = stackOffsets[index] ?? stackOffsets[0];
       const stackPosition = stackBase.clone().add(offset);
-      const targetPosition = new THREE.Vector3(rowX[index], baseY, rowZ);
+      const targetPosition = new THREE.Vector3(
+        rowX[index],
+        baseY,
+        rowZ + (rowZOffsets[index] ?? 0),
+      );
       let position = stackPosition;
       let yaw = -0.22;
 
