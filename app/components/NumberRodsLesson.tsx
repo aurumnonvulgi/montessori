@@ -36,6 +36,9 @@ export default function NumberRodsLesson() {
                 Audio on
               </span>
             )}
+            <span className="rounded-full border border-stone-200 bg-white px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-stone-500">
+              Three-Period Lesson
+            </span>
             <span className="text-[10px] uppercase tracking-[0.3em] text-stone-400">
               Number Rods
             </span>

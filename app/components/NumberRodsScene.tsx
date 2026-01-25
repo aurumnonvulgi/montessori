@@ -2,7 +2,7 @@
 
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, SoftShadows } from "@react-three/drei";
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { playChime } from "../lib/sounds";
 type NumberRodsSceneProps = {
@@ -48,7 +48,9 @@ const maxSegments = 3;
 const maxLength = segmentLength * maxSegments;
 const leftEdge = -maxLength / 2;
 const slideStartX = leftEdge - maxLength - 0.6;
-const rodZ = [0.16, 0, -0.16];
+const rodGap = rodDepth;
+const rodSpacing = rodDepth + rodGap;
+const rodZ = [rodSpacing, 0, -rodSpacing];
 const baseY = rodHeight / 2 + 0.02;
 
 const smoothstep = (t: number) => t * t * (3 - 2 * t);
@@ -93,29 +95,43 @@ const voiceCues = [
   { id: "rod3Seg3", text: "three" },
 ];
 
+type NumberRodsContentProps = Omit<NumberRodsSceneProps, "className"> & {
+  quizLiftRod: number | null;
+  onRodSelect: (index: number) => void;
+};
+
 function NumberRodsContent({
   playing,
   voiceEnabled,
+  quizLiftRod,
   onComplete,
-}: Omit<NumberRodsSceneProps, "className">) {
+  onRodSelect,
+}: NumberRodsContentProps) {
   const rodRefs = useRef<THREE.Group[]>([]);
   const segmentRefs = useRef<THREE.Mesh[][]>([[], [], []]);
   const startTimeRef = useRef<number | null>(null);
   const spokenRef = useRef<Record<string, boolean>>({});
-  const chimeRef = useRef(false);
+  const quizLiftRef = useRef<number | null>(null);
+  const quizLiftStartRef = useRef<number | null>(null);
   const completedRef = useRef(false);
 
   useEffect(() => {
     if (!playing) {
       startTimeRef.current = null;
       spokenRef.current = {};
-      chimeRef.current = false;
       completedRef.current = false;
       if (typeof window !== "undefined" && "speechSynthesis" in window) {
         window.speechSynthesis.cancel();
       }
     }
   }, [playing]);
+
+  useEffect(() => {
+    quizLiftRef.current = quizLiftRod;
+    if (quizLiftRod !== null) {
+      quizLiftStartRef.current = performance.now() / 1000;
+    }
+  }, [quizLiftRod]);
 
   useFrame((state) => {
     const now = state.clock.getElapsedTime();
@@ -137,7 +153,6 @@ function NumberRodsContent({
     if (startTimeRef.current === null) {
       startTimeRef.current = now;
       spokenRef.current = {};
-      chimeRef.current = false;
       completedRef.current = false;
     }
 
@@ -148,11 +163,6 @@ function NumberRodsContent({
       if (onComplete) {
         onComplete();
       }
-    }
-
-    if (!chimeRef.current && t >= timeline.map.finalTap.start) {
-      chimeRef.current = true;
-      playChime();
     }
 
     if (voiceEnabled) {
@@ -166,6 +176,14 @@ function NumberRodsContent({
     }
 
     const rodLengths = [1, 2, 3].map((count) => segmentLength * count);
+    const quizLiftIndex = quizLiftRef.current;
+    const quizLiftStart = quizLiftStartRef.current;
+    const quizLiftElapsed =
+      quizLiftIndex !== null && quizLiftStart !== null ? now - quizLiftStart : 0;
+    const quizLiftValue =
+      quizLiftIndex !== null && quizLiftElapsed < 1.2
+        ? Math.sin((quizLiftElapsed / 1.2) * Math.PI) * 0.03
+        : 0;
     const glowPulse =
       t >= timeline.map.finalTap.start && t <= timeline.map.finalTap.end
         ? 0.4 + 0.25 * Math.sin(now * 6)
@@ -201,6 +219,10 @@ function NumberRodsContent({
         const progress = clamp01((t - settleRange.start) / (settleRange.end - settleRange.start));
         y = baseY + liftHeight * (1 - smoothstep(progress));
       }
+      const isQuizLift = quizLiftIndex === index;
+      if (isQuizLift) {
+        y += quizLiftValue;
+      }
 
       const glowUp =
         t >= liftRange.start && t <= liftRange.end
@@ -229,7 +251,8 @@ function NumberRodsContent({
               (t >= timeline.map.rod3Seg3.start && t <= timeline.map.rod3Seg3.end && segmentIndex === 2)));
 
         const segmentPulse = segmentHighlight ? 0.6 + 0.25 * Math.sin(now * 6) : 0;
-        const emissiveIntensity = Math.max(glowUp, glowPulse, segmentPulse);
+        const quizGlow = isQuizLift && quizLiftValue > 0 ? 0.6 : 0;
+        const emissiveIntensity = Math.max(glowUp, glowPulse, segmentPulse, quizGlow);
         material.emissive.copy(baseColor);
         material.emissiveIntensity = emissiveIntensity;
       });
@@ -277,6 +300,10 @@ function NumberRodsContent({
                 rodRefs.current[index] = el;
               }
             }}
+            onPointerDown={(event) => {
+              event.stopPropagation();
+              onRodSelect(index);
+            }}
           >
             {Array.from({ length: rod.segments }).map((_, segmentIndex) => {
               const xOffset = -length / 2 + segmentLength / 2 + segmentIndex * segmentLength;
@@ -315,12 +342,97 @@ function NumberRodsContent({
   );
 }
 
+const quizOrder = [2, 1];
+const rodNames = ["one", "two", "three"];
+
 export default function NumberRodsScene({
   playing,
   voiceEnabled,
   onComplete,
   className,
 }: NumberRodsSceneProps) {
+  const [quizIndex, setQuizIndex] = useState<number | null>(null);
+  const [quizLiftRod, setQuizLiftRod] = useState<number | null>(null);
+  const quizDoneRef = useRef(false);
+  const promptRef = useRef<Record<number, boolean>>({});
+  const timeoutRef = useRef<number | null>(null);
+
+  const currentTarget = quizIndex !== null ? quizOrder[quizIndex] : null;
+
+  const handleSequenceComplete = useCallback(() => {
+    if (!quizDoneRef.current) {
+      quizDoneRef.current = true;
+      setQuizIndex(0);
+    }
+    if (onComplete) {
+      onComplete();
+    }
+  }, [onComplete]);
+
+  const handleRodSelect = useCallback(
+    (index: number) => {
+      if (currentTarget === null) {
+        return;
+      }
+
+      if (index !== currentTarget) {
+        if (voiceEnabled) {
+          speakText("Oh no, try again.");
+        }
+        return;
+      }
+
+      if (voiceEnabled) {
+        speakText(rodNames[index]);
+      }
+      playChime();
+      setQuizLiftRod(index);
+
+      if (timeoutRef.current) {
+        window.clearTimeout(timeoutRef.current);
+      }
+      timeoutRef.current = window.setTimeout(() => {
+        setQuizLiftRod(null);
+        setQuizIndex((prev) => {
+          if (prev === null) {
+            return null;
+          }
+          const next = prev + 1;
+          return next < quizOrder.length ? next : null;
+        });
+      }, 1200);
+    },
+    [currentTarget, voiceEnabled],
+  );
+
+  useEffect(() => {
+    if (!playing) {
+      quizDoneRef.current = false;
+      promptRef.current = {};
+      setQuizIndex(null);
+      setQuizLiftRod(null);
+    }
+  }, [playing]);
+
+  useEffect(() => {
+    if (currentTarget === null || !voiceEnabled) {
+      return;
+    }
+    if (promptRef.current[currentTarget]) {
+      return;
+    }
+    promptRef.current[currentTarget] = true;
+    speakText(`Can you click on ${rodNames[currentTarget]}?`);
+  }, [currentTarget, voiceEnabled]);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        window.clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
   return (
     <div
       className={`w-full overflow-hidden rounded-[28px] bg-[#f7efe4] ${className ?? "h-[420px]"}`}
@@ -331,7 +443,9 @@ export default function NumberRodsScene({
         <NumberRodsContent
           playing={playing}
           voiceEnabled={voiceEnabled}
-          onComplete={onComplete}
+          quizLiftRod={quizLiftRod}
+          onComplete={handleSequenceComplete}
+          onRodSelect={handleRodSelect}
         />
         <OrbitControls enablePan={false} enableZoom={false} maxPolarAngle={Math.PI / 2.1} />
       </Canvas>
