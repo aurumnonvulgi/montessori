@@ -7,27 +7,6 @@ import * as THREE from "three";
 import { primeSpeechVoices, speakWithPreferredVoice } from "../lib/speech";
 import { playChime } from "../lib/sounds";
 
-// TypeScript declarations for Web Speech API
-interface SpeechRecognitionEvent extends Event {
-  results: SpeechRecognitionResultList;
-}
-
-interface SpeechRecognitionResultList {
-  [index: number]: SpeechRecognitionResult;
-  length: number;
-}
-
-interface SpeechRecognitionResult {
-  [index: number]: SpeechRecognitionAlternative;
-  isFinal: boolean;
-  length: number;
-}
-
-interface SpeechRecognitionAlternative {
-  transcript: string;
-  confidence: number;
-}
-
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -95,18 +74,14 @@ function buildAnimationSteps(numerals: number[]): Step[] {
   const steps: Step[] = [];
 
   for (const numeral of numerals) {
-    // Card slides in
     steps.push({ id: `card${numeral}Slide`, duration: 1.0 });
     steps.push({ id: `card${numeral}Stop`, duration: 0.3 });
-    // "This is X"
     steps.push({ id: `card${numeral}Intro`, duration: 1.2 });
 
-    // Counters drop one by one with counting
     for (let i = 0; i < numeral; i++) {
       steps.push({ id: `counter${numeral}_${i}Drop`, duration: 0.6 });
     }
 
-    // Brief pause before next numeral
     steps.push({ id: `card${numeral}Pause`, duration: 0.5 });
   }
 
@@ -117,13 +92,11 @@ function buildVoiceCues(timeline: Timeline, numerals: number[]): VoiceCue[] {
   const cues: VoiceCue[] = [];
 
   for (const numeral of numerals) {
-    // "This is X" at intro
     const introId = `card${numeral}Intro`;
     if (timeline.map[introId]) {
       cues.push({ id: introId, text: `This is ${numberWords[numeral - 1]}`, offset: 0.1 });
     }
 
-    // Count each counter: "one", "two", "three"...
     for (let i = 0; i < numeral; i++) {
       const dropId = `counter${numeral}_${i}Drop`;
       if (timeline.map[dropId]) {
@@ -220,6 +193,11 @@ function NumeralsAndCountersContent({
   const [quizIndex, setQuizIndex] = useState<number | null>(null);
   const [quizLiftCard, setQuizLiftCard] = useState<number | null>(null);
 
+  // For counter group animation
+  const [groupingNumeral, setGroupingNumeral] = useState<number | null>(null);
+  const groupingStartTimeRef = useRef<number | null>(null);
+  const GROUP_ANIMATION_DURATION = 0.8;
+
   // Build timeline and voice cues
   const timeline = useMemo(() => {
     const steps = buildAnimationSteps(numerals);
@@ -231,9 +209,7 @@ function NumeralsAndCountersContent({
   }, [timeline, numerals]);
 
   // Quiz orders
-  // Click order: REVERSE (e.g., 3, 2, 1)
   const clickOrder = useMemo(() => [...numerals].reverse(), [numerals]);
-  // Name order: FORWARD (e.g., 1, 2, 3)
   const nameOrder = useMemo(() => [...numerals], [numerals]);
 
   const currentTarget = useMemo(() => {
@@ -248,40 +224,65 @@ function NumeralsAndCountersContent({
     return numerals.map((n) => createNumeralTexture(n));
   }, [numerals]);
 
-  // Calculate counter final positions for each numeral (pairs layout on table)
+  // Calculate counter positions and center points for each numeral
   const counterData = useMemo(() => {
-    const data: Record<number, { startX: number; startZ: number; finalX: number; finalZ: number }[]> = {};
+    const data: Record<number, {
+      startX: number;
+      startZ: number;
+      finalX: number;
+      finalZ: number;
+      centerX: number;
+      centerZ: number;
+    }[]> = {};
     const cardSpacing = 1.6;
     const baseX = -((numerals.length - 1) * cardSpacing) / 2;
 
     numerals.forEach((numeral, idx) => {
       const cardX = baseX + idx * cardSpacing;
       const baseZ = 0.9;
-      const counters: { startX: number; startZ: number; finalX: number; finalZ: number }[] = [];
+      const counters: { startX: number; startZ: number; finalX: number; finalZ: number; centerX: number; centerZ: number }[] = [];
 
       const pairs = Math.floor(numeral / 2);
       const hasOdd = numeral % 2 === 1;
 
-      // Counters drop from above card and arrange into pairs
+      // Calculate all positions first to find center
+      const allPositions: { x: number; z: number }[] = [];
+
       for (let p = 0; p < pairs; p++) {
         const pairZ = baseZ + p * 0.35;
-        // Left counter
+        allPositions.push({ x: cardX - 0.18, z: pairZ });
+        allPositions.push({ x: cardX + 0.18, z: pairZ });
+      }
+      if (hasOdd) {
+        const oddZ = baseZ + pairs * 0.35;
+        allPositions.push({ x: cardX, z: oddZ });
+      }
+
+      // Calculate center of all counters
+      const centerX = allPositions.reduce((sum, p) => sum + p.x, 0) / allPositions.length;
+      const centerZ = allPositions.reduce((sum, p) => sum + p.z, 0) / allPositions.length;
+
+      // Create counter data with center reference
+      for (let p = 0; p < pairs; p++) {
+        const pairZ = baseZ + p * 0.35;
         counters.push({
           startX: cardX,
           startZ: -1,
           finalX: cardX - 0.18,
           finalZ: pairZ,
+          centerX,
+          centerZ,
         });
-        // Right counter
         counters.push({
           startX: cardX,
           startZ: -1,
           finalX: cardX + 0.18,
           finalZ: pairZ,
+          centerX,
+          centerZ,
         });
       }
 
-      // Odd counter centered
       if (hasOdd) {
         const oddZ = baseZ + pairs * 0.35;
         counters.push({
@@ -289,6 +290,8 @@ function NumeralsAndCountersContent({
           startZ: -1,
           finalX: cardX,
           finalZ: oddZ,
+          centerX,
+          centerZ,
         });
       }
 
@@ -324,6 +327,8 @@ function NumeralsAndCountersContent({
     setQuizPhase(null);
     setQuizIndex(null);
     setQuizLiftCard(null);
+    setGroupingNumeral(null);
+    groupingStartTimeRef.current = null;
 
     if (timeoutRef.current) {
       window.clearTimeout(timeoutRef.current);
@@ -394,16 +399,25 @@ function NumeralsAndCountersContent({
     return true;
   }, []);
 
-  // Handle card click during click quiz
-  const handleCardClick = useCallback((numeral: number) => {
+  // Handle click on card or counter during click quiz
+  const handleItemClick = useCallback((numeral: number, isCounter: boolean) => {
     if (currentTarget === null || quizPhase !== "click") return;
     if (awaitingAnswerRef.current) return;
+    if (groupingNumeral !== null) return; // Already animating
 
     if (numeral !== currentTarget) {
       if (voiceEnabled) {
         speakText("Oh no, try again.");
       }
       return;
+    }
+
+    // Start group animation for counters if numeral > 1
+    if (isCounter && numeral > 1) {
+      setGroupingNumeral(numeral);
+      groupingStartTimeRef.current = null;
+      // Speak the number word while grouping
+      speakText(numberWords[numeral - 1]);
     }
 
     playChime();
@@ -413,20 +427,24 @@ function NumeralsAndCountersContent({
       window.clearTimeout(timeoutRef.current);
     }
 
+    // Wait longer if grouping animation is happening
+    const delay = (isCounter && numeral > 1) ? 2000 : 1800;
+
     timeoutRef.current = window.setTimeout(() => {
       setQuizLiftCard(null);
+      setGroupingNumeral(null);
+      groupingStartTimeRef.current = null;
       setQuizIndex((prev) => {
         if (prev === null) return null;
         const next = prev + 1;
         if (next < clickOrder.length) {
           return next;
         }
-        // Move to name quiz
         setQuizPhase("name");
         return 0;
       });
-    }, 1800);
-  }, [currentTarget, quizPhase, voiceEnabled, clickOrder.length]);
+    }, delay);
+  }, [currentTarget, quizPhase, voiceEnabled, clickOrder.length, groupingNumeral]);
 
   // Voice prompts for quiz phases
   useEffect(() => {
@@ -437,7 +455,7 @@ function NumeralsAndCountersContent({
     promptRef.current[promptKey] = true;
 
     if (quizPhase === "click") {
-      speakText(`Can you point to ${numberWords[currentTarget - 1]}?`);
+      speakText(`Can you click on ${numberWords[currentTarget - 1]}?`);
       return;
     }
 
@@ -564,6 +582,11 @@ function NumeralsAndCountersContent({
       });
     }
 
+    // Track grouping animation time
+    if (groupingNumeral !== null && groupingStartTimeRef.current === null) {
+      groupingStartTimeRef.current = now;
+    }
+
     // Animate cards and counters
     numerals.forEach((numeral, idx) => {
       const card = cardRefs.current[numeral];
@@ -612,15 +635,32 @@ function NumeralsAndCountersContent({
           return;
         }
 
+        // Base drop animation
         const dropProgress = easeOutBounce(clamp01((t - dropRange.start) / (dropRange.end - dropRange.start)));
         const startZ = counterInfo[cIdx].startZ;
         const finalZ = counterInfo[cIdx].finalZ;
         const startX = counterInfo[cIdx].startX;
         const finalXPos = counterInfo[cIdx].finalX;
 
-        const currentZ = lerp(startZ, finalZ, dropProgress);
-        const currentX = lerp(startX, finalXPos, dropProgress);
-        const dropY = 0.025 + (1 - dropProgress) * 1.5;
+        let currentZ = lerp(startZ, finalZ, dropProgress);
+        let currentX = lerp(startX, finalXPos, dropProgress);
+        let dropY = 0.025 + (1 - dropProgress) * 1.5;
+
+        // Grouping animation - move counters toward center
+        if (groupingNumeral === numeral && groupingStartTimeRef.current !== null) {
+          const groupT = (now - groupingStartTimeRef.current) / GROUP_ANIMATION_DURATION;
+          const groupProgress = smoothstep(clamp01(groupT));
+
+          // Move toward center, then back
+          const toCenter = groupProgress < 0.5 ? groupProgress * 2 : (1 - groupProgress) * 2;
+          const centerX = counterInfo[cIdx].centerX;
+          const centerZ = counterInfo[cIdx].centerZ;
+
+          currentX = lerp(finalXPos, centerX, toCenter * 0.7);
+          currentZ = lerp(finalZ, centerZ, toCenter * 0.7);
+          // Slight lift during grouping
+          dropY = 0.025 + toCenter * 0.1;
+        }
 
         counter.position.set(currentX, Math.max(0.025, dropY), currentZ);
         counter.visible = t >= dropRange.start - 0.05;
@@ -648,9 +688,9 @@ function NumeralsAndCountersContent({
 
       {/* Numeral cards - laying flat on table */}
       {numerals.map((numeral, idx) => {
-        const cardSpacing = 1.6;
-        const baseX = -((numerals.length - 1) * cardSpacing) / 2;
-        const x = baseX + idx * cardSpacing;
+        const cardSpacingLocal = 1.6;
+        const baseXLocal = -((numerals.length - 1) * cardSpacingLocal) / 2;
+        const x = baseXLocal + idx * cardSpacingLocal;
 
         return (
           <group
@@ -662,7 +702,7 @@ function NumeralsAndCountersContent({
             rotation={[-Math.PI / 2, 0, 0]}
             onClick={(e) => {
               e.stopPropagation();
-              handleCardClick(numeral);
+              handleItemClick(numeral, false);
             }}
           >
             <mesh castShadow>
@@ -689,7 +729,7 @@ function NumeralsAndCountersContent({
         );
       })}
 
-      {/* Counters - flat discs on table */}
+      {/* Counters - flat discs on table (no rotation needed for cylinder laying flat) */}
       {numerals.map((numeral) => {
         const countersInfo = counterData[numeral] || [];
 
@@ -703,8 +743,12 @@ function NumeralsAndCountersContent({
               counterRefs.current[numeral][cIdx] = ref;
             }}
             position={[info.finalX, 0.025, info.finalZ]}
-            rotation={[-Math.PI / 2, 0, 0]}
+            rotation={[Math.PI / 2, 0, 0]}
             castShadow
+            onClick={(e) => {
+              e.stopPropagation();
+              handleItemClick(numeral, true);
+            }}
           >
             <cylinderGeometry args={[0.12, 0.12, 0.05, 24]} />
             <meshStandardMaterial
