@@ -22,6 +22,8 @@ const cardSize = { width: 0.36, height: 0.46, thickness: 0.03 };
 const baseY = cardSize.thickness / 2;
 const slideDuration = 2.2;
 const slideDelay = 0.6;
+const introHighlightDuration = 1.2; // Duration of the yellow highlight after landing
+const introLiftHeight = 0.015; // How much the numeral lifts during intro
 const quizLiftDuration = 2.6;
 const liftHeight = 0.05;
 const stackBase = new THREE.Vector3(-0.72, baseY, -0.45);
@@ -263,12 +265,34 @@ function SandpaperNumeralsContent({
       const text = textRefs.current[index];
       if (text) {
         text.visible = playing;
-        text.position.y = textSurfaceY;
+
+        // Intro highlight animation: after card lands, pop numeral up and color yellow
+        const introStart = end;
+        const introEnd = end + introHighlightDuration;
+        const inIntro = t >= introStart && t < introEnd;
+        const introProgress = inIntro ? clamp01((t - introStart) / introHighlightDuration) : 0;
+
+        // Smooth arc for lift: up then down
+        const introLift = inIntro ? Math.sin(introProgress * Math.PI) * introLiftHeight : 0;
+        text.position.y = textSurfaceY + introLift;
+
         const material = text.material as THREE.MeshStandardMaterial;
         if (material?.color) {
-          material.color.set("#ffffff");
-          material.emissive.set("#ffffff");
-          material.emissiveIntensity = 0.2;
+          if (inIntro) {
+            // Bright yellow during intro, with top-to-bottom reveal effect
+            // Use progress to blend from white to yellow and back
+            const yellowIntensity = Math.sin(introProgress * Math.PI); // 0 -> 1 -> 0
+            const r = lerp(1, 1, yellowIntensity);      // stays at 1
+            const g = lerp(1, 0.9, yellowIntensity);    // slight reduction
+            const b = lerp(1, 0.2, yellowIntensity);    // drops to yellow
+            material.color.setRGB(r, g, b);
+            material.emissive.setRGB(r, g, b);
+            material.emissiveIntensity = 0.3 + yellowIntensity * 0.5;
+          } else {
+            material.color.set("#ffffff");
+            material.emissive.set("#ffffff");
+            material.emissiveIntensity = 0.2;
+          }
         }
       }
 
