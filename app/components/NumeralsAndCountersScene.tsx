@@ -670,17 +670,17 @@ function NumeralsAndCountersContent({
 
   return (
     <>
-      <ambientLight intensity={0.8} />
+      <ambientLight intensity={0.95} />
       <directionalLight
         position={[3, 5, 3]}
-        intensity={0.5}
+        intensity={0.25}
         castShadow
         shadow-mapSize-width={512}
         shadow-mapSize-height={512}
-        shadow-radius={8}
+        shadow-radius={12}
         shadow-bias={-0.0001}
       />
-      <directionalLight position={[-2, 4, -2]} intensity={0.3} />
+      <directionalLight position={[-2, 4, -2]} intensity={0.15} />
 
       {/* Base mat/table */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0.5]} receiveShadow>
@@ -762,13 +762,15 @@ function NumeralsAndCountersContent({
       })}
 
       <OrbitControls
-        enableZoom={false}
+        enableZoom
         enablePan={false}
         minPolarAngle={Math.PI / 4}
-        maxPolarAngle={Math.PI / 2.5}
-        minAzimuthAngle={-Math.PI / 6}
-        maxAzimuthAngle={Math.PI / 6}
+        maxPolarAngle={Math.PI / 2.1}
+        minAzimuthAngle={-Math.PI / 4}
+        maxAzimuthAngle={Math.PI / 4}
         target={[0, 0, 0.3]}
+        minDistance={1.5}
+        maxDistance={4.5}
       />
     </>
   );
@@ -796,7 +798,7 @@ export default function NumeralsAndCountersScene({
     <div className={`w-full overflow-hidden rounded-[28px] bg-[#f7efe4] ${className}`}>
       <Canvas
         shadows
-        camera={{ position: [0, 1.8, 2.8], fov: 35 }}
+        camera={{ position: [0, 2.5, 3.5], fov: 35 }}
       >
         <color attach="background" args={["#f7efe4"]} />
         <NumeralsAndCountersContent

@@ -61,9 +61,9 @@ function NumeralsAndCountersPreviewContent() {
 
   return (
     <>
-      <ambientLight intensity={0.8} />
-      <directionalLight position={[3, 5, 3]} intensity={0.5} />
-      <directionalLight position={[-2, 4, -2]} intensity={0.3} />
+      <ambientLight intensity={0.95} />
+      <directionalLight position={[3, 5, 3]} intensity={0.25} />
+      <directionalLight position={[-2, 4, -2]} intensity={0.15} />
 
       {/* Base mat */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0.5]} receiveShadow>
