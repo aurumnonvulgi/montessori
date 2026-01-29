@@ -93,7 +93,7 @@ export default function NumberRodsHub() {
           </p>
         </div>
 
-        <div className="pointer-events-none mx-auto mb-10 h-48 w-full max-w-md overflow-hidden rounded-[28px]">
+        <div className="pointer-events-none mx-auto mb-10 h-48 w-full max-w-md overflow-hidden rounded-[28px] shadow-[0_8px_30px_-8px_rgba(0,0,0,0.2)]">
           <NumberRodsScene
             playing={false}
             voiceEnabled={false}

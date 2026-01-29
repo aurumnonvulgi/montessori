@@ -415,7 +415,7 @@ function NumeralsAndCountersContent({
     }
 
     // Start group animation for counters if numeral > 1
-    if (isCounter && numeral > 1) {
+    if (numeral > 1) {
       setGroupingNumeral(numeral);
       groupingStartTimeRef.current = null;
       // Speak the number word while grouping
@@ -430,7 +430,7 @@ function NumeralsAndCountersContent({
     }
 
     // Wait longer if grouping animation is happening
-    const delay = (isCounter && numeral > 1) ? 2000 : 1800;
+    const delay = numeral > 1 ? 2000 : 1800;
 
     timeoutRef.current = window.setTimeout(() => {
       setQuizLiftCard(null);
@@ -672,14 +672,14 @@ function NumeralsAndCountersContent({
 
   return (
     <>
-      <ambientLight intensity={1.0} />
-      <directionalLight position={[3, 5, 3]} intensity={0.3} />
-      <directionalLight position={[-2, 4, -2]} intensity={0.2} />
+      <ambientLight intensity={1.3} />
+      <directionalLight position={[3, 5, 3]} intensity={0.5} />
+      <directionalLight position={[-2, 4, -2]} intensity={0.3} />
 
       {/* Base mat/table */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0.5]}>
         <planeGeometry args={[8, 5]} />
-        <meshStandardMaterial color="#f3e9d8" roughness={0.95} metalness={0.02} />
+        <meshStandardMaterial color="#faf6f0" roughness={0.9} metalness={0} />
       </mesh>
 
       {/* Numeral cards - laying flat on table */}
@@ -746,9 +746,9 @@ function NumeralsAndCountersContent({
           >
             <cylinderGeometry args={[0.12, 0.12, 0.05, 24]} />
             <meshStandardMaterial
-              color="#d93636"
-              roughness={0.4}
-              metalness={0.1}
+              color="#e85a5a"
+              roughness={0.35}
+              metalness={0.05}
             />
           </mesh>
         ));
@@ -788,12 +788,12 @@ export default function NumeralsAndCountersScene({
   }, []);
 
   return (
-    <div className={`w-full overflow-hidden rounded-[28px] bg-[#f7efe4] ${className}`}>
+    <div className={`w-full overflow-hidden rounded-[28px] bg-[#fdfbf8] ${className}`}>
       <Canvas
         shadows={false}
         camera={{ position: [0, 3.2, 4.5], fov: 35 }}
       >
-        <color attach="background" args={["#f7efe4"]} />
+        <color attach="background" args={["#fdfbf8"]} />
         <NumeralsAndCountersContent
           playing={playing}
           voiceEnabled={voiceEnabled}
