@@ -97,7 +97,7 @@ function NumeralsAndCountersPreviewContent() {
         <mesh
           key={`counter-${pos.numeral}-${idx}`}
           position={[pos.x, 0.025, pos.z]}
-          rotation={[-Math.PI / 2, 0, 0]}
+          rotation={[Math.PI / 2, 0, 0]}
           castShadow
         >
           <cylinderGeometry args={[0.12, 0.12, 0.05, 24]} />
