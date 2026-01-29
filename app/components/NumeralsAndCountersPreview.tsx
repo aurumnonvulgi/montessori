@@ -52,9 +52,8 @@ function NumeralsAndCountersPreviewContent() {
 
       if (hasOdd) {
         const oddZ = baseZ + pairs * 0.4;
-        // For numeral 1, align counter on left; otherwise center
-        const oddX = numeral === 1 ? cardX - 0.2 : cardX;
-        positions.push({ numeral, x: oddX, z: oddZ });
+        // Odd counter always goes on the left
+        positions.push({ numeral, x: cardX - 0.2, z: oddZ });
       }
     });
 

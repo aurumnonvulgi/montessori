@@ -74,15 +74,15 @@ function buildAnimationSteps(numerals: number[]): Step[] {
   const steps: Step[] = [];
 
   for (const numeral of numerals) {
-    steps.push({ id: `card${numeral}Slide`, duration: 1.0 });
-    steps.push({ id: `card${numeral}Stop`, duration: 0.3 });
-    steps.push({ id: `card${numeral}Intro`, duration: 1.2 });
+    steps.push({ id: `card${numeral}Slide`, duration: 1.5 });
+    steps.push({ id: `card${numeral}Stop`, duration: 0.5 });
+    steps.push({ id: `card${numeral}Intro`, duration: 2.0 });
 
     for (let i = 0; i < numeral; i++) {
-      steps.push({ id: `counter${numeral}_${i}Drop`, duration: 0.6 });
+      steps.push({ id: `counter${numeral}_${i}Drop`, duration: 1.2 });
     }
 
-    steps.push({ id: `card${numeral}Pause`, duration: 0.5 });
+    steps.push({ id: `card${numeral}Pause`, duration: 1.0 });
   }
 
   return steps;
@@ -94,13 +94,13 @@ function buildVoiceCues(timeline: Timeline, numerals: number[]): VoiceCue[] {
   for (const numeral of numerals) {
     const introId = `card${numeral}Intro`;
     if (timeline.map[introId]) {
-      cues.push({ id: introId, text: `This is ${numberWords[numeral - 1]}`, offset: 0.1 });
+      cues.push({ id: introId, text: `This is ${numberWords[numeral - 1]}`, offset: 0.3 });
     }
 
     for (let i = 0; i < numeral; i++) {
       const dropId = `counter${numeral}_${i}Drop`;
       if (timeline.map[dropId]) {
-        cues.push({ id: dropId, text: numberWords[i], offset: 0.15 });
+        cues.push({ id: dropId, text: numberWords[i], offset: 0.4 });
       }
     }
   }
@@ -255,9 +255,8 @@ function NumeralsAndCountersContent({
       }
       if (hasOdd) {
         const oddZ = baseZ + pairs * 0.35;
-        // For numeral 1, align counter on left; otherwise center
-        const oddX = numeral === 1 ? cardX - 0.18 : cardX;
-        allPositions.push({ x: oddX, z: oddZ });
+        // Odd counter always goes on the left
+        allPositions.push({ x: cardX - 0.18, z: oddZ });
       }
 
       // Calculate center of all counters
@@ -287,12 +286,11 @@ function NumeralsAndCountersContent({
 
       if (hasOdd) {
         const oddZ = baseZ + pairs * 0.35;
-        // For numeral 1, align counter on left; otherwise center
-        const oddX = numeral === 1 ? cardX - 0.18 : cardX;
+        // Odd counter always goes on the left
         counters.push({
           startX: cardX,
           startZ: -1,
-          finalX: oddX,
+          finalX: cardX - 0.18,
           finalZ: oddZ,
           centerX,
           centerZ,
