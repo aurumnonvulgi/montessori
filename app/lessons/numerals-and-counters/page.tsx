@@ -1,5 +1,5 @@
-import NumeralsAndCountersLesson from "../../components/NumeralsAndCountersLesson";
+import NumeralsAndCountersHub from "../../components/NumeralsAndCountersHub";
 
 export default function NumeralsAndCountersPage() {
-  return <NumeralsAndCountersLesson />;
+  return <NumeralsAndCountersHub />;
 }

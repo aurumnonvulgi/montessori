@@ -97,7 +97,6 @@ function NumeralsAndCountersPreviewContent() {
         <mesh
           key={`counter-${pos.numeral}-${idx}`}
           position={[pos.x, 0.025, pos.z]}
-          rotation={[Math.PI / 2, 0, 0]}
           castShadow
         >
           <cylinderGeometry args={[0.12, 0.12, 0.05, 24]} />
@@ -127,7 +126,7 @@ export default function NumeralsAndCountersPreview({
   return (
     <div className={className}>
       <Canvas
-        camera={{ position: [0, 3, 3], fov: 45 }}
+        camera={{ position: [0, 0.5, 1], fov: 33 }}
         shadows
         gl={{ antialias: true }}
       >
