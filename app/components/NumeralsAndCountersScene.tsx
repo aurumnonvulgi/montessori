@@ -743,7 +743,6 @@ function NumeralsAndCountersContent({
               counterRefs.current[numeral][cIdx] = ref;
             }}
             position={[info.finalX, 0.025, info.finalZ]}
-            rotation={[Math.PI / 2, 0, 0]}
             castShadow
             onClick={(e) => {
               e.stopPropagation();
@@ -795,7 +794,7 @@ export default function NumeralsAndCountersScene({
     <div className={`w-full overflow-hidden rounded-[28px] bg-[#f7efe4] ${className}`}>
       <Canvas
         shadows
-        camera={{ position: [0, 2.5, 3.5], fov: 40 }}
+        camera={{ position: [0, 0.6, 1.2], fov: 33 }}
       >
         <color attach="background" args={["#f7efe4"]} />
         <NumeralsAndCountersContent

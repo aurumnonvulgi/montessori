@@ -1,5 +1,5 @@
-import NumberRodsLesson from "../../components/NumberRodsLesson";
+import NumberRodsHub from "../../components/NumberRodsHub";
 
 export default function NumberRodsPage() {
-  return <NumberRodsLesson />;
+  return <NumberRodsHub />;
 }
