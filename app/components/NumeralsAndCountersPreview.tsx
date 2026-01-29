@@ -52,7 +52,9 @@ function NumeralsAndCountersPreviewContent() {
 
       if (hasOdd) {
         const oddZ = baseZ + pairs * 0.4;
-        positions.push({ numeral, x: cardX, z: oddZ });
+        // For numeral 1, align counter on left; otherwise center
+        const oddX = numeral === 1 ? cardX - 0.2 : cardX;
+        positions.push({ numeral, x: oddX, z: oddZ });
       }
     });
 
@@ -61,14 +63,14 @@ function NumeralsAndCountersPreviewContent() {
 
   return (
     <>
-      <ambientLight intensity={0.95} />
-      <directionalLight position={[3, 5, 3]} intensity={0.25} />
-      <directionalLight position={[-2, 4, -2]} intensity={0.15} />
+      <ambientLight intensity={1.0} />
+      <directionalLight position={[3, 5, 3]} intensity={0.3} />
+      <directionalLight position={[-2, 4, -2]} intensity={0.2} />
 
       {/* Base mat */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0.5]} receiveShadow>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0.5]}>
         <planeGeometry args={[6, 4]} />
-        <meshStandardMaterial color="#f5f1e8" />
+        <meshStandardMaterial color="#f3e9d8" />
       </mesh>
 
       {/* Numeral cards - laying flat on table */}
@@ -76,9 +78,9 @@ function NumeralsAndCountersPreviewContent() {
         const x = -1.6 + idx * 1.6;
         return (
           <group key={numeral} position={[x, 0.04, -0.3]} rotation={[-Math.PI / 2, 0, 0]}>
-            <mesh castShadow>
+            <mesh>
               <boxGeometry args={[0.8, 1.1, 0.06]} />
-              <meshStandardMaterial color="#ffffff" roughness={0.3} />
+              <meshStandardMaterial color="#f5e6c8" roughness={0.4} />
             </mesh>
             <mesh position={[0, 0, 0.031]}>
               <planeGeometry args={[0.75, 1.05]} />
@@ -97,7 +99,6 @@ function NumeralsAndCountersPreviewContent() {
         <mesh
           key={`counter-${pos.numeral}-${idx}`}
           position={[pos.x, 0.025, pos.z]}
-          castShadow
         >
           <cylinderGeometry args={[0.12, 0.12, 0.05, 24]} />
           <meshStandardMaterial
@@ -127,7 +128,7 @@ export default function NumeralsAndCountersPreview({
     <div className={className}>
       <Canvas
         camera={{ position: [0, 1.5, 2.2], fov: 35 }}
-        shadows
+        shadows={false}
         gl={{ antialias: true }}
       >
         <NumeralsAndCountersPreviewContent />

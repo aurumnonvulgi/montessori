@@ -255,7 +255,9 @@ function NumeralsAndCountersContent({
       }
       if (hasOdd) {
         const oddZ = baseZ + pairs * 0.35;
-        allPositions.push({ x: cardX, z: oddZ });
+        // For numeral 1, align counter on left; otherwise center
+        const oddX = numeral === 1 ? cardX - 0.18 : cardX;
+        allPositions.push({ x: oddX, z: oddZ });
       }
 
       // Calculate center of all counters
@@ -285,10 +287,12 @@ function NumeralsAndCountersContent({
 
       if (hasOdd) {
         const oddZ = baseZ + pairs * 0.35;
+        // For numeral 1, align counter on left; otherwise center
+        const oddX = numeral === 1 ? cardX - 0.18 : cardX;
         counters.push({
           startX: cardX,
           startZ: -1,
-          finalX: cardX,
+          finalX: oddX,
           finalZ: oddZ,
           centerX,
           centerZ,
@@ -670,20 +674,12 @@ function NumeralsAndCountersContent({
 
   return (
     <>
-      <ambientLight intensity={0.95} />
-      <directionalLight
-        position={[3, 5, 3]}
-        intensity={0.25}
-        castShadow
-        shadow-mapSize-width={512}
-        shadow-mapSize-height={512}
-        shadow-radius={12}
-        shadow-bias={-0.0001}
-      />
-      <directionalLight position={[-2, 4, -2]} intensity={0.15} />
+      <ambientLight intensity={1.0} />
+      <directionalLight position={[3, 5, 3]} intensity={0.3} />
+      <directionalLight position={[-2, 4, -2]} intensity={0.2} />
 
       {/* Base mat/table */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0.5]} receiveShadow>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0.5]}>
         <planeGeometry args={[8, 5]} />
         <meshStandardMaterial color="#f3e9d8" roughness={0.95} metalness={0.02} />
       </mesh>
@@ -707,14 +703,14 @@ function NumeralsAndCountersContent({
               handleItemClick(numeral, false);
             }}
           >
-            <mesh castShadow>
+            <mesh>
               <boxGeometry args={[0.9, 1.2, 0.06]} />
               <meshStandardMaterial
                 ref={(ref) => {
                   cardMaterialRefs.current[numeral] = ref;
                 }}
-                color="#ffffff"
-                roughness={0.3}
+                color="#f5e6c8"
+                roughness={0.4}
                 emissive="#ffd966"
                 emissiveIntensity={0}
               />
@@ -745,7 +741,6 @@ function NumeralsAndCountersContent({
               counterRefs.current[numeral][cIdx] = ref;
             }}
             position={[info.finalX, 0.025, info.finalZ]}
-            castShadow
             onClick={(e) => {
               e.stopPropagation();
               handleItemClick(numeral, true);
@@ -769,8 +764,8 @@ function NumeralsAndCountersContent({
         minAzimuthAngle={-Math.PI / 4}
         maxAzimuthAngle={Math.PI / 4}
         target={[0, 0, 0.3]}
-        minDistance={1.5}
-        maxDistance={4.5}
+        minDistance={2.0}
+        maxDistance={6.5}
       />
     </>
   );
@@ -797,8 +792,8 @@ export default function NumeralsAndCountersScene({
   return (
     <div className={`w-full overflow-hidden rounded-[28px] bg-[#f7efe4] ${className}`}>
       <Canvas
-        shadows
-        camera={{ position: [0, 2.5, 3.5], fov: 35 }}
+        shadows={false}
+        camera={{ position: [0, 3.2, 4.5], fov: 35 }}
       >
         <color attach="background" args={["#f7efe4"]} />
         <NumeralsAndCountersContent
