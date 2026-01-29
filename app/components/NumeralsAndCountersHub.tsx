@@ -4,11 +4,11 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import NumeralsAndCountersPreview from "./NumeralsAndCountersPreview";
 
-const STAGES = [
-  { id: 1, name: "1, 2, 3", numerals: [1, 2, 3] },
-  { id: 2, name: "4, 5, 6", numerals: [4, 5, 6] },
-  { id: 3, name: "7, 8, 9", numerals: [7, 8, 9] },
-  { id: 4, name: "10", numerals: [10] },
+const LESSONS = [
+  { id: 1, name: "1, 2, 3", numerals: [1, 2, 3], color: "bg-rose-100", borderColor: "border-rose-200", textColor: "text-rose-700" },
+  { id: 2, name: "4, 5, 6", numerals: [4, 5, 6], color: "bg-amber-100", borderColor: "border-amber-200", textColor: "text-amber-700" },
+  { id: 3, name: "7, 8, 9", numerals: [7, 8, 9], color: "bg-sky-100", borderColor: "border-sky-200", textColor: "text-sky-700" },
+  { id: 4, name: "10", numerals: [10], color: "bg-violet-100", borderColor: "border-violet-200", textColor: "text-violet-700" },
 ];
 
 function LockIcon() {
@@ -45,33 +45,33 @@ function CheckIcon() {
 
 export default function NumeralsAndCountersHub() {
   const router = useRouter();
-  const [completedStages, setCompletedStages] = useState<number[]>([]);
+  const [completedLessons, setCompletedLessons] = useState<number[]>([]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     const completed: number[] = [];
-    STAGES.forEach((stage) => {
-      const key = `numerals-and-counters-stage-${stage.id}-complete`;
+    LESSONS.forEach((lesson) => {
+      const key = `numerals-and-counters-stage-${lesson.id}-complete`;
       if (window.localStorage.getItem(key) === "true") {
-        completed.push(stage.id);
+        completed.push(lesson.id);
       }
     });
-    setCompletedStages(completed);
+    setCompletedLessons(completed);
   }, []);
 
-  const isStageUnlocked = (stageId: number) => {
-    if (stageId === 1) return true;
-    return completedStages.includes(stageId - 1);
+  const isLessonUnlocked = (lessonId: number) => {
+    if (lessonId === 1) return true;
+    return completedLessons.includes(lessonId - 1);
   };
 
-  const isStageCompleted = (stageId: number) => {
-    return completedStages.includes(stageId);
+  const isLessonCompleted = (lessonId: number) => {
+    return completedLessons.includes(lessonId);
   };
 
-  const handleStageClick = (stageId: number) => {
-    if (!isStageUnlocked(stageId)) return;
-    router.push(`/lessons/numerals-and-counters/stage-${stageId}`);
+  const handleLessonClick = (lessonId: number) => {
+    if (!isLessonUnlocked(lessonId)) return;
+    router.push(`/lessons/numerals-and-counters/stage-${lessonId}`);
   };
 
   return (
@@ -98,51 +98,51 @@ export default function NumeralsAndCountersHub() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          {STAGES.map((stage) => {
-            const unlocked = isStageUnlocked(stage.id);
-            const completed = isStageCompleted(stage.id);
+          {LESSONS.map((lesson) => {
+            const unlocked = isLessonUnlocked(lesson.id);
+            const completed = isLessonCompleted(lesson.id);
 
             return (
               <button
-                key={stage.id}
-                onClick={() => handleStageClick(stage.id)}
+                key={lesson.id}
+                onClick={() => handleLessonClick(lesson.id)}
                 disabled={!unlocked}
                 className={`relative flex items-center justify-between rounded-2xl border p-6 text-left transition ${
                   unlocked
-                    ? "border-stone-200 bg-white/90 shadow-md hover:-translate-y-0.5 hover:shadow-lg"
-                    : "cursor-not-allowed border-stone-100 bg-stone-50/50"
+                    ? `${lesson.color} ${lesson.borderColor} shadow-md hover:-translate-y-0.5 hover:shadow-lg`
+                    : "cursor-not-allowed border-stone-200 bg-stone-100/50"
                 }`}
               >
                 <div>
                   <div
                     className={`text-xs uppercase tracking-[0.2em] ${
-                      unlocked ? "text-stone-400" : "text-stone-300"
+                      unlocked ? lesson.textColor : "text-stone-400"
                     }`}
                   >
-                    Stage {stage.id}
+                    Lesson {lesson.id}
                   </div>
                   <div
                     className={`mt-1 font-display text-xl font-semibold ${
                       unlocked ? "text-stone-900" : "text-stone-400"
                     }`}
                   >
-                    {stage.name}
+                    {lesson.name}
                   </div>
                 </div>
 
                 <div className="flex items-center">
                   {!unlocked && (
-                    <div className="text-stone-300">
+                    <div className="text-stone-400">
                       <LockIcon />
                     </div>
                   )}
                   {completed && (
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/80 text-emerald-600">
                       <CheckIcon />
                     </div>
                   )}
                   {unlocked && !completed && (
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-stone-100 text-stone-400">
+                    <div className={`flex h-10 w-10 items-center justify-center rounded-full bg-white/60 ${lesson.textColor}`}>
                       <svg viewBox="0 0 24 24" className="h-5 w-5">
                         <path
                           d="M9 18l6-6-6-6"
@@ -161,11 +161,11 @@ export default function NumeralsAndCountersHub() {
           })}
         </div>
 
-        {completedStages.length === STAGES.length && (
+        {completedLessons.length === LESSONS.length && (
           <div className="mt-8 rounded-2xl bg-emerald-50 p-6 text-center">
             <div className="text-2xl">🎉</div>
             <div className="mt-2 font-display text-lg font-semibold text-emerald-700">
-              All stages completed!
+              All lessons completed!
             </div>
           </div>
         )}

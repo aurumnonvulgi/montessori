@@ -74,15 +74,15 @@ function buildAnimationSteps(numerals: number[]): Step[] {
   const steps: Step[] = [];
 
   for (const numeral of numerals) {
-    steps.push({ id: `card${numeral}Slide`, duration: 1.0 });
-    steps.push({ id: `card${numeral}Stop`, duration: 0.3 });
-    steps.push({ id: `card${numeral}Intro`, duration: 1.2 });
+    steps.push({ id: `card${numeral}Slide`, duration: 1.5 });
+    steps.push({ id: `card${numeral}Stop`, duration: 0.5 });
+    steps.push({ id: `card${numeral}Intro`, duration: 2.0 });
 
     for (let i = 0; i < numeral; i++) {
-      steps.push({ id: `counter${numeral}_${i}Drop`, duration: 0.6 });
+      steps.push({ id: `counter${numeral}_${i}Drop`, duration: 1.2 });
     }
 
-    steps.push({ id: `card${numeral}Pause`, duration: 0.5 });
+    steps.push({ id: `card${numeral}Pause`, duration: 1.0 });
   }
 
   return steps;
@@ -94,13 +94,13 @@ function buildVoiceCues(timeline: Timeline, numerals: number[]): VoiceCue[] {
   for (const numeral of numerals) {
     const introId = `card${numeral}Intro`;
     if (timeline.map[introId]) {
-      cues.push({ id: introId, text: `This is ${numberWords[numeral - 1]}`, offset: 0.1 });
+      cues.push({ id: introId, text: `This is ${numberWords[numeral - 1]}`, offset: 0.3 });
     }
 
     for (let i = 0; i < numeral; i++) {
       const dropId = `counter${numeral}_${i}Drop`;
       if (timeline.map[dropId]) {
-        cues.push({ id: dropId, text: numberWords[i], offset: 0.15 });
+        cues.push({ id: dropId, text: numberWords[i], offset: 0.4 });
       }
     }
   }
@@ -255,7 +255,8 @@ function NumeralsAndCountersContent({
       }
       if (hasOdd) {
         const oddZ = baseZ + pairs * 0.35;
-        allPositions.push({ x: cardX, z: oddZ });
+        // Odd counter always goes on the left
+        allPositions.push({ x: cardX - 0.18, z: oddZ });
       }
 
       // Calculate center of all counters
@@ -285,10 +286,11 @@ function NumeralsAndCountersContent({
 
       if (hasOdd) {
         const oddZ = baseZ + pairs * 0.35;
+        // Odd counter always goes on the left
         counters.push({
           startX: cardX,
           startZ: -1,
-          finalX: cardX,
+          finalX: cardX - 0.18,
           finalZ: oddZ,
           centerX,
           centerZ,
@@ -670,18 +672,12 @@ function NumeralsAndCountersContent({
 
   return (
     <>
-      <ambientLight intensity={0.65} />
-      <directionalLight
-        position={[3, 4, 2]}
-        intensity={0.9}
-        castShadow
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
-      />
-      <directionalLight position={[-2, 3, -2]} intensity={0.4} />
+      <ambientLight intensity={1.0} />
+      <directionalLight position={[3, 5, 3]} intensity={0.3} />
+      <directionalLight position={[-2, 4, -2]} intensity={0.2} />
 
       {/* Base mat/table */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0.5]} receiveShadow>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0.5]}>
         <planeGeometry args={[8, 5]} />
         <meshStandardMaterial color="#f3e9d8" roughness={0.95} metalness={0.02} />
       </mesh>
@@ -705,14 +701,14 @@ function NumeralsAndCountersContent({
               handleItemClick(numeral, false);
             }}
           >
-            <mesh castShadow>
+            <mesh>
               <boxGeometry args={[0.9, 1.2, 0.06]} />
               <meshStandardMaterial
                 ref={(ref) => {
                   cardMaterialRefs.current[numeral] = ref;
                 }}
-                color="#ffffff"
-                roughness={0.3}
+                color="#f5e6c8"
+                roughness={0.4}
                 emissive="#ffd966"
                 emissiveIntensity={0}
               />
@@ -743,7 +739,6 @@ function NumeralsAndCountersContent({
               counterRefs.current[numeral][cIdx] = ref;
             }}
             position={[info.finalX, 0.025, info.finalZ]}
-            castShadow
             onClick={(e) => {
               e.stopPropagation();
               handleItemClick(numeral, true);
@@ -760,13 +755,15 @@ function NumeralsAndCountersContent({
       })}
 
       <OrbitControls
-        enableZoom={false}
+        enableZoom
         enablePan={false}
         minPolarAngle={Math.PI / 4}
-        maxPolarAngle={Math.PI / 2.5}
-        minAzimuthAngle={-Math.PI / 6}
-        maxAzimuthAngle={Math.PI / 6}
+        maxPolarAngle={Math.PI / 2.1}
+        minAzimuthAngle={-Math.PI / 4}
+        maxAzimuthAngle={Math.PI / 4}
         target={[0, 0, 0.3]}
+        minDistance={2.0}
+        maxDistance={6.5}
       />
     </>
   );
@@ -793,8 +790,8 @@ export default function NumeralsAndCountersScene({
   return (
     <div className={`w-full overflow-hidden rounded-[28px] bg-[#f7efe4] ${className}`}>
       <Canvas
-        shadows
-        camera={{ position: [0, 0.6, 1.2], fov: 33 }}
+        shadows={false}
+        camera={{ position: [0, 3.2, 4.5], fov: 35 }}
       >
         <color attach="background" args={["#f7efe4"]} />
         <NumeralsAndCountersContent
