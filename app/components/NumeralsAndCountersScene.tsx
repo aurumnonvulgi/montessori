@@ -670,15 +670,17 @@ function NumeralsAndCountersContent({
 
   return (
     <>
-      <ambientLight intensity={0.65} />
+      <ambientLight intensity={0.8} />
       <directionalLight
-        position={[3, 4, 2]}
-        intensity={0.9}
+        position={[3, 5, 3]}
+        intensity={0.5}
         castShadow
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
+        shadow-mapSize-width={512}
+        shadow-mapSize-height={512}
+        shadow-radius={8}
+        shadow-bias={-0.0001}
       />
-      <directionalLight position={[-2, 3, -2]} intensity={0.4} />
+      <directionalLight position={[-2, 4, -2]} intensity={0.3} />
 
       {/* Base mat/table */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0.5]} receiveShadow>
@@ -794,7 +796,7 @@ export default function NumeralsAndCountersScene({
     <div className={`w-full overflow-hidden rounded-[28px] bg-[#f7efe4] ${className}`}>
       <Canvas
         shadows
-        camera={{ position: [0, 0.6, 1.2], fov: 33 }}
+        camera={{ position: [0, 1.8, 2.8], fov: 35 }}
       >
         <color attach="background" args={["#f7efe4"]} />
         <NumeralsAndCountersContent

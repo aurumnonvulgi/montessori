@@ -61,9 +61,9 @@ function NumeralsAndCountersPreviewContent() {
 
   return (
     <>
-      <ambientLight intensity={0.65} />
-      <directionalLight position={[3, 4, 2]} intensity={0.9} />
-      <directionalLight position={[-2, 3, -2]} intensity={0.5} />
+      <ambientLight intensity={0.8} />
+      <directionalLight position={[3, 5, 3]} intensity={0.5} />
+      <directionalLight position={[-2, 4, -2]} intensity={0.3} />
 
       {/* Base mat */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0.5]} receiveShadow>
@@ -126,7 +126,7 @@ export default function NumeralsAndCountersPreview({
   return (
     <div className={className}>
       <Canvas
-        camera={{ position: [0, 0.5, 1], fov: 33 }}
+        camera={{ position: [0, 1.5, 2.2], fov: 35 }}
         shadows
         gl={{ antialias: true }}
       >
