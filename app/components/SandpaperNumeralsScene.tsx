@@ -20,17 +20,20 @@ const numerals = ["1", "2", "3"];
 const numeralWords = ["one", "two", "three"];
 const cardSize = { width: 0.36, height: 0.46, thickness: 0.03 };
 const baseY = cardSize.thickness / 2;
-const slideDuration = 2.2;
-const slideDelay = 0.6;
+const flipDuration = 0.8; // Duration for card to flip
+const travelDuration = 1.6; // Duration for card to travel to position
+const slideDelay = 0.4;
 const introHighlightDuration = 1.2; // Duration of the yellow highlight after landing
-const introLiftHeight = 0.015; // How much the numeral lifts during intro
+const introLiftHeight = 0.03; // How much the numeral lifts during intro (doubled)
+const arcHeight = 0.25; // How high cards lift during travel
 const quizLiftDuration = 2.6;
 const liftHeight = 0.05;
-const stackBase = new THREE.Vector3(-0.72, baseY, -0.45);
+const stackBase = new THREE.Vector3(-0.55, baseY, -0.35);
+// Stack order: 3 on bottom, 2 middle, 1 on top (reversed from index)
 const stackOffsets = [
-  new THREE.Vector3(0, 0.001, 0),
-  new THREE.Vector3(0.05, 0.002, 0.05),
-  new THREE.Vector3(0.1, 0.003, 0.1),
+  new THREE.Vector3(0, cardSize.thickness * 2, 0),    // Card 1 on top
+  new THREE.Vector3(0, cardSize.thickness, 0),        // Card 2 in middle
+  new THREE.Vector3(0, 0, 0),                         // Card 3 on bottom
 ];
 const rowZ = 0.42;
 const rowX = [-0.48, 0, 0.48];
@@ -74,12 +77,14 @@ const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const buildTimeline = () => {
   let cursor = 0;
   const stages = numerals.map(() => {
-    const slideStart = cursor;
-    const slideEnd = slideStart + slideDuration;
-    cursor = slideEnd + slideDelay;
-    return { slideStart, slideEnd };
+    const flipStart = cursor;
+    const flipEnd = flipStart + flipDuration;
+    const travelStart = flipEnd;
+    const travelEnd = travelStart + travelDuration;
+    cursor = travelEnd + slideDelay;
+    return { flipStart, flipEnd, travelStart, travelEnd };
   });
-  const sequenceDuration = stages[stages.length - 1]?.slideEnd ?? 0;
+  const sequenceDuration = stages[stages.length - 1]?.travelEnd ?? 0;
   return { stages, sequenceDuration };
 };
 
@@ -138,7 +143,7 @@ function SandpaperNumeralsContent({
     }
 
     timeline.stages.forEach((stage, index) => {
-      const delayMs = (stage.slideEnd ?? 0) * 1000 + 150;
+      const delayMs = (stage.travelEnd ?? 0) * 1000 + 150;
       const timeoutId = window.setTimeout(() => {
         speakText(numeralWords[index]);
       }, delayMs);
@@ -173,11 +178,12 @@ function SandpaperNumeralsContent({
         const offset = stackOffsets[index] ?? stackOffsets[0];
         const position = stackBase.clone().add(offset);
         card.position.copy(position);
-        card.rotation.set(0, -0.22, 0);
+        // Cards start face-down (flipped on X axis)
+        card.rotation.set(Math.PI, 0, 0);
         card.scale.set(1, 1, 1);
         const text = textRefs.current[index];
         if (text) {
-          text.visible = playing;
+          text.visible = false; // Hidden when face-down
           text.position.set(0, textSurfaceY, 0);
           const material = text.material as THREE.MeshStandardMaterial;
           if (material?.color) {
@@ -225,8 +231,10 @@ function SandpaperNumeralsContent({
       }
 
       const stage = timeline.stages[index];
-      const start = stage?.slideStart ?? 0;
-      const end = stage?.slideEnd ?? 0;
+      const flipStart = stage?.flipStart ?? 0;
+      const flipEnd = stage?.flipEnd ?? 0;
+      const travelStart = stage?.travelStart ?? 0;
+      const travelEnd = stage?.travelEnd ?? 0;
       const offset = stackOffsets[index] ?? stackOffsets[0];
       const stackPosition = stackBase.clone().add(offset);
       const targetPosition = new THREE.Vector3(
@@ -234,41 +242,56 @@ function SandpaperNumeralsContent({
         baseY,
         rowZ + (rowZOffsets[index] ?? 0),
       );
-      let position = stackPosition;
-      let yaw = -0.22;
 
-      if (t >= end) {
-        position = targetPosition;
-        yaw = 0;
-      } else if (t >= start) {
-        const progress = clamp01((t - start) / slideDuration);
-        const eased = smoothstep(progress);
-        position = new THREE.Vector3(
-          lerp(stackPosition.x, targetPosition.x, eased),
-          baseY,
-          lerp(stackPosition.z, targetPosition.z, eased),
-        );
-        yaw = lerp(-0.22, 0, eased);
+      let posX = stackPosition.x;
+      let posY = stackPosition.y;
+      let posZ = stackPosition.z;
+      let rotX = Math.PI; // Face-down
+
+      // Phase 1: Flip (rotate from face-down to face-up while staying in place)
+      if (t >= flipStart && t < flipEnd) {
+        const flipProgress = smoothstep(clamp01((t - flipStart) / flipDuration));
+        rotX = lerp(Math.PI, 0, flipProgress);
+        // Slight lift during flip
+        posY = stackPosition.y + Math.sin(flipProgress * Math.PI) * 0.1;
+      }
+      // Phase 2: Travel with arc motion
+      else if (t >= travelStart && t < travelEnd) {
+        rotX = 0; // Fully face-up
+        const travelProgress = smoothstep(clamp01((t - travelStart) / travelDuration));
+        posX = lerp(stackPosition.x, targetPosition.x, travelProgress);
+        posZ = lerp(stackPosition.z, targetPosition.z, travelProgress);
+        // Arc motion: lift up in the middle, land at the end
+        const arc = 4 * travelProgress * (1 - travelProgress);
+        posY = lerp(stackPosition.y, targetPosition.y, travelProgress) + arc * arcHeight;
+      }
+      // Phase 3: At final position
+      else if (t >= travelEnd) {
+        rotX = 0;
+        posX = targetPosition.x;
+        posY = targetPosition.y;
+        posZ = targetPosition.z;
       }
 
-      let y = position.y;
+      // Apply quiz lift if active
       if (quizLiftIndexValue === index) {
-        y += quizLiftValue;
+        posY += quizLiftValue;
       }
-      y = Math.max(baseY, y);
+      posY = Math.max(baseY, posY);
 
-      card.position.set(position.x, y, position.z);
-      card.rotation.set(0, yaw, 0);
+      card.position.set(posX, posY, posZ);
+      card.rotation.set(rotX, 0, 0);
       const scale = quizLiftIndexValue === index ? 1.02 : 1;
       card.scale.set(scale, scale, scale);
 
       const text = textRefs.current[index];
       if (text) {
-        text.visible = playing;
+        // Text only visible after flip completes
+        text.visible = playing && t >= flipEnd;
 
         // Intro highlight animation: after card lands, pop numeral up and color yellow
-        const introStart = end;
-        const introEnd = end + introHighlightDuration;
+        const introStart = travelEnd;
+        const introEnd = travelEnd + introHighlightDuration;
         const inIntro = t >= introStart && t < introEnd;
         const introProgress = inIntro ? clamp01((t - introStart) / introHighlightDuration) : 0;
 
@@ -279,15 +302,15 @@ function SandpaperNumeralsContent({
         const material = text.material as THREE.MeshStandardMaterial;
         if (material?.color) {
           if (inIntro) {
-            // Bright yellow during intro, with top-to-bottom reveal effect
-            // Use progress to blend from white to yellow and back
+            // Bright yellow #F0CE02 during intro
+            // F0CE02 in normalized RGB: (240/255, 206/255, 2/255) = (0.94, 0.81, 0.008)
             const yellowIntensity = Math.sin(introProgress * Math.PI); // 0 -> 1 -> 0
-            const r = lerp(1, 1, yellowIntensity);      // stays at 1
-            const g = lerp(1, 0.9, yellowIntensity);    // slight reduction
-            const b = lerp(1, 0.2, yellowIntensity);    // drops to yellow
+            const r = lerp(1, 0.94, yellowIntensity);
+            const g = lerp(1, 0.81, yellowIntensity);
+            const b = lerp(1, 0.008, yellowIntensity);
             material.color.setRGB(r, g, b);
             material.emissive.setRGB(r, g, b);
-            material.emissiveIntensity = 0.3 + yellowIntensity * 0.5;
+            material.emissiveIntensity = 0.3 + yellowIntensity * 0.6;
           } else {
             material.color.set("#ffffff");
             material.emissive.set("#ffffff");
