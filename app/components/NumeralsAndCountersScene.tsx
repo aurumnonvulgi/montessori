@@ -602,14 +602,23 @@ function NumeralsAndCountersContent({
       const cardY = 0.04;
       const cardZ = -0.2;
 
-      // Card slide animation
+      // Card slide animation with lift-over-land arc
       const slideRange = timeline.map[`card${numeral}Slide`];
       if (slideRange) {
         const slideProgress = smoothstep(clamp01((t - slideRange.start) / (slideRange.end - slideRange.start)));
         const startX = -4;
         const currentX = lerp(startX, finalX, slideProgress);
+
+        // Arc motion: lift up, stay elevated, then land
+        // Use a parabola that peaks in the middle of the slide
+        const liftHeight = 0.5; // How high the card lifts
+        const arcProgress = slideProgress; // 0 to 1
+        // Parabola: 4 * p * (1 - p) gives 0 at start, 1 at middle, 0 at end
+        const arc = 4 * arcProgress * (1 - arcProgress);
+        const currentY = cardY + (liftHeight * arc);
+
         card.position.x = currentX;
-        card.position.y = cardY;
+        card.position.y = currentY;
         card.position.z = cardZ;
         card.visible = t >= slideRange.start - 0.1;
       }
