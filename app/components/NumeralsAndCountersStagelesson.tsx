@@ -81,17 +81,25 @@ export default function NumeralsAndCountersStageLesson({
   const [confettiVisible, setConfettiVisible] = useState(false);
   const [fadeOut, setFadeOut] = useState(false);
   const [isPortraitMobile, setIsPortraitMobile] = useState(false);
+  const [isMobileLandscape, setIsMobileLandscape] = useState(false);
   const fadeTimerRef = useRef<number | null>(null);
   const advanceTimerRef = useRef<number | null>(null);
 
-  // Detect portrait orientation on mobile and try to lock to landscape
+  // Detect orientation on mobile
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     const checkOrientation = () => {
-      const isMobile = window.innerWidth < 640 || window.innerHeight < 640;
-      const isPortrait = window.innerHeight > window.innerWidth;
-      setIsPortraitMobile(isMobile && isPortrait);
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      const isLandscape = width > height;
+      // Mobile landscape: height is small (< 500px) and in landscape orientation
+      const mobileLandscape = height < 500 && isLandscape;
+      // Mobile portrait: small screen in portrait
+      const mobilePortrait = (width < 640 || height < 500) && !isLandscape;
+
+      setIsMobileLandscape(mobileLandscape);
+      setIsPortraitMobile(mobilePortrait);
     };
 
     // Try to lock to landscape on mobile
@@ -213,63 +221,67 @@ export default function NumeralsAndCountersStageLesson({
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-[radial-gradient(circle_at_top,#f5efe6_0%,#fdfbf8_45%,#f7efe4_100%)]">
-      {/* Mobile: Right sidebar */}
-      <div className="fixed right-0 top-0 z-10 flex h-full w-12 flex-col items-center justify-center gap-4 bg-white/80 shadow-lg backdrop-blur-sm sm:hidden">
-        {!lessonStarted ? (
+      {/* Mobile landscape: Right sidebar */}
+      {isMobileLandscape && (
+        <div className="fixed right-0 top-0 z-10 flex h-full w-12 flex-col items-center justify-center gap-4 bg-white/80 shadow-lg backdrop-blur-sm">
+          {!lessonStarted ? (
+            <button
+              type="button"
+              onClick={startLesson}
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-[#cf5f5f] text-white shadow-md transition hover:bg-[#c15454]"
+              aria-label="Start"
+            >
+              <PlayIcon />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={restartLesson}
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-stone-200 text-stone-600 shadow-md transition hover:bg-stone-300"
+              aria-label="Restart"
+            >
+              <RestartIcon />
+            </button>
+          )}
           <button
             type="button"
-            onClick={startLesson}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-[#cf5f5f] text-white shadow-md transition hover:bg-[#c15454]"
-            aria-label="Start"
-          >
-            <PlayIcon />
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={restartLesson}
+            onClick={goBack}
             className="flex h-10 w-10 items-center justify-center rounded-full bg-stone-200 text-stone-600 shadow-md transition hover:bg-stone-300"
-            aria-label="Restart"
+            aria-label="Back"
           >
-            <RestartIcon />
+            <BackIcon />
           </button>
-        )}
-        <button
-          type="button"
-          onClick={goBack}
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-stone-200 text-stone-600 shadow-md transition hover:bg-stone-300"
-          aria-label="Back"
-        >
-          <BackIcon />
-        </button>
-        <button
-          type="button"
-          onClick={goHome}
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-stone-200 text-stone-600 shadow-md transition hover:bg-stone-300"
-          aria-label="Home"
-        >
-          <HomeIcon />
-        </button>
-      </div>
+          <button
+            type="button"
+            onClick={goHome}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-stone-200 text-stone-600 shadow-md transition hover:bg-stone-300"
+            aria-label="Home"
+          >
+            <HomeIcon />
+          </button>
+        </div>
+      )}
 
       {/* Main content */}
-      <main className="flex h-full flex-col pr-12 sm:pr-0">
-        {/* Desktop header */}
-        <div className="hidden items-center justify-between px-6 py-4 sm:flex sm:px-10">
-          <button
-            onClick={goBack}
-            className="text-sm text-stone-500 hover:text-stone-700"
-          >
-            ← Back
-          </button>
-          <div className="flex items-center gap-3 text-[10px] uppercase tracking-[0.3em] text-stone-400">
-            <span>Lesson {stageIndex + 1}</span>
-            <span>{STAGE_NAMES[stageIndex]}</span>
+      <main className={`flex h-full flex-col ${isMobileLandscape ? "pr-12" : ""}`}>
+        {/* Desktop header - hidden on mobile landscape */}
+        {!isMobileLandscape && (
+          <div className="flex items-center justify-between px-6 py-4 sm:px-10">
+            <button
+              onClick={goBack}
+              className="text-sm text-stone-500 hover:text-stone-700"
+            >
+              ← Back
+            </button>
+            <div className="flex items-center gap-3 text-[10px] uppercase tracking-[0.3em] text-stone-400">
+              <span>Lesson {stageIndex + 1}</span>
+              <span>{STAGE_NAMES[stageIndex]}</span>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Scene container - fills available space */}
-        <div className="flex-1 px-2 pb-2 sm:px-6 sm:pb-4">
+        <div className={`flex-1 ${isMobileLandscape ? "p-1" : "px-2 pb-2 sm:px-6 sm:pb-4"}`}>
           <NumeralsAndCountersScene
             key={resetKey}
             playing={lessonStarted}
@@ -280,26 +292,28 @@ export default function NumeralsAndCountersStageLesson({
           />
         </div>
 
-        {/* Desktop bottom button */}
-        <div className="hidden px-6 pb-6 sm:block sm:px-10">
-          {!lessonStarted ? (
-            <button
-              type="button"
-              onClick={startLesson}
-              className="w-full rounded-3xl bg-[#cf5f5f] py-4 text-sm font-semibold uppercase tracking-[0.25em] text-white shadow-lg transition hover:bg-[#c15454]"
-            >
-              Start
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={restartLesson}
-              className="w-full rounded-3xl bg-stone-200 py-4 text-sm font-semibold uppercase tracking-[0.25em] text-stone-700 shadow-lg transition hover:bg-stone-300"
-            >
-              Restart
-            </button>
-          )}
-        </div>
+        {/* Desktop bottom button - hidden on mobile landscape */}
+        {!isMobileLandscape && (
+          <div className="hidden px-6 pb-6 sm:block sm:px-10">
+            {!lessonStarted ? (
+              <button
+                type="button"
+                onClick={startLesson}
+                className="w-full rounded-3xl bg-[#cf5f5f] py-4 text-sm font-semibold uppercase tracking-[0.25em] text-white shadow-lg transition hover:bg-[#c15454]"
+              >
+                Start
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={restartLesson}
+                className="w-full rounded-3xl bg-stone-200 py-4 text-sm font-semibold uppercase tracking-[0.25em] text-stone-700 shadow-lg transition hover:bg-stone-300"
+              >
+                Restart
+              </button>
+            )}
+          </div>
+        )}
       </main>
 
       {confettiVisible ? (

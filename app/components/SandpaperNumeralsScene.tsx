@@ -12,6 +12,7 @@ type SandpaperNumeralsSceneProps = {
   voiceEnabled: boolean;
   className?: string;
   onLessonComplete?: () => void;
+  isMobile?: boolean;
 };
 
 type QuizPhase = "click" | "name" | null;
@@ -407,6 +408,7 @@ export default function SandpaperNumeralsScene({
   voiceEnabled,
   className,
   onLessonComplete,
+  isMobile = false,
 }: SandpaperNumeralsSceneProps) {
   useEffect(() => {
     primeSpeechVoices();
@@ -654,16 +656,23 @@ export default function SandpaperNumeralsScene({
     };
   }, []);
 
+  // Mobile: zoom out more, lower camera angle to show full cards
   const cameraPosition = useMemo(
-    () => [0, 1.35, 1.75] as [number, number, number],
-    [],
+    () => (isMobile
+      ? [0, 0.9, 1.6] as [number, number, number]  // Mobile: lower Y, pull back
+      : [0, 1.35, 1.75] as [number, number, number]  // Desktop
+    ),
+    [isMobile],
   );
+
+  const cameraFov = isMobile ? 45 : 28; // Wider FOV on mobile
+  const orbitTarget: [number, number, number] = isMobile ? [0, 0, 0.15] : [0, 0, 0.3];
 
   return (
     <div
-      className={`w-full overflow-hidden rounded-[28px] bg-[#f7efe4] ${className ?? "h-[420px]"}`}
+      className={`w-full overflow-hidden ${isMobile ? "" : "rounded-[28px]"} bg-[#f7efe4] ${className ?? "h-[420px]"}`}
     >
-      <Canvas shadows camera={{ position: cameraPosition, fov: 28 }}>
+      <Canvas shadows camera={{ position: cameraPosition, fov: cameraFov }}>
         <color attach="background" args={["#f7efe4"]} />
         <SandpaperNumeralsContent
           playing={playing}
@@ -676,7 +685,7 @@ export default function SandpaperNumeralsScene({
           enablePan={false}
           enableZoom
           maxPolarAngle={Math.PI / 2.1}
-          target={[0, 0, 0.3]}
+          target={orbitTarget}
           minAzimuthAngle={-(Math.PI * 65) / 180}
           maxAzimuthAngle={(Math.PI * 65) / 180}
           minDistance={2.2}
