@@ -136,13 +136,30 @@ export default function NumeralsAndCountersStageLesson({
     }
   }, []);
 
+  const requestFullscreen = useCallback(() => {
+    if (typeof document === "undefined") return;
+    const elem = document.documentElement;
+    try {
+      if (elem.requestFullscreen) {
+        elem.requestFullscreen().catch(() => {});
+      } else if ((elem as any).webkitRequestFullscreen) {
+        (elem as any).webkitRequestFullscreen();
+      }
+    } catch {
+      // Fullscreen not supported - that's fine
+    }
+  }, []);
+
   const startLesson = useCallback(() => {
     clearConfettiTimers();
     setLessonStarted(true);
     setResetKey((value) => value + 1);
     setConfettiVisible(false);
     setFadeOut(false);
-  }, [clearConfettiTimers]);
+
+    // Request fullscreen on mobile
+    requestFullscreen();
+  }, [clearConfettiTimers, requestFullscreen]);
 
   const restartLesson = useCallback(() => {
     setLessonStarted(false);

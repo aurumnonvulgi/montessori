@@ -119,6 +119,20 @@ export default function NumberRodsStageLesson({
     }
   }, []);
 
+  const requestFullscreen = useCallback(() => {
+    if (typeof document === "undefined") return;
+    const elem = document.documentElement;
+    try {
+      if (elem.requestFullscreen) {
+        elem.requestFullscreen().catch(() => {});
+      } else if ((elem as any).webkitRequestFullscreen) {
+        (elem as any).webkitRequestFullscreen();
+      }
+    } catch {
+      // Fullscreen not supported - that's fine
+    }
+  }, []);
+
   const startLesson = useCallback(() => {
     clearConfettiTimers();
     setLessonStarted(true);
@@ -126,13 +140,16 @@ export default function NumberRodsStageLesson({
     setConfettiVisible(false);
     setFadeOut(false);
 
+    // Request fullscreen on mobile
+    requestFullscreen();
+
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       const utterance = new SpeechSynthesisUtterance(" ");
       utterance.volume = 0;
       window.speechSynthesis.cancel();
       window.speechSynthesis.speak(utterance);
     }
-  }, [clearConfettiTimers]);
+  }, [clearConfettiTimers, requestFullscreen]);
 
   const restartLesson = useCallback(() => {
     setLessonStarted(false);

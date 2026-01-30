@@ -1,0 +1,22 @@
+{
+  "name": "Montessori Studio",
+  "short_name": "Montessori",
+  "description": "A playful Montessori materials lab with 3D learning",
+  "start_url": "/",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#f5efe6",
+  "theme_color": "#f5efe6",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

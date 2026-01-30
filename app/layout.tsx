@@ -15,6 +15,15 @@ const manrope = Manrope({
 export const metadata: Metadata = {
   title: "Montessori Studio",
   description: "A playful Montessori materials lab with 3D learning.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Montessori",
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+  },
 };
 
 export default function RootLayout({
@@ -24,6 +33,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <meta name="theme-color" content="#f5efe6" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+      </head>
       <body className={`${fraunces.variable} ${manrope.variable} antialiased`}>
         {children}
       </body>
