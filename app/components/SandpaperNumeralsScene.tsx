@@ -22,7 +22,7 @@ const cardSize = { width: 0.36, height: 0.46, thickness: 0.03 };
 const baseY = cardSize.thickness / 2;
 const flipDuration = 0.8; // Duration for card to flip
 const travelDuration = 1.6; // Duration for card to travel to position
-const slideDelay = 0.4;
+const slideDelay = 2.2; // Delay after card lands and name is spoken before next card
 const introHighlightDuration = 1.2; // Duration of the yellow highlight after landing
 const introLiftHeight = 0.03; // How much the numeral lifts during intro (doubled)
 const arcHeight = 0.25; // How high cards lift during travel
@@ -183,7 +183,7 @@ function SandpaperNumeralsContent({
         card.scale.set(1, 1, 1);
         const text = textRefs.current[index];
         if (text) {
-          text.visible = false; // Hidden when face-down
+          text.visible = true; // Always visible - 3D rotation handles visibility
           text.position.set(0, textSurfaceY, 0);
           const material = text.material as THREE.MeshStandardMaterial;
           if (material?.color) {
@@ -286,8 +286,8 @@ function SandpaperNumeralsContent({
 
       const text = textRefs.current[index];
       if (text) {
-        // Text only visible after flip completes
-        text.visible = playing && t >= flipEnd;
+        // Text always visible - 3D rotation handles showing/hiding as card flips
+        text.visible = true;
 
         // Intro highlight animation: after card lands, pop numeral up and color yellow
         const introStart = travelEnd;

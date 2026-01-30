@@ -10,6 +10,17 @@ type NumeralsAndCountersStageProps = {
 
 const STAGE_NAMES = ["1, 2, 3", "4, 5, 6", "7, 8, 9", "10"];
 
+function RotateDeviceIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-16 w-16 animate-pulse">
+      <rect x="4" y="2" width="16" height="20" rx="2" />
+      <path d="M12 18h.01" />
+      <path d="M2 12l2-2m0 0l2 2m-2-2v4" />
+      <path d="M22 12l-2 2m0 0l-2-2m2 2v-4" />
+    </svg>
+  );
+}
+
 function PlayIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6">
@@ -69,8 +80,50 @@ export default function NumeralsAndCountersStageLesson({
   const [resetKey, setResetKey] = useState(0);
   const [confettiVisible, setConfettiVisible] = useState(false);
   const [fadeOut, setFadeOut] = useState(false);
+  const [isPortraitMobile, setIsPortraitMobile] = useState(false);
   const fadeTimerRef = useRef<number | null>(null);
   const advanceTimerRef = useRef<number | null>(null);
+
+  // Detect portrait orientation on mobile and try to lock to landscape
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const checkOrientation = () => {
+      const isMobile = window.innerWidth < 640 || window.innerHeight < 640;
+      const isPortrait = window.innerHeight > window.innerWidth;
+      setIsPortraitMobile(isMobile && isPortrait);
+    };
+
+    // Try to lock to landscape on mobile
+    const lockLandscape = async () => {
+      try {
+        if (screen.orientation && "lock" in screen.orientation) {
+          await (screen.orientation as any).lock("landscape");
+        }
+      } catch {
+        // Orientation lock not supported or denied - that's fine
+      }
+    };
+
+    checkOrientation();
+    lockLandscape();
+
+    window.addEventListener("resize", checkOrientation);
+    window.addEventListener("orientationchange", checkOrientation);
+
+    return () => {
+      window.removeEventListener("resize", checkOrientation);
+      window.removeEventListener("orientationchange", checkOrientation);
+      // Unlock orientation on unmount
+      try {
+        if (screen.orientation && "unlock" in screen.orientation) {
+          (screen.orientation as any).unlock();
+        }
+      } catch {
+        // ignore
+      }
+    };
+  }, []);
 
   const clearConfettiTimers = useCallback(() => {
     if (fadeTimerRef.current) {
@@ -242,6 +295,19 @@ export default function NumeralsAndCountersStageLesson({
           </div>
         </div>
       ) : null}
+
+      {/* Portrait orientation overlay for mobile */}
+      {isPortraitMobile && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 bg-[#f5efe6]/95 backdrop-blur-sm">
+          <RotateDeviceIcon />
+          <p className="font-display text-xl text-stone-700">
+            Please rotate your device
+          </p>
+          <p className="text-sm text-stone-500">
+            This lesson works best in landscape mode
+          </p>
+        </div>
+      )}
     </div>
   );
 }
