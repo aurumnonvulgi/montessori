@@ -562,6 +562,15 @@ export default function SandpaperNumeralsScene({
 
   useEffect(() => {
     if (currentTarget === null || !voiceEnabled || quizPhase === null) {
+      // Stop recognition when quiz phase ends
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {
+          // ignore
+        }
+        recognitionRef.current = null;
+      }
       return;
     }
     const promptKey = `${quizPhase}-${currentTarget}`;

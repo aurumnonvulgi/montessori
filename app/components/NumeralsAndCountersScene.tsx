@@ -450,7 +450,18 @@ function NumeralsAndCountersContent({
 
   // Voice prompts for quiz phases
   useEffect(() => {
-    if (currentTarget === null || !voiceEnabled || quizPhase === null) return;
+    if (currentTarget === null || !voiceEnabled || quizPhase === null) {
+      // Stop recognition when quiz phase ends
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {
+          // ignore
+        }
+        recognitionRef.current = null;
+      }
+      return;
+    }
 
     const promptKey = `${quizPhase}-${currentTarget}`;
     if (promptRef.current[promptKey]) return;
