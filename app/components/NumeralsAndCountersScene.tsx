@@ -782,8 +782,8 @@ function NumeralsAndCountersContent({
         minAzimuthAngle={-Math.PI / 4}
         maxAzimuthAngle={Math.PI / 4}
         target={[0, 0, 0.3]}
-        minDistance={2.0}
-        maxDistance={6.5}
+        minDistance={3.0}
+        maxDistance={5.0}
       />
     </>
   );

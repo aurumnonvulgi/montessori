@@ -829,8 +829,8 @@ export default function NumberRodsScene({
           minAzimuthAngle={-Math.PI / 2}
           maxAzimuthAngle={Math.PI / 2}
           target={[targetX, 0.03, 0]}
-          minDistance={0.85}
-          maxDistance={2}
+          minDistance={1.1}
+          maxDistance={2.2}
         />
       </Canvas>
     </div>

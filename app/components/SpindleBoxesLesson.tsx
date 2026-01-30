@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import SpindleBoxesScene from "./SpindleBoxesScene";
+import { primeSounds } from "../lib/sounds";
 
 function RotateDeviceIcon() {
   return (
@@ -129,6 +130,10 @@ export default function SpindleBoxesLesson() {
     setConfettiVisible(false);
     setFadeOut(false);
     requestFullscreen();
+
+    // Prime audio for mobile browsers
+    primeSounds();
+
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       const utterance = new SpeechSynthesisUtterance(" ");
       utterance.volume = 0;

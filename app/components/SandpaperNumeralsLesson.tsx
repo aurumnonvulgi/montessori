@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import SandpaperNumeralsScene from "./SandpaperNumeralsScene";
+import { primeSounds } from "../lib/sounds";
 
 function RotateDeviceIcon() {
   return (
@@ -142,6 +143,9 @@ export default function SandpaperNumeralsLesson() {
 
     // Request fullscreen on mobile
     requestFullscreen();
+
+    // Prime audio for mobile browsers
+    primeSounds();
 
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       const utterance = new SpeechSynthesisUtterance(" ");
@@ -301,6 +305,13 @@ export default function SandpaperNumeralsLesson() {
           <p className="text-sm text-stone-500">
             This lesson works best in landscape mode
           </p>
+          <button
+            type="button"
+            onClick={goBack}
+            className="mt-4 rounded-full bg-stone-200 px-6 py-2 text-sm text-stone-600 shadow-md transition hover:bg-stone-300"
+          >
+            Go Back
+          </button>
         </div>
       )}
     </div>
