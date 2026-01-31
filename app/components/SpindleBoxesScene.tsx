@@ -13,6 +13,7 @@ type SpindleBoxesSceneProps = {
   className?: string;
   onLessonComplete?: () => void;
   isMobile?: boolean;
+  stageIndex?: number; // 0 = numerals 0-4, 1 = numerals 5-9, undefined = all
 };
 
 type LessonPhase = "idle" | "naming" | "counting" | "zero" | "complete";
@@ -39,17 +40,33 @@ const BASKET_1_POS = new THREE.Vector3(-0.5, 0, -0.35);
 const BASKET_2_POS = new THREE.Vector3(0.5, 0, -0.35);
 const RUBBER_BAND_POS = new THREE.Vector3(0, 0, -0.35);
 
-const getCompartmentPosition = (numeral: number): THREE.Vector3 => {
-  const boxPos = numeral < 5 ? BOX_A_POS : BOX_B_POS;
-  const localIndex = numeral < 5 ? numeral : numeral - 5;
+const getCompartmentPosition = (numeral: number, stageIndex?: number): THREE.Vector3 => {
+  // When showing a single box, it's centered at (0, 0, 0.1)
+  let boxPos: THREE.Vector3;
+  let localIndex: number;
+
+  if (stageIndex === 0) {
+    // Stage 1: only box A, centered
+    boxPos = new THREE.Vector3(0, 0, 0.1);
+    localIndex = numeral;
+  } else if (stageIndex === 1) {
+    // Stage 2: only box B, centered
+    boxPos = new THREE.Vector3(0, 0, 0.1);
+    localIndex = numeral - 5;
+  } else {
+    // Full lesson: both boxes in original positions
+    boxPos = numeral < 5 ? BOX_A_POS : BOX_B_POS;
+    localIndex = numeral < 5 ? numeral : numeral - 5;
+  }
+
   const x = boxPos.x + (localIndex - 2) * COMPARTMENT_WIDTH;
   const y = BOX_HEIGHT / 2 + 0.01;
   const z = boxPos.z;
   return new THREE.Vector3(x, y, z);
 };
 
-const getStagingPosition = (numeral: number, spindleIndex: number, total: number): THREE.Vector3 => {
-  const compPos = getCompartmentPosition(numeral);
+const getStagingPosition = (numeral: number, spindleIndex: number, total: number, stageIndex?: number): THREE.Vector3 => {
+  const compPos = getCompartmentPosition(numeral, stageIndex);
   const spacing = 0.03;
   const startX = compPos.x - ((total - 1) * spacing) / 2;
   return new THREE.Vector3(startX + spindleIndex * spacing, SPINDLE_RADIUS + 0.01, compPos.z + BOX_DEPTH / 2 + 0.08);
@@ -155,28 +172,37 @@ function SpindleBundle({ position, count, hasRubberBand }: { position: THREE.Vec
   );
 }
 
-function SpindleBoxesContent({ playing, voiceEnabled, onComplete }: { playing: boolean; voiceEnabled: boolean; onComplete?: () => void }) {
+function SpindleBoxesContent({ playing, voiceEnabled, onComplete, stageIndex }: { playing: boolean; voiceEnabled: boolean; onComplete?: () => void; stageIndex?: number }) {
+  // Determine which numerals to use based on stage
+  const stageNumerals = stageIndex === 0 ? [0, 1, 2, 3, 4] : stageIndex === 1 ? [5, 6, 7, 8, 9] : [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+  const startNumeral = stageNumerals[0];
+  const endNumeral = stageNumerals[stageNumerals.length - 1];
+  const firstCountingNumeral = stageIndex === 1 ? 5 : 1; // Stage 2 starts counting at 5, stage 1 and full lesson at 1
+
+  // Calculate total spindles needed for this stage
+  const totalSpindlesNeeded = stageNumerals.reduce((sum, n) => sum + n, 0);
+
   const [phase, setPhase] = useState<LessonPhase>("idle");
-  const [namingIndex, setNamingIndex] = useState(0);
-  const [countingNumeral, setCountingNumeral] = useState(1);
+  const [namingIndex, setNamingIndex] = useState(startNumeral);
+  const [countingNumeral, setCountingNumeral] = useState(firstCountingNumeral);
   const [stagedSpindles, setStagedSpindles] = useState<number[]>([]);
   const [placedBundles, setPlacedBundles] = useState<Record<number, number>>({});
   const [rubberBandsUsed, setRubberBandsUsed] = useState(0);
-  const [basket1Count, setBasket1Count] = useState(10);
-  const [basket2Count, setBasket2Count] = useState(35);
+  const [basket1Count, setBasket1Count] = useState(stageIndex === 1 ? 0 : 10);
+  const [basket2Count, setBasket2Count] = useState(stageIndex === 0 ? 0 : stageIndex === 1 ? 35 : 35);
   const [highlightedNumeral, setHighlightedNumeral] = useState<number | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
-  
+
   const phaseTimerRef = useRef<number | null>(null);
   const spokenRef = useRef<Record<string, boolean>>({});
 
   useEffect(() => {
     if (playing && phase === "idle") {
       setPhase("naming");
-      setNamingIndex(0);
+      setNamingIndex(startNumeral);
       spokenRef.current = {};
     }
-  }, [playing, phase]);
+  }, [playing, phase, startNumeral]);
 
   useEffect(() => {
     if (phase !== "naming" || !voiceEnabled) return;
@@ -187,16 +213,17 @@ function SpindleBoxesContent({ playing, voiceEnabled, onComplete }: { playing: b
     const text = namingIndex === 0 ? "This is zero." : NUMERAL_WORDS[namingIndex] + ".";
     speakWithPreferredVoice(text, { rate: 0.85, pitch: 0.95 });
     phaseTimerRef.current = window.setTimeout(() => {
-      if (namingIndex < 9) {
+      if (namingIndex < endNumeral) {
         setNamingIndex(namingIndex + 1);
       } else {
         setHighlightedNumeral(null);
+        // For stage 1 (0-4), go to counting at 1. For stage 2 (5-9), go to counting at 5. For full, start at 1.
         setPhase("counting");
-        setCountingNumeral(1);
+        setCountingNumeral(firstCountingNumeral);
       }
     }, 2000);
     return () => { if (phaseTimerRef.current) clearTimeout(phaseTimerRef.current); };
-  }, [phase, namingIndex, voiceEnabled]);
+  }, [phase, namingIndex, voiceEnabled, endNumeral, firstCountingNumeral]);
 
   useEffect(() => {
     if (phase !== "counting" || !voiceEnabled || isAnimating) return;
@@ -232,11 +259,18 @@ function SpindleBoxesContent({ playing, voiceEnabled, onComplete }: { playing: b
         playChime();
         setTimeout(() => {
           setIsAnimating(false);
-          if (countingNumeral < 9) {
+          if (countingNumeral < endNumeral) {
             setCountingNumeral(countingNumeral + 1);
           } else {
-            setPhase("zero");
-            setHighlightedNumeral(0);
+            // Stage 1 (0-4) goes to zero phase, stage 2 (5-9) completes directly
+            if (stageIndex === 1) {
+              setPhase("complete");
+              setHighlightedNumeral(null);
+              if (onComplete) onComplete();
+            } else {
+              setPhase("zero");
+              setHighlightedNumeral(0);
+            }
           }
         }, 1500);
       }, 1000);
@@ -259,56 +293,110 @@ function SpindleBoxesContent({ playing, voiceEnabled, onComplete }: { playing: b
 
   return (
     <group>
-      <ambientLight intensity={0.5} />
-      <directionalLight position={[2, 4, 2]} intensity={1} castShadow shadow-mapSize={[1024, 1024]} />
+      <ambientLight intensity={0.7} />
+      <directionalLight
+        position={[2, 4, 2]}
+        intensity={0.7}
+        castShadow
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
+        shadow-bias={-0.0001}
+        shadow-normalBias={0.02}
+        shadow-radius={12}
+      />
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
         <planeGeometry args={[3, 2]} />
         <meshStandardMaterial color="#e8dfd4" />
       </mesh>
-      <WoodenBox position={BOX_A_POS} numerals={[0, 1, 2, 3, 4]} />
-      <WoodenBox position={BOX_B_POS} numerals={[5, 6, 7, 8, 9]} />
+      {(stageIndex === undefined || stageIndex === 0) && (
+        <WoodenBox position={stageIndex === 0 ? new THREE.Vector3(0, 0, 0.1) : BOX_A_POS} numerals={[0, 1, 2, 3, 4]} />
+      )}
+      {(stageIndex === undefined || stageIndex === 1) && (
+        <WoodenBox position={stageIndex === 1 ? new THREE.Vector3(0, 0, 0.1) : BOX_B_POS} numerals={[5, 6, 7, 8, 9]} />
+      )}
       {highlightedNumeral !== null && (
-        <mesh position={getCompartmentPosition(highlightedNumeral).clone().add(new THREE.Vector3(0, 0.08, 0))}>
+        <mesh position={getCompartmentPosition(highlightedNumeral, stageIndex).clone().add(new THREE.Vector3(0, 0.08, 0))}>
           <ringGeometry args={[0.04, 0.05, 32]} />
           <meshBasicMaterial color="#ffe066" transparent opacity={0.8} />
         </mesh>
       )}
-      <Basket position={BASKET_1_POS} />
-      <Basket position={BASKET_2_POS} />
+      {/* Baskets - positioned based on stage */}
+      {(stageIndex === undefined || stageIndex === 0) && basket1Count > 0 && (
+        <Basket position={stageIndex === 0 ? new THREE.Vector3(-0.35, 0, -0.25) : BASKET_1_POS} />
+      )}
+      {(stageIndex === undefined || stageIndex === 1) && basket2Count > 0 && (
+        <Basket position={stageIndex === 1 ? new THREE.Vector3(0.35, 0, -0.25) : BASKET_2_POS} />
+      )}
       {phase === "counting" && !isAnimating && (basket1Count > 0 || basket2Count > 0) && (
         <group>
           {basket1Count > 0 && (
-            <Spindle position={new THREE.Vector3(BASKET_1_POS.x, BASKET_HEIGHT + SPINDLE_RADIUS, BASKET_1_POS.z)} isHighlighted={true} onClick={handleSpindlePickup} />
+            <Spindle
+              position={new THREE.Vector3(
+                stageIndex === 0 ? -0.35 : BASKET_1_POS.x,
+                BASKET_HEIGHT + SPINDLE_RADIUS,
+                stageIndex === 0 ? -0.25 : BASKET_1_POS.z
+              )}
+              isHighlighted={true}
+              onClick={handleSpindlePickup}
+            />
           )}
           {basket1Count === 0 && basket2Count > 0 && (
-            <Spindle position={new THREE.Vector3(BASKET_2_POS.x, BASKET_HEIGHT + SPINDLE_RADIUS, BASKET_2_POS.z)} isHighlighted={true} onClick={handleSpindlePickup} />
+            <Spindle
+              position={new THREE.Vector3(
+                stageIndex === 1 ? 0.35 : BASKET_2_POS.x,
+                BASKET_HEIGHT + SPINDLE_RADIUS,
+                stageIndex === 1 ? -0.25 : BASKET_2_POS.z
+              )}
+              isHighlighted={true}
+              onClick={handleSpindlePickup}
+            />
           )}
         </group>
       )}
       {stagedSpindles.map((_, index) => (
-        <Spindle key={index} position={getStagingPosition(countingNumeral, index, stagedSpindles.length)} />
+        <Spindle key={index} position={getStagingPosition(countingNumeral, index, stagedSpindles.length, stageIndex)} />
       ))}
       {Object.entries(placedBundles).map(([numeral, count]) => (
-        <SpindleBundle key={numeral} position={getCompartmentPosition(parseInt(numeral))} count={count} hasRubberBand={parseInt(numeral) >= 2} />
+        <SpindleBundle key={numeral} position={getCompartmentPosition(parseInt(numeral), stageIndex)} count={count} hasRubberBand={parseInt(numeral) >= 2} />
       ))}
-      <RubberBandContainer position={RUBBER_BAND_POS} count={9 - rubberBandsUsed} />
+      <RubberBandContainer
+        position={stageIndex !== undefined ? new THREE.Vector3(0, 0, -0.25) : RUBBER_BAND_POS}
+        count={stageIndex === 0 ? 3 - rubberBandsUsed : stageIndex === 1 ? 5 - rubberBandsUsed : 9 - rubberBandsUsed}
+      />
     </group>
   );
 }
 
 
-export default function SpindleBoxesScene({ playing, voiceEnabled, className, onLessonComplete, isMobile = false }: SpindleBoxesSceneProps) {
+export default function SpindleBoxesScene({ playing, voiceEnabled, className, onLessonComplete, isMobile = false, stageIndex }: SpindleBoxesSceneProps) {
   useEffect(() => { primeSpeechVoices(); }, []);
 
-  const cameraPosition = useMemo(() => (isMobile ? [0, 0.6, 0.9] : [0, 0.8, 1.1]) as [number, number, number], [isMobile]);
+  // For single-box stages, adjust camera to center on the relevant box
+  const cameraPosition = useMemo(() => {
+    if (stageIndex === 0) {
+      // Center on left box (0-4)
+      return isMobile ? [-0.25, 0.5, 0.8] : [-0.25, 0.7, 1.0];
+    } else if (stageIndex === 1) {
+      // Center on right box (5-9)
+      return isMobile ? [0.25, 0.5, 0.8] : [0.25, 0.7, 1.0];
+    }
+    return isMobile ? [0, 0.6, 0.9] : [0, 0.8, 1.1];
+  }, [isMobile, stageIndex]) as [number, number, number];
+
+  const cameraTarget = useMemo(() => {
+    if (stageIndex === 0) return [-0.25, 0.05, 0];
+    if (stageIndex === 1) return [0.25, 0.05, 0];
+    return [0, 0.05, 0];
+  }, [stageIndex]) as [number, number, number];
+
   const cameraFov = isMobile ? 50 : 40;
 
   return (
     <div className={`w-full overflow-hidden ${isMobile ? "" : "rounded-[28px]"} bg-[#f7efe4] ${className ?? "h-[420px]"}`}>
       <Canvas shadows camera={{ position: cameraPosition, fov: cameraFov }}>
         <color attach="background" args={["#f7efe4"]} />
-        <SpindleBoxesContent playing={playing} voiceEnabled={voiceEnabled} onComplete={onLessonComplete} />
-        <OrbitControls enablePan={false} enableZoom maxPolarAngle={Math.PI / 2.1} minDistance={0.5} maxDistance={2} target={[0, 0.05, 0]} />
+        <SpindleBoxesContent playing={playing} voiceEnabled={voiceEnabled} onComplete={onLessonComplete} stageIndex={stageIndex} />
+        <OrbitControls enablePan={false} enableZoom maxPolarAngle={Math.PI / 2.1} minAzimuthAngle={-Math.PI / 4} maxAzimuthAngle={Math.PI / 4} minDistance={0.5} maxDistance={2} target={cameraTarget} />
       </Canvas>
     </div>
   );

@@ -331,18 +331,18 @@ function SandpaperNumeralsContent({
 
   return (
     <group>
-      <ambientLight intensity={0.6} />
+      <ambientLight intensity={0.7} />
       <directionalLight
         position={[2, 2.4, 1.4]}
-        intensity={0.9}
+        intensity={0.7}
         castShadow
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
-        shadow-bias={-0.0002}
-        shadow-normalBias={0.01}
-        shadow-radius={6}
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
+        shadow-bias={-0.0001}
+        shadow-normalBias={0.02}
+        shadow-radius={12}
       />
-      <directionalLight position={[-2.4, 2, -1.2]} intensity={0.2} />
+      <directionalLight position={[-2.4, 2, -1.2]} intensity={0.3} />
 
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
         <planeGeometry args={[2.6, 1.9]} />
@@ -686,8 +686,8 @@ export default function SandpaperNumeralsScene({
           enableZoom
           maxPolarAngle={Math.PI / 2.1}
           target={orbitTarget}
-          minAzimuthAngle={-(Math.PI * 65) / 180}
-          maxAzimuthAngle={(Math.PI * 65) / 180}
+          minAzimuthAngle={-Math.PI / 4}
+          maxAzimuthAngle={Math.PI / 4}
           minDistance={2.2}
           maxDistance={3.6}
         />

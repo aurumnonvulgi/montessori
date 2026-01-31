@@ -56,6 +56,23 @@ function RestartIcon() {
   );
 }
 
+const CompletionCheck = () => (
+  <div className="flex h-full items-center justify-center">
+    <div className="flex h-32 w-32 items-center justify-center rounded-full bg-white/85 shadow-lg">
+      <svg viewBox="0 0 120 120" className="h-20 w-20">
+        <path
+          d="M18 64l28 28 56-62"
+          fill="none"
+          stroke="#f2c94c"
+          strokeWidth="14"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </div>
+  </div>
+);
+
 export default function NumberRodsStageLesson({
   stageIndex,
 }: NumberRodsStageProps) {
@@ -130,6 +147,10 @@ export default function NumberRodsStageLesson({
 
   const requestFullscreen = useCallback(() => {
     if (typeof document === "undefined") return;
+    // Only request fullscreen on mobile
+    const isMobile = window.innerHeight < 500 || window.innerWidth < 640;
+    if (!isMobile) return;
+
     const elem = document.documentElement;
     try {
       if (elem.requestFullscreen) {
@@ -312,11 +333,7 @@ export default function NumberRodsStageLesson({
 
       {confettiVisible ? (
         <div className={`lesson-complete-overlay${fadeOut ? " fade-out" : ""}`}>
-          <div className="lesson-complete-confetti">
-            {Array.from({ length: 16 }).map((_, index) => (
-              <span key={index} className="confetti-piece" />
-            ))}
-          </div>
+          <CompletionCheck />
         </div>
       ) : null}
 

@@ -1,5 +1,5 @@
-import SpindleBoxesLesson from "../../components/SpindleBoxesLesson";
+import SpindleBoxesHub from "../../components/SpindleBoxesHub";
 
 export default function SpindleBoxesPage() {
-  return <SpindleBoxesLesson />;
+  return <SpindleBoxesHub />;
 }

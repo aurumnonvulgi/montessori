@@ -147,6 +147,10 @@ export default function NumeralsAndCountersStageLesson({
 
   const requestFullscreen = useCallback(() => {
     if (typeof document === "undefined") return;
+    // Only request fullscreen on mobile
+    const isMobile = window.innerHeight < 500 || window.innerWidth < 640;
+    if (!isMobile) return;
+
     const elem = document.documentElement;
     try {
       if (elem.requestFullscreen) {
@@ -330,11 +334,6 @@ export default function NumeralsAndCountersStageLesson({
       {confettiVisible ? (
         <div className={`lesson-complete-overlay${fadeOut ? " fade-out" : ""}`}>
           <CompletionCheck />
-          <div className="lesson-complete-confetti">
-            {Array.from({ length: 16 }).map((_, index) => (
-              <span key={index} className="confetti-piece" />
-            ))}
-          </div>
         </div>
       ) : null}
 
