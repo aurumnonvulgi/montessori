@@ -1,126 +1,73 @@
 "use client";
 
-import { useEffect, useState } from "react";
+"use client";
+
+import { useMemo } from "react";
 import NumberRodsScene from "./NumberRodsScene";
 import SandpaperNumeralsPreview from "./SandpaperNumeralsPreview";
 import NumeralsAndCountersPreview from "./NumeralsAndCountersPreview";
 import SpindleBoxesPreview from "./SpindleBoxesPreview";
 
-export default function MontessoriHome() {
-  const [isCompleted, setIsCompleted] = useState(false);
-  const [numeralsAndCountersCompleted, setNumeralsAndCountersCompleted] = useState(false);
-  const [spindleBoxesCompleted, setSpindleBoxesCompleted] = useState(false);
+const previews = [
+  { label: "Number Rods", component: <NumberRodsScene playing={false} voiceEnabled={false} className="h-full" /> },
+  { label: "Sandpaper Numerals", component: <SandpaperNumeralsPreview className="h-full" /> },
+  { label: "Numerals & Counters", component: <NumeralsAndCountersPreview className="h-full" /> },
+  { label: "Spindle Boxes", component: <SpindleBoxesPreview className="h-full" /> },
+];
 
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-    setIsCompleted(window.localStorage.getItem("number-rods-complete") === "true");
-    setNumeralsAndCountersCompleted(
-      window.localStorage.getItem("numerals-and-counters-complete") === "true",
-    );
-    setSpindleBoxesCompleted(
-      window.localStorage.getItem("spindle-boxes-complete") === "true",
-    );
-  }, []);
+function MathematicsPreview() {
+  return (
+    <div className="grid gap-2 sm:gap-3">
+      {previews.map((preview) => (
+        <div
+          key={preview.label}
+          className="pointer-events-none aspect-square w-full overflow-hidden rounded-[18px] border border-stone-100 bg-white/70 shadow-inner"
+        >
+          {preview.component}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default function MontessoriHome() {
+  const subjectHighlights = useMemo(() => ["Counting", "Geometry", "Sequencing"], []);
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,#f5efe6_0%,#fdfbf8_45%,#f7efe4_100%)]">
-      <main className="mx-auto flex w-full max-w-6xl items-center justify-center px-4 py-6 sm:min-h-screen sm:px-10 sm:py-12">
-        <div className="grid w-full gap-4 sm:gap-8 md:grid-cols-2">
-          <a
-            href="/lessons/number-rods"
-            className="group mx-auto w-full max-w-[560px]"
-            aria-label="Open Number Rods lesson"
-          >
-            <div className="relative w-full rounded-[24px] border border-stone-200 bg-white/90 p-4 shadow-[0_30px_80px_-50px_rgba(60,40,20,0.6)] transition hover:-translate-y-1 hover:shadow-[0_40px_90px_-50px_rgba(60,40,20,0.7)] sm:rounded-[40px] sm:p-6">
-              <div className="pointer-events-none aspect-[4/3] w-full rounded-[18px] bg-white/70 sm:aspect-square sm:rounded-[28px]">
-                <NumberRodsScene
-                  playing={false}
-                  voiceEnabled={false}
-                  className="h-full"
-                />
-              </div>
-              <div className="mt-3 text-center sm:mt-6">
-                <span className="font-display text-lg font-semibold text-stone-900 sm:text-2xl">
-                  Number Rods
-                </span>
-                {isCompleted ? (
-                  <div className="mt-1 flex justify-center sm:mt-2">
-                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] uppercase tracking-[0.2em] text-emerald-700 sm:px-3 sm:py-1 sm:text-[10px]">
-                      Completed
-                    </span>
-                  </div>
-                ) : null}
-              </div>
-            </div>
-          </a>
-
-          <a
-            href="/lessons/sandpaper-numerals"
-            className="group mx-auto w-full max-w-[560px]"
-            aria-label="Open Sandpaper Numerals lesson"
-          >
-            <div className="relative w-full rounded-[24px] border border-stone-200 bg-white/90 p-4 shadow-[0_30px_80px_-50px_rgba(60,40,20,0.6)] transition hover:-translate-y-1 hover:shadow-[0_40px_90px_-50px_rgba(60,40,20,0.7)] sm:rounded-[40px] sm:p-6">
-              <div className="pointer-events-none aspect-[4/3] w-full rounded-[18px] bg-white/70 sm:aspect-square sm:rounded-[28px]">
-                <SandpaperNumeralsPreview className="h-full" />
-              </div>
-              <div className="mt-3 text-center sm:mt-6">
-                <span className="font-display text-lg font-semibold text-stone-900 sm:text-2xl">
-                  Sandpaper Numerals
-                </span>
-              </div>
-            </div>
-          </a>
-
-          <a
-            href="/lessons/numerals-and-counters"
-            className="group mx-auto w-full max-w-[560px]"
-            aria-label="Open Numerals and Counters lesson"
-          >
-            <div className="relative w-full rounded-[24px] border border-stone-200 bg-white/90 p-4 shadow-[0_30px_80px_-50px_rgba(60,40,20,0.6)] transition hover:-translate-y-1 hover:shadow-[0_40px_90px_-50px_rgba(60,40,20,0.7)] sm:rounded-[40px] sm:p-6">
-              <div className="pointer-events-none aspect-[4/3] w-full rounded-[18px] bg-white/70 sm:aspect-square sm:rounded-[28px]">
-                <NumeralsAndCountersPreview className="h-full" />
-              </div>
-              <div className="mt-3 text-center sm:mt-6">
-                <span className="font-display text-lg font-semibold text-stone-900 sm:text-2xl">
-                  Numerals and Counters
-                </span>
-                {numeralsAndCountersCompleted ? (
-                  <div className="mt-1 flex justify-center sm:mt-2">
-                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] uppercase tracking-[0.2em] text-emerald-700 sm:px-3 sm:py-1 sm:text-[10px]">
-                      Completed
-                    </span>
-                  </div>
-                ) : null}
-              </div>
-            </div>
-          </a>
-
-          <a
-            href="/lessons/spindle-boxes"
-            className="group mx-auto w-full max-w-[560px]"
-            aria-label="Open Spindle Boxes lesson"
-          >
-            <div className="relative w-full rounded-[24px] border border-stone-200 bg-white/90 p-4 shadow-[0_30px_80px_-50px_rgba(60,40,20,0.6)] transition hover:-translate-y-1 hover:shadow-[0_40px_90px_-50px_rgba(60,40,20,0.7)] sm:rounded-[40px] sm:p-6">
-              <div className="pointer-events-none aspect-[4/3] w-full rounded-[18px] bg-white/70 sm:aspect-square sm:rounded-[28px]">
-                <SpindleBoxesPreview className="h-full" />
-              </div>
-              <div className="mt-3 text-center sm:mt-6">
-                <span className="font-display text-lg font-semibold text-stone-900 sm:text-2xl">
-                  Spindle Boxes
-                </span>
-                {spindleBoxesCompleted ? (
-                  <div className="mt-1 flex justify-center sm:mt-2">
-                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] uppercase tracking-[0.2em] text-emerald-700 sm:px-3 sm:py-1 sm:text-[10px]">
-                      Completed
-                    </span>
-                  </div>
-                ) : null}
-              </div>
-            </div>
-          </a>
+      <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col items-center justify-center px-6 py-12 sm:px-10">
+        <div className="space-y-6 text-center">
+          <p className="text-xs uppercase tracking-[0.4em] text-stone-400">Montessori Studio</p>
+          <h1 className="font-display text-4xl font-semibold text-stone-900 md:text-5xl">A gentle lab for Montessori math</h1>
+          <p className="mx-auto max-w-2xl text-sm text-stone-500">
+            Explore each material at your pace—from Number Rods to Spindle Boxes—while keeping the focus on calm sequencing and hands-on discovery.
+          </p>
         </div>
+
+        <a
+          href="/lessons/mathematics"
+          className="group mt-10 w-full max-w-[760px] rounded-[36px] border border-stone-200 bg-white/90 p-6 shadow-[0_30px_80px_-50px_rgba(60,40,20,0.6)] transition hover:-translate-y-1 hover:shadow-[0_40px_90px_-50px_rgba(60,40,20,0.7)]"
+          aria-label="Open Mathematics hub"
+        >
+          <div className="flex flex-col gap-5 sm:gap-8">
+            <div className="flex flex-col gap-2">
+              <div className="text-xs uppercase tracking-[0.35em] text-stone-400">Subject</div>
+              <h2 className="font-display text-3xl font-semibold text-stone-900">Mathematics</h2>
+              <p className="text-sm text-stone-500">
+                Tap to see the math card that holds every lesson—Number Rods, Spindle Boxes, Sandpaper Numerals, and Numerals & Counters.
+              </p>
+            </div>
+            <MathematicsPreview />
+            <div className="flex flex-wrap gap-2 text-[11px] uppercase tracking-[0.25em] text-stone-500">
+              {subjectHighlights.map((highlight) => (
+                <span key={highlight} className="inline-flex items-center gap-1 rounded-full border border-stone-200 px-3 py-1">
+                  <span className="h-1 w-1 rounded-full bg-stone-400" />
+                  {highlight}
+                </span>
+              ))}
+            </div>
+          </div>
+        </a>
       </main>
     </div>
   );

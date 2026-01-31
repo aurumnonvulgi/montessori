@@ -10,6 +10,7 @@ import { primeSpeechVoices, speakWithPreferredVoice } from "../lib/speech";
 type SandpaperNumeralsSceneProps = {
   playing: boolean;
   voiceEnabled: boolean;
+  isMobile?: boolean;
   numbers?: number[];
   className?: string;
   onLessonComplete?: () => void;
@@ -393,6 +394,7 @@ function SandpaperNumeralsContent({
 export default function SandpaperNumeralsScene({
   playing,
   voiceEnabled,
+  isMobile = false,
   numbers,
   className,
   onLessonComplete,
@@ -663,15 +665,23 @@ export default function SandpaperNumeralsScene({
   }, []);
 
   const cameraPosition = useMemo(
-    () => [0, 1.35, 1.75] as [number, number, number],
-    [],
+    () =>
+      (isMobile
+        ? [0, 0.9, 1.6]
+        : [0, 1.35, 1.75]) as [number, number, number],
+    [isMobile],
+  );
+  const cameraFov = useMemo(() => (isMobile ? 45 : 28), [isMobile]);
+  const orbitTarget = useMemo<[number, number, number]>(
+    () => (isMobile ? [0, 0, 0.15] : [0, 0, 0.3]),
+    [isMobile],
   );
 
   return (
     <div
-      className={`w-full overflow-hidden rounded-[28px] bg-[#f7efe4] ${className ?? "h-[420px]"}`}
+      className={`w-full overflow-hidden ${isMobile ? "" : "rounded-[28px]"} bg-[#f7efe4] ${className ?? "h-[420px]"}`}
     >
-      <Canvas shadows camera={{ position: cameraPosition, fov: 28 }}>
+      <Canvas shadows camera={{ position: cameraPosition, fov: cameraFov }}>
         <color attach="background" args={["#f7efe4"]} />
         <SandpaperNumeralsContent
           playing={playing}
@@ -687,7 +697,7 @@ export default function SandpaperNumeralsScene({
           enablePan={false}
           enableZoom
           maxPolarAngle={Math.PI / 2.1}
-          target={[0, 0, 0.3]}
+          target={orbitTarget}
           minAzimuthAngle={-(Math.PI * 65) / 180}
           maxAzimuthAngle={(Math.PI * 65) / 180}
           minDistance={2.2}
