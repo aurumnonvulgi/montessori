@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import NumeralsAndCountersScene from "./NumeralsAndCountersScene";
 import { primeSounds } from "../lib/sounds";
+import HomeLink from "./HomeLink";
 
 type NumeralsAndCountersStageProps = {
   stageIndex: number;
@@ -193,7 +194,7 @@ export default function NumeralsAndCountersStageLesson({
   }, [clearConfettiTimers]);
 
   const goBack = useCallback(() => {
-    router.push("/lessons/numerals-and-counters");
+    router.back();
   }, [router]);
 
   const goHome = useCallback(() => {
@@ -236,6 +237,7 @@ export default function NumeralsAndCountersStageLesson({
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-[radial-gradient(circle_at_top,#f5efe6_0%,#fdfbf8_45%,#f7efe4_100%)]">
+      <HomeLink />
       {/* Mobile landscape: Right sidebar */}
       {isMobileLandscape && (
         <div className="fixed right-0 top-0 z-10 flex h-full w-12 flex-col items-center justify-center gap-4 bg-white/80 shadow-lg backdrop-blur-sm">
@@ -281,13 +283,7 @@ export default function NumeralsAndCountersStageLesson({
       <main className={`flex h-full flex-col ${isMobileLandscape ? "pr-12" : ""}`}>
         {/* Desktop header - hidden on mobile landscape */}
         {!isMobileLandscape && (
-          <div className="flex items-center justify-between px-6 py-4 sm:px-10">
-            <button
-              onClick={goBack}
-              className="text-sm text-stone-500 hover:text-stone-700"
-            >
-              ← Back
-            </button>
+          <div className="flex items-center justify-center px-6 py-4 sm:px-10">
             <div className="flex items-center gap-3 text-[10px] uppercase tracking-[0.3em] text-stone-400">
               <span>Lesson {stageIndex + 1}</span>
               <span>{STAGE_NAMES[stageIndex]}</span>

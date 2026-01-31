@@ -11,7 +11,7 @@ export default function MontessoriHome() {
       <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col items-center justify-center px-6 py-12 sm:px-10">
         <div className="space-y-6 text-center">
           <p className="text-xs uppercase tracking-[0.4em] text-stone-400">Montessori Studio</p>
-          <h1 className="font-display text-4xl font-semibold text-stone-900 md:text-5xl">A gentle lab for Montessori math</h1>
+          <h1 className="font-display text-4xl font-semibold text-stone-900 md:text-5xl">Montessori Studio</h1>
         </div>
 
         <a
