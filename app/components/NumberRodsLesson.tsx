@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import NumberRodsScene, { NUMBER_ROD_STAGES } from "./NumberRodsScene";
+import HomeLink from "./HomeLink";
 
 export default function NumberRodsLesson() {
   const router = useRouter();
@@ -82,7 +83,8 @@ export default function NumberRodsLesson() {
   }, [clearConfettiTimers]);
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,#f5efe6_0%,#fdfbf8_45%,#f7efe4_100%)]">
+    <div className="relative min-h-screen bg-[radial-gradient(circle_at_top,#f5efe6_0%,#fdfbf8_45%,#f7efe4_100%)]">
+      <HomeLink />
       <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 px-6 py-12 sm:px-10">
         <div className="flex items-center justify-end gap-3 text-[10px] uppercase tracking-[0.3em] text-stone-400">
           <span>Three-Period Lesson</span>

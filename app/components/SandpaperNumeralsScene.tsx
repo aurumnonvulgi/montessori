@@ -16,8 +16,21 @@ type SandpaperNumeralsSceneProps = {
 
 type QuizPhase = "click" | "name" | null;
 
-const numerals = ["1", "2", "3"];
-const numeralWords = ["one", "two", "three"];
+const NUMBER_WORDS = [
+  "zero",
+  "one",
+  "two",
+  "three",
+  "four",
+  "five",
+  "six",
+  "seven",
+  "eight",
+  "nine",
+  "ten",
+];
+
+const DEFAULT_NUMBERS = [1, 2, 3];
 const cardSize = { width: 0.36, height: 0.46, thickness: 0.03 };
 const baseY = cardSize.thickness / 2;
 const slideDuration = 2.2;
@@ -69,9 +82,9 @@ const smoothstep = (t: number) => t * t * (3 - 2 * t);
 const clamp01 = (t: number) => Math.min(1, Math.max(0, t));
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
-const buildTimeline = () => {
+const buildTimeline = (count: number) => {
   let cursor = 0;
-  const stages = numerals.map(() => {
+  const stages = Array.from({ length: count }).map(() => {
     const slideStart = cursor;
     const slideEnd = slideStart + slideDuration;
     cursor = slideEnd + slideDelay;
@@ -80,8 +93,6 @@ const buildTimeline = () => {
   const sequenceDuration = stages[stages.length - 1]?.slideEnd ?? 0;
   return { stages, sequenceDuration };
 };
-
-const timeline = buildTimeline();
 
 const speakText = (text: string) => {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) {
@@ -96,6 +107,9 @@ type SandpaperNumeralsContentProps = {
   quizLiftIndex: number | null;
   onComplete: () => void;
   onSelect: (index: number) => void;
+  numeralValues: string[];
+  numeralWords: string[];
+  timeline: ReturnType<typeof buildTimeline>;
 };
 
 function SandpaperNumeralsContent({
@@ -104,6 +118,9 @@ function SandpaperNumeralsContent({
   quizLiftIndex,
   onComplete,
   onSelect,
+  numeralValues,
+  numeralWords,
+  timeline,
 }: SandpaperNumeralsContentProps) {
   const cardRefs = useRef<THREE.Group[]>([]);
   const cardMeshRefs = useRef<THREE.Mesh[]>([]);
@@ -114,8 +131,8 @@ function SandpaperNumeralsContent({
   const quizLiftStartRef = useRef<number | null>(null);
   const introTimeoutsRef = useRef<number[]>([]);
   const numeralTextures = useMemo(
-    () => numerals.map((value) => createNumeralTexture(value)),
-    [],
+    () => numeralValues.map((value) => createNumeralTexture(value)),
+    [numeralValues],
   );
 
   useEffect(() => {
@@ -163,7 +180,7 @@ function SandpaperNumeralsContent({
     if (!playing) {
       startTimeRef.current = null;
       completedRef.current = false;
-      numerals.forEach((_, index) => {
+      numeralValues.forEach((_, index) => {
         const card = cardRefs.current[index];
         if (!card) {
           return;
@@ -216,7 +233,7 @@ function SandpaperNumeralsContent({
         ? Math.sin((quizLiftElapsed / quizLiftDuration) * Math.PI) * liftHeight
         : 0;
 
-    numerals.forEach((_, index) => {
+    numeralValues.forEach((_, index) => {
       const card = cardRefs.current[index];
       if (!card) {
         return;
@@ -301,7 +318,7 @@ function SandpaperNumeralsContent({
         <meshStandardMaterial color="#f3e9d8" roughness={0.95} metalness={0.02} />
       </mesh>
 
-      {numerals.map((value, index) => (
+      {numeralValues.map((value, index) => (
         <group
           key={value}
           ref={(el) => {
@@ -358,6 +375,7 @@ function SandpaperNumeralsContent({
 export default function SandpaperNumeralsScene({
   playing,
   voiceEnabled,
+  numbers,
   className,
   onLessonComplete,
 }: SandpaperNumeralsSceneProps) {
@@ -376,8 +394,25 @@ export default function SandpaperNumeralsScene({
   const recognitionRef = useRef<any>(null);
   const awaitingAnswerRef = useRef(false);
 
-  const clickOrder = useMemo(() => [2, 1, 0], []);
-  const nameOrder = useMemo(() => [0, 1, 2], []);
+  const effectiveNumbers = useMemo(() => numbers ?? DEFAULT_NUMBERS, [numbers]);
+  const numeralValues = useMemo(
+    () => effectiveNumbers.map((value) => value.toString()),
+    [effectiveNumbers],
+  );
+  const numeralWords = useMemo(
+    () => effectiveNumbers.map((value) => NUMBER_WORDS[value] ?? value.toString()),
+    [effectiveNumbers],
+  );
+  const timeline = useMemo(() => buildTimeline(numeralValues.length), [numeralValues.length]);
+
+  const clickOrder = useMemo(
+    () => numeralValues.map((_, index) => numeralValues.length - 1 - index),
+    [numeralValues],
+  );
+  const nameOrder = useMemo(
+    () => numeralValues.map((_, index) => index),
+    [numeralValues],
+  );
 
   const currentTarget =
     quizIndex !== null && quizPhase === "click"
@@ -615,6 +650,9 @@ export default function SandpaperNumeralsScene({
           quizLiftIndex={quizLiftIndex}
           onComplete={handleSequenceComplete}
           onSelect={handleCardSelect}
+          numeralValues={numeralValues}
+          numeralWords={numeralWords}
+          timeline={timeline}
         />
         <OrbitControls
           enablePan={false}

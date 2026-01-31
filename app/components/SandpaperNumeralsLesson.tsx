@@ -3,8 +3,21 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import SandpaperNumeralsScene from "./SandpaperNumeralsScene";
+import HomeLink from "./HomeLink";
 
-export default function SandpaperNumeralsLesson() {
+const SANDPAPER_LEVEL_IDS = [1, 2, 3];
+
+type SandpaperNumeralsLessonProps = {
+  levelId: number;
+  levelName: string;
+  numbers: number[];
+};
+
+export default function SandpaperNumeralsLesson({
+  levelId,
+  levelName,
+  numbers,
+}: SandpaperNumeralsLessonProps) {
   const router = useRouter();
   const [lessonStarted, setLessonStarted] = useState(false);
   const [resetKey, setResetKey] = useState(0);
@@ -56,11 +69,23 @@ export default function SandpaperNumeralsLesson() {
       setConfettiVisible(false);
       setFadeOut(false);
       if (typeof window !== "undefined") {
-        window.localStorage.setItem("sandpaper-numerals-complete", "true");
+        window.localStorage.setItem(
+          `sandpaper-numerals-level-${levelId}-complete`,
+          "true",
+        );
+        const allComplete = SANDPAPER_LEVEL_IDS.every(
+          (id) =>
+            window.localStorage.getItem(
+              `sandpaper-numerals-level-${id}-complete`,
+            ) === "true",
+        );
+        if (allComplete) {
+          window.localStorage.setItem("sandpaper-numerals-complete", "true");
+        }
       }
       router.push("/");
     }, 3400);
-  }, [clearConfettiTimers, router]);
+  }, [clearConfettiTimers, levelId, router]);
 
   useEffect(() => {
     return () => {
@@ -69,17 +94,21 @@ export default function SandpaperNumeralsLesson() {
   }, [clearConfettiTimers]);
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,#f5efe6_0%,#fdfbf8_45%,#f7efe4_100%)]">
+    <div className="relative min-h-screen bg-[radial-gradient(circle_at_top,#f5efe6_0%,#fdfbf8_45%,#f7efe4_100%)]">
+      <HomeLink />
       <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 px-6 py-12 sm:px-10">
-        <div className="flex items-center justify-end gap-3 text-[10px] uppercase tracking-[0.3em] text-stone-400">
+        <div className="flex flex-col gap-1 text-[10px] uppercase tracking-[0.3em] text-stone-400">
           <span>Three-Period Lesson</span>
-          <span>Sandpaper Numerals</span>
+          <span className="text-[10px] tracking-[0.25em]">
+            Sandpaper Numerals — {levelName}
+          </span>
         </div>
 
         <SandpaperNumeralsScene
           key={resetKey}
           playing={lessonStarted}
           voiceEnabled={lessonStarted}
+          numbers={numbers}
           onLessonComplete={handleLessonComplete}
           className="h-[68vh] min-h-[500px]"
         />

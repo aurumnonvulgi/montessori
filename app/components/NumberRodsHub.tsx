@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import NumberRodsScene from "./NumberRodsScene";
+import HomeLink from "./HomeLink";
 
 const LESSONS = [
   { id: 1, name: "1, 2, 3", rods: [1, 2, 3], color: "bg-rose-100", borderColor: "border-rose-200", textColor: "text-rose-700" },
@@ -75,7 +76,8 @@ export default function NumberRodsHub() {
   };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,#f5efe6_0%,#fdfbf8_45%,#f7efe4_100%)]">
+    <div className="relative min-h-screen bg-[radial-gradient(circle_at_top,#f5efe6_0%,#fdfbf8_45%,#f7efe4_100%)]">
+      <HomeLink />
       <main className="mx-auto flex min-h-screen w-full max-w-4xl flex-col px-6 py-12 sm:px-10">
         <button
           onClick={() => router.push("/")}
