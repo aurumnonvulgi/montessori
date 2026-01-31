@@ -4,6 +4,7 @@ import { Canvas, ThreeEvent } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { playChime } from "../lib/sounds";
+import type { PointerEvent as ReactPointerEvent } from "react";
 
 export type ShortBeadStairPhase = "idle" | "placement" | "count" | "rebuild";
 
@@ -286,7 +287,7 @@ export default function ShortBeadStairScene({
   );
 
   const handleCanvasPointerMove = useCallback(
-    (event: PointerEvent<HTMLDivElement>) => {
+    (event: ReactPointerEvent<HTMLDivElement>) => {
       handleDragMove(event as unknown as ThreeEvent<PointerEvent>);
     },
     [handleDragMove],
