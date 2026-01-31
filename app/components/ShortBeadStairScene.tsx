@@ -228,7 +228,10 @@ export default function ShortBeadStairScene({
         y: point.y - bar.position.y,
         z: point.z - bar.position.z,
       };
-      event.target?.setPointerCapture(event.pointerId);
+      const pointerTarget = event.target as Element & {
+        setPointerCapture?: (pointerId: number) => void;
+      };
+      pointerTarget.setPointerCapture?.(event.pointerId);
       setDragState({ barNumber: bar.number, pointerOffset: offset });
     },
     [phase],
@@ -241,7 +244,10 @@ export default function ShortBeadStairScene({
         return;
       }
       event.stopPropagation();
-      event.target?.releasePointerCapture(event.pointerId);
+      const pointerTarget = event.target as Element & {
+        releasePointerCapture?: (pointerId: number) => void;
+      };
+      pointerTarget.releasePointerCapture?.(event.pointerId);
       handleDrop(bar.number, event.point);
       setDragState(null);
     },
