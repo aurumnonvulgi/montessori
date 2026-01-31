@@ -34,18 +34,15 @@ const NUMBER_WORDS = [
 const DEFAULT_NUMBERS = [1, 2, 3];
 const cardSize = { width: 0.36, height: 0.46, thickness: 0.03 };
 const baseY = cardSize.thickness / 2;
-const slideDuration = 2.2;
+const flipDuration = 0.8;
+const travelDuration = 1.6;
 const slideDelay = 0.6;
+const arcHeight = 0.25;
 const introHighlightDuration = 1.2;
 const introLiftHeight = 0.03;
 const quizLiftDuration = 2.6;
 const liftHeight = 0.05;
 const stackBase = new THREE.Vector3(-0.72, baseY, -0.45);
-const stackOffsets = [
-  new THREE.Vector3(0, 0.001, 0),
-  new THREE.Vector3(0.05, 0.002, 0.05),
-  new THREE.Vector3(0.1, 0.003, 0.1),
-];
 const rowZ = 0.42;
 const rowX = [-0.48, 0, 0.48];
 const rowZOffsets = [0.02, 0, -0.02];
@@ -88,12 +85,14 @@ const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const buildTimeline = (count: number) => {
   let cursor = 0;
   const stages = Array.from({ length: count }).map(() => {
-    const slideStart = cursor;
-    const slideEnd = slideStart + slideDuration;
-    cursor = slideEnd + slideDelay;
-    return { slideStart, slideEnd };
+    const flipStart = cursor;
+    const flipEnd = flipStart + flipDuration;
+    const travelStart = flipEnd;
+    const travelEnd = travelStart + travelDuration;
+    cursor = travelEnd + slideDelay;
+    return { flipStart, flipEnd, travelStart, travelEnd };
   });
-  const sequenceDuration = stages[stages.length - 1]?.slideEnd ?? 0;
+  const sequenceDuration = stages[stages.length - 1]?.travelEnd ?? 0;
   return { stages, sequenceDuration };
 };
 
@@ -113,6 +112,7 @@ type SandpaperNumeralsContentProps = {
   numeralValues: string[];
   numeralWords: string[];
   timeline: ReturnType<typeof buildTimeline>;
+  stackOffsets: THREE.Vector3[];
 };
 
 function SandpaperNumeralsContent({
@@ -124,6 +124,7 @@ function SandpaperNumeralsContent({
   numeralValues,
   numeralWords,
   timeline,
+  stackOffsets,
 }: SandpaperNumeralsContentProps) {
   const cardRefs = useRef<THREE.Group[]>([]);
   const cardMeshRefs = useRef<THREE.Mesh[]>([]);
@@ -156,7 +157,7 @@ function SandpaperNumeralsContent({
     }
 
     timeline.stages.forEach((stage, index) => {
-      const delayMs = (stage.slideEnd ?? 0) * 1000 + 150;
+      const delayMs = (stage.travelEnd ?? 0) * 1000 + 150;
       const timeoutId = window.setTimeout(() => {
         speakText(numeralWords[index]);
       }, delayMs);
@@ -191,11 +192,11 @@ function SandpaperNumeralsContent({
         const offset = stackOffsets[index] ?? stackOffsets[stackOffsets.length - 1];
         const position = stackBase.clone().add(offset);
         card.position.copy(position);
-        card.rotation.set(0, -0.22, 0);
+        card.rotation.set(Math.PI, 0, 0);
         card.scale.set(1, 1, 1);
         const text = textRefs.current[index];
         if (text) {
-          text.visible = playing;
+          text.visible = true;
           text.position.set(0, textSurfaceY, 0);
           const material = text.material as THREE.MeshStandardMaterial;
           if (material?.color) {
@@ -243,37 +244,52 @@ function SandpaperNumeralsContent({
       }
 
       const stage = timeline.stages[index];
-      const start = stage?.slideStart ?? 0;
-      const end = stage?.slideEnd ?? 0;
+      const flipStart = stage?.flipStart ?? 0;
+      const flipEnd = stage?.flipEnd ?? 0;
+      const travelStart = stage?.travelStart ?? 0;
+      const travelEnd = stage?.travelEnd ?? 0;
       const offset = stackOffsets[index] ?? stackOffsets[stackOffsets.length - 1];
       const stackPosition = stackBase.clone().add(offset);
+      const column = index % rowX.length;
       const targetPosition = new THREE.Vector3(
-        rowX[index] ?? rowX[rowX.length - 1],
+        rowX[column],
         baseY,
-        rowZ + (rowZOffsets[index] ?? 0),
+        rowZ + (rowZOffsets[column] ?? 0),
       );
 
       let posX = stackPosition.x;
       let posY = stackPosition.y;
       let posZ = stackPosition.z;
-      let rotX = 0;
+      let rotX = Math.PI;
 
-      if (t >= start && t < end) {
-        const progress = clamp01((t - start) / slideDuration);
-        const eased = smoothstep(progress);
-        posX = lerp(stackPosition.x, targetPosition.x, eased);
-        posZ = lerp(stackPosition.z, targetPosition.z, eased);
-        posY = stackPosition.y + Math.sin(eased * Math.PI) * 0.1;
-      } else if (t >= end) {
+      if (t >= flipStart) {
+        const flipValue = smoothstep(clamp01((t - flipStart) / flipDuration));
+        rotX = lerp(Math.PI, 0, flipValue);
+        posY = stackPosition.y + Math.sin(flipValue * Math.PI) * 0.18;
+      }
+
+      if (t >= travelStart) {
+        const travelValue = smoothstep(clamp01((t - travelStart) / travelDuration));
+        posX = lerp(stackPosition.x, targetPosition.x, travelValue);
+        posZ = lerp(stackPosition.z, targetPosition.z, travelValue);
+        const arc = 4 * travelValue * (1 - travelValue);
+        posY = Math.max(
+          baseY,
+          lerp(stackPosition.y, targetPosition.y, travelValue) + arc * arcHeight,
+        );
+        rotX = 0;
+      }
+
+      if (t >= travelEnd) {
         posX = targetPosition.x;
         posY = targetPosition.y;
         posZ = targetPosition.z;
+        rotX = 0;
       }
 
       if (quizLiftIndexValue === index) {
         posY += quizLiftValue;
       }
-      posY = Math.max(baseY, posY);
 
       card.position.set(posX, posY, posZ);
       card.rotation.set(rotX, 0, 0);
@@ -282,9 +298,8 @@ function SandpaperNumeralsContent({
 
       const text = textRefs.current[index];
       if (text) {
-        text.visible = playing;
-        const introStart = end;
-        const introEnd = end + introHighlightDuration;
+        const introStart = travelEnd;
+        const introEnd = travelEnd + introHighlightDuration;
         const inIntro = t >= introStart && t < introEnd;
         const introProgress = inIntro ? clamp01((t - introStart) / introHighlightDuration) : 0;
         const introLift = inIntro ? Math.sin(introProgress * Math.PI) * introLiftHeight : 0;
@@ -429,6 +444,13 @@ export default function SandpaperNumeralsScene({
     [effectiveNumbers],
   );
   const timeline = useMemo(() => buildTimeline(numeralValues.length), [numeralValues.length]);
+  const stackOffsets = useMemo(
+    () =>
+      effectiveNumbers.map((_, index) => {
+        return new THREE.Vector3(index * 0.035, index * 0.0025, index * 0.035);
+      }),
+    [effectiveNumbers.length],
+  );
 
   const clickOrder = useMemo(
     () => numeralValues.map((_, index) => numeralValues.length - 1 - index),
@@ -692,6 +714,7 @@ export default function SandpaperNumeralsScene({
           numeralValues={numeralValues}
           numeralWords={numeralWords}
           timeline={timeline}
+          stackOffsets={stackOffsets}
         />
         <OrbitControls
           enablePan={false}

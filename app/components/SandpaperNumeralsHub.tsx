@@ -41,13 +41,6 @@ export default function SandpaperNumeralsHub() {
     <div className="relative min-h-screen bg-[radial-gradient(circle_at_top,#f5efe6_0%,#fdfbf8_45%,#f7efe4_100%)]">
       <HomeLink />
       <main className="mx-auto flex min-h-screen w-full max-w-4xl flex-col gap-6 px-6 py-12 sm:px-10">
-        <button
-          onClick={() => router.push("/")}
-          className="text-sm text-stone-500 hover:text-stone-700"
-        >
-          ← Back to Home
-        </button>
-
         <div className="mb-4 text-center">
           <h1 className="font-display text-3xl font-semibold text-stone-900">
             Sandpaper Numerals

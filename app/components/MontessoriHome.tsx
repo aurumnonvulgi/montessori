@@ -1,26 +1,7 @@
 "use client";
 
+import Image from "next/image";
 import { useMemo } from "react";
-
-const RODS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-
-function NumberRodsSnapshot({ className }: { className?: string }) {
-  return (
-    <div
-      className={`pointer-events-none overflow-hidden rounded-[24px] bg-[#f2e8da] p-4 shadow-inner ${className ?? ""}`}
-    >
-      <div className="flex flex-col gap-2">
-        {RODS.map((length) => (
-          <div
-            key={length}
-            className="h-3 rounded-full bg-gradient-to-r from-emerald-600 to-emerald-400"
-            style={{ width: `${(length / RODS.length) * 100}%` }}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
 
 export default function MontessoriHome() {
   const subjectHighlights = useMemo(() => ["Counting", "Geometry", "Sequencing"], []);
@@ -40,7 +21,16 @@ export default function MontessoriHome() {
         >
           <div className="flex flex-col gap-5 sm:gap-8">
             <h2 className="font-display text-3xl font-semibold text-stone-900">Mathematics</h2>
-            <NumberRodsSnapshot className="h-48 w-full" />
+            <div className="relative h-48 w-full overflow-hidden rounded-[24px] border border-stone-200 bg-stone-100 shadow-inner">
+              <Image
+                src="/mathematics-card.png"
+                alt="Montessori number rods"
+                fill
+                sizes="(max-width: 768px) 100vw, 760px"
+                priority
+                className="object-cover"
+              />
+            </div>
             <div className="flex flex-wrap gap-2 text-[11px] uppercase tracking-[0.25em] text-stone-500">
               {subjectHighlights.map((highlight) => (
                 <span key={highlight} className="inline-flex items-center gap-1 rounded-full border border-stone-200 px-3 py-1">
