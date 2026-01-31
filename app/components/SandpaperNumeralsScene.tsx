@@ -10,31 +10,40 @@ import { primeSpeechVoices, speakWithPreferredVoice } from "../lib/speech";
 type SandpaperNumeralsSceneProps = {
   playing: boolean;
   voiceEnabled: boolean;
+  numbers?: number[];
   className?: string;
   onLessonComplete?: () => void;
-  isMobile?: boolean;
 };
 
 type QuizPhase = "click" | "name" | null;
 
-const numerals = ["1", "2", "3"];
-const numeralWords = ["one", "two", "three"];
+const NUMBER_WORDS = [
+  "zero",
+  "one",
+  "two",
+  "three",
+  "four",
+  "five",
+  "six",
+  "seven",
+  "eight",
+  "nine",
+  "ten",
+];
+const DEFAULT_NUMBERS = [1, 2, 3];
 const cardSize = { width: 0.36, height: 0.46, thickness: 0.03 };
 const baseY = cardSize.thickness / 2;
-const flipDuration = 0.8; // Duration for card to flip
-const travelDuration = 1.6; // Duration for card to travel to position
-const slideDelay = 2.2; // Delay after card lands and name is spoken before next card
-const introHighlightDuration = 1.2; // Duration of the yellow highlight after landing
-const introLiftHeight = 0.03; // How much the numeral lifts during intro (doubled)
-const arcHeight = 0.25; // How high cards lift during travel
+const slideDuration = 2.2;
+const slideDelay = 0.6;
+const introHighlightDuration = 1.2;
+const introLiftHeight = 0.03;
 const quizLiftDuration = 2.6;
 const liftHeight = 0.05;
-const stackBase = new THREE.Vector3(-0.55, baseY, -0.35);
-// Stack order: 3 on bottom, 2 middle, 1 on top (reversed from index)
+const stackBase = new THREE.Vector3(-0.72, baseY, -0.45);
 const stackOffsets = [
-  new THREE.Vector3(0, cardSize.thickness * 2, 0),    // Card 1 on top
-  new THREE.Vector3(0, cardSize.thickness, 0),        // Card 2 in middle
-  new THREE.Vector3(0, 0, 0),                         // Card 3 on bottom
+  new THREE.Vector3(0, 0.001, 0),
+  new THREE.Vector3(0.05, 0.002, 0.05),
+  new THREE.Vector3(0.1, 0.003, 0.1),
 ];
 const rowZ = 0.42;
 const rowX = [-0.48, 0, 0.48];
@@ -75,21 +84,17 @@ const smoothstep = (t: number) => t * t * (3 - 2 * t);
 const clamp01 = (t: number) => Math.min(1, Math.max(0, t));
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
-const buildTimeline = () => {
+const buildTimeline = (count: number) => {
   let cursor = 0;
-  const stages = numerals.map(() => {
-    const flipStart = cursor;
-    const flipEnd = flipStart + flipDuration;
-    const travelStart = flipEnd;
-    const travelEnd = travelStart + travelDuration;
-    cursor = travelEnd + slideDelay;
-    return { flipStart, flipEnd, travelStart, travelEnd };
+  const stages = Array.from({ length: count }).map(() => {
+    const slideStart = cursor;
+    const slideEnd = slideStart + slideDuration;
+    cursor = slideEnd + slideDelay;
+    return { slideStart, slideEnd };
   });
-  const sequenceDuration = stages[stages.length - 1]?.travelEnd ?? 0;
+  const sequenceDuration = stages[stages.length - 1]?.slideEnd ?? 0;
   return { stages, sequenceDuration };
 };
-
-const timeline = buildTimeline();
 
 const speakText = (text: string) => {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) {
@@ -104,6 +109,9 @@ type SandpaperNumeralsContentProps = {
   quizLiftIndex: number | null;
   onComplete: () => void;
   onSelect: (index: number) => void;
+  numeralValues: string[];
+  numeralWords: string[];
+  timeline: ReturnType<typeof buildTimeline>;
 };
 
 function SandpaperNumeralsContent({
@@ -112,6 +120,9 @@ function SandpaperNumeralsContent({
   quizLiftIndex,
   onComplete,
   onSelect,
+  numeralValues,
+  numeralWords,
+  timeline,
 }: SandpaperNumeralsContentProps) {
   const cardRefs = useRef<THREE.Group[]>([]);
   const cardMeshRefs = useRef<THREE.Mesh[]>([]);
@@ -122,8 +133,8 @@ function SandpaperNumeralsContent({
   const quizLiftStartRef = useRef<number | null>(null);
   const introTimeoutsRef = useRef<number[]>([]);
   const numeralTextures = useMemo(
-    () => numerals.map((value) => createNumeralTexture(value)),
-    [],
+    () => numeralValues.map((value) => createNumeralTexture(value)),
+    [numeralValues],
   );
 
   useEffect(() => {
@@ -144,7 +155,7 @@ function SandpaperNumeralsContent({
     }
 
     timeline.stages.forEach((stage, index) => {
-      const delayMs = (stage.travelEnd ?? 0) * 1000 + 150;
+      const delayMs = (stage.slideEnd ?? 0) * 1000 + 150;
       const timeoutId = window.setTimeout(() => {
         speakText(numeralWords[index]);
       }, delayMs);
@@ -157,7 +168,7 @@ function SandpaperNumeralsContent({
       });
       introTimeoutsRef.current = [];
     };
-  }, [playing, voiceEnabled]);
+  }, [playing, voiceEnabled, numeralWords, timeline]);
 
   useEffect(() => {
     return () => {
@@ -171,20 +182,19 @@ function SandpaperNumeralsContent({
     if (!playing) {
       startTimeRef.current = null;
       completedRef.current = false;
-      numerals.forEach((_, index) => {
+      numeralValues.forEach((_, index) => {
         const card = cardRefs.current[index];
         if (!card) {
           return;
         }
-        const offset = stackOffsets[index] ?? stackOffsets[0];
+        const offset = stackOffsets[index] ?? stackOffsets[stackOffsets.length - 1];
         const position = stackBase.clone().add(offset);
         card.position.copy(position);
-        // Cards start face-down (flipped on X axis)
-        card.rotation.set(Math.PI, 0, 0);
+        card.rotation.set(0, -0.22, 0);
         card.scale.set(1, 1, 1);
         const text = textRefs.current[index];
         if (text) {
-          text.visible = true; // Always visible - 3D rotation handles visibility
+          text.visible = playing;
           text.position.set(0, textSurfaceY, 0);
           const material = text.material as THREE.MeshStandardMaterial;
           if (material?.color) {
@@ -225,21 +235,19 @@ function SandpaperNumeralsContent({
         ? Math.sin((quizLiftElapsed / quizLiftDuration) * Math.PI) * liftHeight
         : 0;
 
-    numerals.forEach((_, index) => {
+    numeralValues.forEach((_, index) => {
       const card = cardRefs.current[index];
       if (!card) {
         return;
       }
 
       const stage = timeline.stages[index];
-      const flipStart = stage?.flipStart ?? 0;
-      const flipEnd = stage?.flipEnd ?? 0;
-      const travelStart = stage?.travelStart ?? 0;
-      const travelEnd = stage?.travelEnd ?? 0;
-      const offset = stackOffsets[index] ?? stackOffsets[0];
+      const start = stage?.slideStart ?? 0;
+      const end = stage?.slideEnd ?? 0;
+      const offset = stackOffsets[index] ?? stackOffsets[stackOffsets.length - 1];
       const stackPosition = stackBase.clone().add(offset);
       const targetPosition = new THREE.Vector3(
-        rowX[index],
+        rowX[index] ?? rowX[rowX.length - 1],
         baseY,
         rowZ + (rowZOffsets[index] ?? 0),
       );
@@ -247,34 +255,20 @@ function SandpaperNumeralsContent({
       let posX = stackPosition.x;
       let posY = stackPosition.y;
       let posZ = stackPosition.z;
-      let rotX = Math.PI; // Face-down
+      let rotX = 0;
 
-      // Phase 1: Flip (rotate from face-down to face-up while staying in place)
-      if (t >= flipStart && t < flipEnd) {
-        const flipProgress = smoothstep(clamp01((t - flipStart) / flipDuration));
-        rotX = lerp(Math.PI, 0, flipProgress);
-        // Slight lift during flip
-        posY = stackPosition.y + Math.sin(flipProgress * Math.PI) * 0.1;
-      }
-      // Phase 2: Travel with arc motion
-      else if (t >= travelStart && t < travelEnd) {
-        rotX = 0; // Fully face-up
-        const travelProgress = smoothstep(clamp01((t - travelStart) / travelDuration));
-        posX = lerp(stackPosition.x, targetPosition.x, travelProgress);
-        posZ = lerp(stackPosition.z, targetPosition.z, travelProgress);
-        // Arc motion: lift up in the middle, land at the end
-        const arc = 4 * travelProgress * (1 - travelProgress);
-        posY = lerp(stackPosition.y, targetPosition.y, travelProgress) + arc * arcHeight;
-      }
-      // Phase 3: At final position
-      else if (t >= travelEnd) {
-        rotX = 0;
+      if (t >= start && t < end) {
+        const progress = clamp01((t - start) / slideDuration);
+        const eased = smoothstep(progress);
+        posX = lerp(stackPosition.x, targetPosition.x, eased);
+        posZ = lerp(stackPosition.z, targetPosition.z, eased);
+        posY = stackPosition.y + Math.sin(eased * Math.PI) * 0.1;
+      } else if (t >= end) {
         posX = targetPosition.x;
         posY = targetPosition.y;
         posZ = targetPosition.z;
       }
 
-      // Apply quiz lift if active
       if (quizLiftIndexValue === index) {
         posY += quizLiftValue;
       }
@@ -287,25 +281,18 @@ function SandpaperNumeralsContent({
 
       const text = textRefs.current[index];
       if (text) {
-        // Text always visible - 3D rotation handles showing/hiding as card flips
-        text.visible = true;
-
-        // Intro highlight animation: after card lands, pop numeral up and color yellow
-        const introStart = travelEnd;
-        const introEnd = travelEnd + introHighlightDuration;
+        text.visible = playing;
+        const introStart = end;
+        const introEnd = end + introHighlightDuration;
         const inIntro = t >= introStart && t < introEnd;
         const introProgress = inIntro ? clamp01((t - introStart) / introHighlightDuration) : 0;
-
-        // Smooth arc for lift: up then down
         const introLift = inIntro ? Math.sin(introProgress * Math.PI) * introLiftHeight : 0;
         text.position.y = textSurfaceY + introLift;
 
         const material = text.material as THREE.MeshStandardMaterial;
         if (material?.color) {
           if (inIntro) {
-            // Bright yellow #F0CE02 during intro
-            // F0CE02 in normalized RGB: (240/255, 206/255, 2/255) = (0.94, 0.81, 0.008)
-            const yellowIntensity = Math.sin(introProgress * Math.PI); // 0 -> 1 -> 0
+            const yellowIntensity = Math.sin(introProgress * Math.PI);
             const r = lerp(1, 0.94, yellowIntensity);
             const g = lerp(1, 0.81, yellowIntensity);
             const b = lerp(1, 0.008, yellowIntensity);
@@ -349,7 +336,7 @@ function SandpaperNumeralsContent({
         <meshStandardMaterial color="#f3e9d8" roughness={0.95} metalness={0.02} />
       </mesh>
 
-      {numerals.map((value, index) => (
+      {numeralValues.map((value, index) => (
         <group
           key={value}
           ref={(el) => {
@@ -406,9 +393,9 @@ function SandpaperNumeralsContent({
 export default function SandpaperNumeralsScene({
   playing,
   voiceEnabled,
+  numbers,
   className,
   onLessonComplete,
-  isMobile = false,
 }: SandpaperNumeralsSceneProps) {
   useEffect(() => {
     primeSpeechVoices();
@@ -425,8 +412,27 @@ export default function SandpaperNumeralsScene({
   const recognitionRef = useRef<any>(null);
   const awaitingAnswerRef = useRef(false);
 
-  const clickOrder = useMemo(() => [2, 1, 0], []);
-  const nameOrder = useMemo(() => [0, 1, 2], []);
+  const effectiveNumbers = useMemo(() => {
+    if (!numbers || numbers.length === 0) {
+      return DEFAULT_NUMBERS;
+    }
+    return numbers;
+  }, [numbers]);
+  const numeralValues = useMemo(
+    () => effectiveNumbers.map((value) => value.toString()),
+    [effectiveNumbers],
+  );
+  const numeralWords = useMemo(
+    () => effectiveNumbers.map((value) => NUMBER_WORDS[value] ?? value.toString()),
+    [effectiveNumbers],
+  );
+  const timeline = useMemo(() => buildTimeline(numeralValues.length), [numeralValues.length]);
+
+  const clickOrder = useMemo(
+    () => numeralValues.map((_, index) => numeralValues.length - 1 - index),
+    [numeralValues],
+  );
+  const nameOrder = useMemo(() => numeralValues.map((_, index) => index), [numeralValues]);
 
   const currentTarget =
     quizIndex !== null && quizPhase === "click"
@@ -564,7 +570,6 @@ export default function SandpaperNumeralsScene({
 
   useEffect(() => {
     if (currentTarget === null || !voiceEnabled || quizPhase === null) {
-      // Stop recognition when quiz phase ends
       if (recognitionRef.current) {
         try {
           recognitionRef.current.stop();
@@ -593,22 +598,22 @@ export default function SandpaperNumeralsScene({
       const advance = () => {
         awaitingAnswerRef.current = false;
         setQuizLiftIndex(null);
-          setQuizIndex((prev) => {
-            if (prev === null) {
-              return null;
-            }
-            const next = prev + 1;
-            if (next < nameOrder.length) {
-              return next;
-            }
-            setQuizPhase(null);
-            if (!lessonCompleteRef.current) {
-              lessonCompleteRef.current = true;
-              onLessonComplete?.();
-            }
+        setQuizIndex((prev) => {
+          if (prev === null) {
             return null;
-          });
-        };
+          }
+          const next = prev + 1;
+          if (next < nameOrder.length) {
+            return next;
+          }
+          setQuizPhase(null);
+          if (!lessonCompleteRef.current) {
+            lessonCompleteRef.current = true;
+            onLessonComplete?.();
+          }
+          return null;
+        });
+      };
 
       if (timeoutRef.current) {
         window.clearTimeout(timeoutRef.current);
@@ -633,6 +638,7 @@ export default function SandpaperNumeralsScene({
     startRecognition,
     voiceEnabled,
     nameOrder.length,
+    numeralWords,
     onLessonComplete,
   ]);
 
@@ -656,23 +662,16 @@ export default function SandpaperNumeralsScene({
     };
   }, []);
 
-  // Mobile: zoom out more, lower camera angle to show full cards
   const cameraPosition = useMemo(
-    () => (isMobile
-      ? [0, 0.9, 1.6] as [number, number, number]  // Mobile: lower Y, pull back
-      : [0, 1.35, 1.75] as [number, number, number]  // Desktop
-    ),
-    [isMobile],
+    () => [0, 1.35, 1.75] as [number, number, number],
+    [],
   );
-
-  const cameraFov = isMobile ? 45 : 28; // Wider FOV on mobile
-  const orbitTarget: [number, number, number] = isMobile ? [0, 0, 0.15] : [0, 0, 0.3];
 
   return (
     <div
-      className={`w-full overflow-hidden ${isMobile ? "" : "rounded-[28px]"} bg-[#f7efe4] ${className ?? "h-[420px]"}`}
+      className={`w-full overflow-hidden rounded-[28px] bg-[#f7efe4] ${className ?? "h-[420px]"}`}
     >
-      <Canvas shadows camera={{ position: cameraPosition, fov: cameraFov }}>
+      <Canvas shadows camera={{ position: cameraPosition, fov: 28 }}>
         <color attach="background" args={["#f7efe4"]} />
         <SandpaperNumeralsContent
           playing={playing}
@@ -680,14 +679,17 @@ export default function SandpaperNumeralsScene({
           quizLiftIndex={quizLiftIndex}
           onComplete={handleSequenceComplete}
           onSelect={handleCardSelect}
+          numeralValues={numeralValues}
+          numeralWords={numeralWords}
+          timeline={timeline}
         />
         <OrbitControls
           enablePan={false}
           enableZoom
           maxPolarAngle={Math.PI / 2.1}
-          target={orbitTarget}
-          minAzimuthAngle={-Math.PI / 4}
-          maxAzimuthAngle={Math.PI / 4}
+          target={[0, 0, 0.3]}
+          minAzimuthAngle={-(Math.PI * 65) / 180}
+          maxAzimuthAngle={(Math.PI * 65) / 180}
           minDistance={2.2}
           maxDistance={3.6}
         />
