@@ -34,14 +34,15 @@ const NUMBER_WORDS = [
 const DEFAULT_NUMBERS = [1, 2, 3];
 const cardSize = { width: 0.36, height: 0.46, thickness: 0.03 };
 const baseY = cardSize.thickness / 2;
-const flipDuration = 1.6;
-const travelDuration = 1.6;
-const slideDelay = 0.6;
-const arcHeight = 0.25;
-const introHighlightDuration = 1.2;
-const introLiftHeight = 0.03;
+const flipDuration = 2.4;
+const travelDuration = 4.8;
+const slideDelay = 1.8;
+const arcHeight = 0.45;
+const introHighlightDuration = 3.6;
+const introLiftHeight = 0.05;
 const quizLiftDuration = 2.6;
 const liftHeight = 0.05;
+const preFlipLift = 0.35;
 const stackBase = new THREE.Vector3(-0.72, baseY, -0.45);
 const rowZ = 0.42;
 const rowX = [-0.48, 0, 0.48];
@@ -265,7 +266,7 @@ function SandpaperNumeralsContent({
       if (t >= flipStart) {
         const flipValue = smoothstep(clamp01((t - flipStart) / flipDuration));
         rotX = lerp(Math.PI, 0, flipValue);
-        posY = stackPosition.y + Math.sin(flipValue * Math.PI) * 0.18;
+        posY = stackPosition.y + Math.sin(flipValue * Math.PI) * preFlipLift;
       }
 
       if (t >= travelStart) {

@@ -2,6 +2,10 @@
 
 import Image from "next/image";
 import { useMemo } from "react";
+import LanguageArtsPreview from "./LanguageArtsPreview";
+
+const CARD_STYLE =
+  "group select-none rounded-[36px] border border-stone-200 bg-white/90 p-6 shadow-[0_30px_80px_-50px_rgba(60,40,20,0.6)] transition hover:-translate-y-1 hover:shadow-[0_40px_90px_-50px_rgba(60,40,20,0.7)]";
 
 export default function MontessoriHome() {
   const subjectHighlights = useMemo(() => ["Counting", "Geometry", "Sequencing"], []);
@@ -14,33 +18,52 @@ export default function MontessoriHome() {
           <h1 className="font-display text-4xl font-semibold text-stone-900 md:text-5xl">Montessori Studio</h1>
         </div>
 
-        <a
-          href="/lessons/mathematics"
-          className="group mt-10 w-full max-w-[760px] select-none rounded-[36px] border border-stone-200 bg-white/90 p-6 shadow-[0_30px_80px_-50px_rgba(60,40,20,0.6)] transition hover:-translate-y-1 hover:shadow-[0_40px_90px_-50px_rgba(60,40,20,0.7)]"
-          aria-label="Open Mathematics hub"
-        >
-          <div className="flex flex-col gap-5 sm:gap-8">
-            <h2 className="font-display text-3xl font-semibold text-stone-900">Mathematics</h2>
-            <div className="relative h-48 w-full overflow-hidden rounded-[24px] border border-stone-200 bg-stone-100 shadow-inner">
-              <Image
-                src="/mathematics-card.png"
-                alt="Montessori number rods"
-                fill
-                sizes="(max-width: 768px) 100vw, 760px"
-                priority
-                className="object-cover"
-              />
+        <div className="mt-10 grid w-full gap-6 lg:grid-cols-2">
+          <a
+            href="/lessons/mathematics"
+            aria-label="Open Mathematics hub"
+            className={`${CARD_STYLE} max-w-full`}
+          >
+            <div className="flex flex-col gap-5 sm:gap-8">
+              <h2 className="font-display text-3xl font-semibold text-stone-900">Mathematics</h2>
+              <div className="relative h-48 w-full overflow-hidden rounded-[24px] border border-stone-200 bg-stone-100 shadow-inner">
+                <Image
+                  src="/mathematics-card.png"
+                  alt="Montessori number rods"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 760px"
+                  priority
+                  className="object-cover"
+                />
+              </div>
+              <div className="flex flex-wrap gap-2 text-[11px] uppercase tracking-[0.25em] text-stone-500">
+                {subjectHighlights.map((highlight) => (
+                  <span
+                    key={highlight}
+                    className="inline-flex items-center gap-1 rounded-full border border-stone-200 px-3 py-1"
+                  >
+                    <span className="h-1 w-1 rounded-full bg-stone-400" />
+                    {highlight}
+                  </span>
+                ))}
+              </div>
             </div>
-            <div className="flex flex-wrap gap-2 text-[11px] uppercase tracking-[0.25em] text-stone-500">
-              {subjectHighlights.map((highlight) => (
-                <span key={highlight} className="inline-flex items-center gap-1 rounded-full border border-stone-200 px-3 py-1">
-                  <span className="h-1 w-1 rounded-full bg-stone-400" />
-                  {highlight}
-                </span>
-              ))}
+          </a>
+
+          <a
+            href="/lessons/language-arts/movable-alphabet"
+            aria-label="Open Language Arts card"
+            className={`${CARD_STYLE} max-w-full`}
+          >
+            <div className="flex flex-col gap-5 sm:gap-8">
+              <h2 className="font-display text-3xl font-semibold text-stone-900">Language Arts</h2>
+              <LanguageArtsPreview className="h-48" />
+              <p className="text-sm text-stone-500">
+                Movable Alphabet — select a picture card and build the word letter by letter.
+              </p>
             </div>
-          </div>
-        </a>
+          </a>
+        </div>
       </main>
     </div>
   );

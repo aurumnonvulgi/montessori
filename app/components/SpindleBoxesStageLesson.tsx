@@ -289,7 +289,7 @@ export default function SpindleBoxesStageLesson({
       <main className={`flex h-full flex-col ${isMobileLandscape ? "pr-12" : ""}`}>
         {/* Desktop header - hidden on mobile landscape */}
         {!isMobileLandscape && (
-          <div className="flex items-center justify-center px-6 py-4 sm:px-10">
+          <div className="flex items-center justify-end px-6 py-4 sm:px-10">
             <div className="flex items-center gap-3 text-[10px] uppercase tracking-[0.3em] text-stone-400">
               <span>Lesson {stageIndex + 1}</span>
               <span>{STAGE_NAMES[stageIndex]}</span>

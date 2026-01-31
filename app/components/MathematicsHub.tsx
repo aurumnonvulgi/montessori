@@ -3,9 +3,14 @@
 import { useEffect, useState } from "react";
 import HomeLink from "./HomeLink";
 import NumberRodsScene from "./NumberRodsScene";
-import SandpaperNumeralsPreview from "./SandpaperNumeralsPreview";
 import NumeralsAndCountersPreview from "./NumeralsAndCountersPreview";
 import SpindleBoxesPreview from "./SpindleBoxesPreview";
+
+const SandpaperPlaceholder = () => (
+  <div className="flex items-center justify-center rounded-[20px] border border-dashed border-stone-300 bg-white/70 p-4 text-sm text-stone-500">
+    <span>Sandpaper cards</span>
+  </div>
+);
 
 const LESSONS = [
   {
@@ -19,7 +24,7 @@ const LESSONS = [
     key: "sandpaperNumerals",
     label: "Sandpaper Numerals",
     href: "/lessons/sandpaper-numerals",
-    preview: <SandpaperNumeralsPreview className="h-full" />,
+    preview: <SandpaperPlaceholder />,
     completionKey: "sandpaper-numerals-complete",
   },
   {
@@ -62,9 +67,6 @@ export default function MathematicsHub() {
       <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 px-6 py-12 sm:px-10">
         <div className="space-y-3 text-center">
           <h1 className="font-display text-3xl font-semibold text-stone-900">Mathematics</h1>
-          <p className="text-sm text-stone-500">
-            Tap into each material to experience the three-period lesson, counting, and gentle celebrations.
-          </p>
         </div>
 
         <div className="grid gap-5 lg:grid-cols-2">
