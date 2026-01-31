@@ -285,6 +285,13 @@ export default function ShortBeadStairScene({
     [phase, countTarget, onPhaseComplete],
   );
 
+  const handleCanvasPointerMove = useCallback(
+    (event: PointerEvent<HTMLDivElement>) => {
+      handleDragMove(event as unknown as ThreeEvent<PointerEvent>);
+    },
+    [handleDragMove],
+  );
+
   return (
     <div className={`relative h-full w-full ${className ?? ""}`}>
       {hintMessage ? (
@@ -292,7 +299,11 @@ export default function ShortBeadStairScene({
           {hintMessage}
         </div>
       ) : null}
-      <Canvas shadows camera={{ position: [0, 1.2, 1.4], fov: 36 }} onPointerMove={handleDragMove}>
+        <Canvas
+          shadows
+          camera={{ position: [0, 1.2, 1.4], fov: 36 }}
+          onPointerMove={handleCanvasPointerMove}
+        >
         <color attach="background" args={["#f7efe4"]} />
         <ambientLight intensity={0.6} />
         <directionalLight position={[2, 2.5, 1]} intensity={0.85} castShadow />
