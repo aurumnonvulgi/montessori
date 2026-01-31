@@ -240,7 +240,10 @@ export default function ShortBeadStairScene({
   const handlePointerUp = useCallback(
     (event: ThreeEvent<PointerEvent>, bar: BarState) => {
       if (dragState?.barNumber !== bar.number) {
-        event.target?.releasePointerCapture(event.pointerId);
+        const pointerTarget = event.target as Element & {
+          releasePointerCapture?: (pointerId: number) => void;
+        };
+        pointerTarget.releasePointerCapture?.(event.pointerId);
         return;
       }
       event.stopPropagation();
