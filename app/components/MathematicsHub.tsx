@@ -3,19 +3,11 @@
 import { useEffect, useState } from "react";
 import HomeLink from "./HomeLink";
 import NumberRodsScene from "./NumberRodsScene";
-import NumberRodsPresentationPreview from "./NumberRodsPresentationPreview";
 import SandpaperNumeralsPreview from "./SandpaperNumeralsPreview";
 import NumeralsAndCountersPreview from "./NumeralsAndCountersPreview";
 import SpindleBoxesPreview from "./SpindleBoxesPreview";
 
 const LESSONS = [
-  {
-    key: "spindleBoxes",
-    label: "Spindle Boxes",
-    href: "/lessons/spindle-boxes",
-    preview: <SpindleBoxesPreview className="h-full" />,
-    completionKey: "spindle-boxes-complete",
-  },
   {
     key: "numberRods",
     label: "Number Rods",
@@ -24,18 +16,18 @@ const LESSONS = [
     completionKey: "number-rods-complete",
   },
   {
-    key: "numberRodsPresentation",
-    label: "Number Rods Presentation",
-    href: "/lessons/number-rods-presentation",
-    preview: <NumberRodsPresentationPreview className="h-full" />,
-    completionKey: "number-rods-presentation-complete",
-  },
-  {
     key: "sandpaperNumerals",
     label: "Sandpaper Numerals",
     href: "/lessons/sandpaper-numerals",
     preview: <SandpaperNumeralsPreview className="h-full" />,
     completionKey: "sandpaper-numerals-complete",
+  },
+  {
+    key: "spindleBoxes",
+    label: "Spindle Boxes",
+    href: "/lessons/spindle-boxes",
+    preview: <SpindleBoxesPreview className="h-full" />,
+    completionKey: "spindle-boxes-complete",
   },
   {
     key: "numeralsAndCounters",
@@ -77,11 +69,11 @@ export default function MathematicsHub() {
 
         <div className="grid gap-5 lg:grid-cols-2">
           {LESSONS.map((lesson) => (
-            <a
-              key={lesson.key}
-              href={lesson.href}
-              className="group flex flex-col rounded-[32px] border border-stone-200 bg-white/90 p-4 shadow-[0_30px_80px_-50px_rgba(60,40,20,0.6)] transition hover:-translate-y-0.5 hover:shadow-[0_40px_90px_-50px_rgba(60,40,20,0.7)]"
-            >
+          <a
+            key={lesson.key}
+            href={lesson.href}
+            className="group select-none flex flex-col rounded-[32px] border border-stone-200 bg-white/90 p-4 shadow-[0_30px_80px_-50px_rgba(60,40,20,0.6)] transition hover:-translate-y-0.5 hover:shadow-[0_40px_90px_-50px_rgba(60,40,20,0.7)]"
+          >
               <div className="flex flex-col gap-3">
                 <div className="pointer-events-none overflow-hidden rounded-[24px] bg-white/70 p-2 shadow-inner">
                   {lesson.preview}
