@@ -73,32 +73,39 @@ const getStagingPosition = (numeral: number, spindleIndex: number, total: number
 };
 
 function WoodenBox({ position, numerals }: { position: THREE.Vector3; numerals: number[] }) {
+  const backWallHeight = 0.1; // Taller back wall for number backing
   return (
     <group position={position}>
+      {/* Base of the box */}
       <mesh position={[0, BOX_HEIGHT / 4, 0]} receiveShadow castShadow>
         <boxGeometry args={[BOX_WIDTH, BOX_HEIGHT / 2, BOX_DEPTH]} />
         <meshStandardMaterial color={WOOD_COLOR} />
       </mesh>
-      <mesh position={[0, BOX_HEIGHT / 2 + 0.02, -BOX_DEPTH / 2 + 0.01]} castShadow>
-        <boxGeometry args={[BOX_WIDTH, 0.06, 0.02]} />
+      {/* Back wall - extended height for number backing */}
+      <mesh position={[0, BOX_HEIGHT / 2 + backWallHeight / 2 - 0.01, -BOX_DEPTH / 2 + 0.01]} castShadow>
+        <boxGeometry args={[BOX_WIDTH, backWallHeight, 0.02]} />
         <meshStandardMaterial color={WOOD_COLOR} />
       </mesh>
+      {/* Dividers between compartments */}
       {[-2, -1, 0, 1].map((i) => (
         <mesh key={i} position={[(i + 0.5) * COMPARTMENT_WIDTH, BOX_HEIGHT / 2 + 0.015, 0]} castShadow>
           <boxGeometry args={[0.008, 0.05, BOX_DEPTH - 0.02]} />
           <meshStandardMaterial color={WOOD_DARK} />
         </mesh>
       ))}
+      {/* Left wall */}
       <mesh position={[-BOX_WIDTH / 2 + 0.01, BOX_HEIGHT / 2 + 0.015, 0]} castShadow>
         <boxGeometry args={[0.02, 0.05, BOX_DEPTH]} />
         <meshStandardMaterial color={WOOD_COLOR} />
       </mesh>
+      {/* Right wall */}
       <mesh position={[BOX_WIDTH / 2 - 0.01, BOX_HEIGHT / 2 + 0.015, 0]} castShadow>
         <boxGeometry args={[0.02, 0.05, BOX_DEPTH]} />
         <meshStandardMaterial color={WOOD_COLOR} />
       </mesh>
+      {/* Numbers on the back wall - lowered position */}
       {numerals.map((n, i) => (
-        <Text key={n} position={[(i - 2) * COMPARTMENT_WIDTH, BOX_HEIGHT + 0.06, -BOX_DEPTH / 2 + 0.02]} fontSize={0.05} color="#5a4a32" anchorX="center" anchorY="middle">
+        <Text key={n} position={[(i - 2) * COMPARTMENT_WIDTH, BOX_HEIGHT / 2 + backWallHeight / 2 - 0.01, -BOX_DEPTH / 2 + 0.025]} fontSize={0.04} color="#5a4a32" anchorX="center" anchorY="middle">
           {String(n)}
         </Text>
       ))}
