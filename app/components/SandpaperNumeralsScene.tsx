@@ -10,6 +10,7 @@ import { primeSpeechVoices, speakWithPreferredVoice } from "../lib/speech";
 type SandpaperNumeralsSceneProps = {
   playing: boolean;
   voiceEnabled: boolean;
+  numbers?: number[];
   className?: string;
   onLessonComplete?: () => void;
 };
