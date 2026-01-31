@@ -9,7 +9,7 @@ type CompletionKey = Record<
   | "sandpaperNumerals"
   | "numeralsAndCounters"
   | "shortBeadStair",
-  boolean,
+  boolean
 >;
 
 const COMPLETION_KEYS: Record<keyof CompletionKey, string> = {
@@ -157,6 +157,7 @@ export default function MontessoriHome() {
     return initial;
   });
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
@@ -174,6 +175,7 @@ export default function MontessoriHome() {
     });
     setCompletionMap(next);
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const mathComplete = useMemo(
     () =>
