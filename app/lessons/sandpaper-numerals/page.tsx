@@ -1,5 +1,5 @@
-import SandpaperNumeralsHub from "../../components/SandpaperNumeralsHub";
+import SandpaperNumeralsLesson from "../../components/SandpaperNumeralsLesson";
 
 export default function SandpaperNumeralsPage() {
-  return <SandpaperNumeralsHub />;
+  return <SandpaperNumeralsLesson />;
 }

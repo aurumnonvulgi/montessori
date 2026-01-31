@@ -415,7 +415,7 @@ function NumeralsAndCountersContent({
     }
 
     // Start group animation for counters if numeral > 1
-    if (isCounter && numeral > 1) {
+    if (numeral > 1) {
       setGroupingNumeral(numeral);
       groupingStartTimeRef.current = null;
       // Speak the number word while grouping
@@ -430,7 +430,7 @@ function NumeralsAndCountersContent({
     }
 
     // Wait longer if grouping animation is happening
-    const delay = (isCounter && numeral > 1) ? 2000 : 1800;
+    const delay = numeral > 1 ? 2000 : 1800;
 
     timeoutRef.current = window.setTimeout(() => {
       setQuizLiftCard(null);
@@ -450,7 +450,18 @@ function NumeralsAndCountersContent({
 
   // Voice prompts for quiz phases
   useEffect(() => {
-    if (currentTarget === null || !voiceEnabled || quizPhase === null) return;
+    if (currentTarget === null || !voiceEnabled || quizPhase === null) {
+      // Stop recognition when quiz phase ends
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {
+          // ignore
+        }
+        recognitionRef.current = null;
+      }
+      return;
+    }
 
     const promptKey = `${quizPhase}-${currentTarget}`;
     if (promptRef.current[promptKey]) return;
@@ -602,14 +613,23 @@ function NumeralsAndCountersContent({
       const cardY = 0.04;
       const cardZ = -0.2;
 
-      // Card slide animation
+      // Card slide animation with lift-over-land arc
       const slideRange = timeline.map[`card${numeral}Slide`];
       if (slideRange) {
         const slideProgress = smoothstep(clamp01((t - slideRange.start) / (slideRange.end - slideRange.start)));
         const startX = -4;
         const currentX = lerp(startX, finalX, slideProgress);
+
+        // Arc motion: lift up, stay elevated, then land
+        // Use a parabola that peaks in the middle of the slide
+        const liftHeight = 0.5; // How high the card lifts
+        const arcProgress = slideProgress; // 0 to 1
+        // Parabola: 4 * p * (1 - p) gives 0 at start, 1 at middle, 0 at end
+        const arc = 4 * arcProgress * (1 - arcProgress);
+        const currentY = cardY + (liftHeight * arc);
+
         card.position.x = currentX;
-        card.position.y = cardY;
+        card.position.y = currentY;
         card.position.z = cardZ;
         card.visible = t >= slideRange.start - 0.1;
       }
@@ -672,14 +692,14 @@ function NumeralsAndCountersContent({
 
   return (
     <>
-      <ambientLight intensity={1.0} />
-      <directionalLight position={[3, 5, 3]} intensity={0.3} />
-      <directionalLight position={[-2, 4, -2]} intensity={0.2} />
+      <ambientLight intensity={1.3} />
+      <directionalLight position={[3, 5, 3]} intensity={0.5} />
+      <directionalLight position={[-2, 4, -2]} intensity={0.3} />
 
       {/* Base mat/table */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0.5]}>
         <planeGeometry args={[8, 5]} />
-        <meshStandardMaterial color="#f3e9d8" roughness={0.95} metalness={0.02} />
+        <meshStandardMaterial color="#faf6f0" roughness={0.9} metalness={0} />
       </mesh>
 
       {/* Numeral cards - laying flat on table */}
@@ -746,9 +766,9 @@ function NumeralsAndCountersContent({
           >
             <cylinderGeometry args={[0.12, 0.12, 0.05, 24]} />
             <meshStandardMaterial
-              color="#d93636"
-              roughness={0.4}
-              metalness={0.1}
+              color="#e85a5a"
+              roughness={0.35}
+              metalness={0.05}
             />
           </mesh>
         ));
@@ -762,8 +782,8 @@ function NumeralsAndCountersContent({
         minAzimuthAngle={-Math.PI / 4}
         maxAzimuthAngle={Math.PI / 4}
         target={[0, 0, 0.3]}
-        minDistance={2.0}
-        maxDistance={6.5}
+        minDistance={3.0}
+        maxDistance={5.0}
       />
     </>
   );
@@ -788,12 +808,12 @@ export default function NumeralsAndCountersScene({
   }, []);
 
   return (
-    <div className={`w-full overflow-hidden rounded-[28px] bg-[#f7efe4] ${className}`}>
+    <div className={`w-full overflow-hidden rounded-[28px] bg-[#fdfbf8] ${className}`}>
       <Canvas
         shadows={false}
         camera={{ position: [0, 3.2, 4.5], fov: 35 }}
       >
-        <color attach="background" args={["#f7efe4"]} />
+        <color attach="background" args={["#fdfbf8"]} />
         <NumeralsAndCountersContent
           playing={playing}
           voiceEnabled={voiceEnabled}

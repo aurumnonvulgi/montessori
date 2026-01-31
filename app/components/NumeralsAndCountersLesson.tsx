@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import NumeralsAndCountersScene, {
   NUMERALS_AND_COUNTERS_STAGES,
 } from "./NumeralsAndCountersScene";
-import HomeLink from "./HomeLink";
 
 const CompletionCheck = () => (
   <div className="flex h-full items-center justify-center">
@@ -95,8 +94,7 @@ export default function NumeralsAndCountersLesson() {
   }, [clearConfettiTimers]);
 
   return (
-    <div className="relative min-h-screen bg-[radial-gradient(circle_at_top,#f5efe6_0%,#fdfbf8_45%,#f7efe4_100%)]">
-      <HomeLink />
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,#f5efe6_0%,#fdfbf8_45%,#f7efe4_100%)]">
       <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 px-6 py-12 sm:px-10">
         <div className="flex items-center justify-between">
           <div className="text-[10px] uppercase tracking-[0.3em] text-stone-400">

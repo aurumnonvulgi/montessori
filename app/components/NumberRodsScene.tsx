@@ -463,18 +463,18 @@ function NumberRodsContent({
 
   return (
     <group>
-      <ambientLight intensity={0.6} />
+      <ambientLight intensity={0.7} />
       <directionalLight
         position={[2.2, 2.6, 1.8]}
-        intensity={0.9}
+        intensity={0.7}
         castShadow
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
-        shadow-bias={-0.0002}
-        shadow-normalBias={0.01}
-        shadow-radius={6}
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
+        shadow-bias={-0.0001}
+        shadow-normalBias={0.02}
+        shadow-radius={12}
       />
-      <directionalLight position={[-2.6, 2.1, -1.2]} intensity={0.25} />
+      <directionalLight position={[-2.6, 2.1, -1.2]} intensity={0.3} />
 
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
         <planeGeometry args={[planeWidth, 2]} />
@@ -826,11 +826,11 @@ export default function NumberRodsScene({
           enablePan={false}
           enableZoom
           maxPolarAngle={Math.PI / 2.1}
-          minAzimuthAngle={-Math.PI / 2}
-          maxAzimuthAngle={Math.PI / 2}
+          minAzimuthAngle={-Math.PI / 4}
+          maxAzimuthAngle={Math.PI / 4}
           target={[targetX, 0.03, 0]}
-          minDistance={0.85}
-          maxDistance={2}
+          minDistance={1.1}
+          maxDistance={2.2}
         />
       </Canvas>
     </div>

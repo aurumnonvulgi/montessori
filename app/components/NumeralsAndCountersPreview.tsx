@@ -62,14 +62,14 @@ function NumeralsAndCountersPreviewContent() {
 
   return (
     <>
-      <ambientLight intensity={1.0} />
-      <directionalLight position={[3, 5, 3]} intensity={0.3} />
-      <directionalLight position={[-2, 4, -2]} intensity={0.2} />
+      <ambientLight intensity={1.3} />
+      <directionalLight position={[3, 5, 3]} intensity={0.5} />
+      <directionalLight position={[-2, 4, -2]} intensity={0.3} />
 
       {/* Base mat */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0.5]}>
         <planeGeometry args={[6, 4]} />
-        <meshStandardMaterial color="#f3e9d8" />
+        <meshStandardMaterial color="#faf6f0" />
       </mesh>
 
       {/* Numeral cards - laying flat on table */}
@@ -101,9 +101,9 @@ function NumeralsAndCountersPreviewContent() {
         >
           <cylinderGeometry args={[0.12, 0.12, 0.05, 24]} />
           <meshStandardMaterial
-            color="#d93636"
-            roughness={0.4}
-            metalness={0.1}
+            color="#e85a5a"
+            roughness={0.35}
+            metalness={0.05}
           />
         </mesh>
       ))}

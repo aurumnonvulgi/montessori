@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import NumeralsAndCountersPreview from "./NumeralsAndCountersPreview";
-import HomeLink from "./HomeLink";
 
 const LESSONS = [
   { id: 1, name: "1, 2, 3", numerals: [1, 2, 3], color: "bg-rose-100", borderColor: "border-rose-200", textColor: "text-rose-700" },
@@ -76,8 +75,7 @@ export default function NumeralsAndCountersHub() {
   };
 
   return (
-    <div className="relative min-h-screen bg-[radial-gradient(circle_at_top,#f5efe6_0%,#fdfbf8_45%,#f7efe4_100%)]">
-      <HomeLink />
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,#f5efe6_0%,#fdfbf8_45%,#f7efe4_100%)]">
       <main className="mx-auto flex min-h-screen w-full max-w-4xl flex-col px-6 py-12 sm:px-10">
         <button
           onClick={() => router.push("/")}
@@ -95,7 +93,7 @@ export default function NumeralsAndCountersHub() {
           </p>
         </div>
 
-        <div className="pointer-events-none mx-auto mb-10 h-48 w-full max-w-md overflow-hidden rounded-[28px]">
+        <div className="pointer-events-none mx-auto mb-10 h-48 w-full max-w-md overflow-hidden rounded-[28px] shadow-[0_8px_30px_-8px_rgba(0,0,0,0.2)]">
           <NumeralsAndCountersPreview className="h-full" />
         </div>
 

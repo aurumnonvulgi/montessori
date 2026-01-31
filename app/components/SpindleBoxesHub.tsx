@@ -2,13 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import NumberRodsScene from "./NumberRodsScene";
+import SpindleBoxesPreview from "./SpindleBoxesPreview";
 
 const LESSONS = [
-  { id: 1, name: "1, 2, 3", rods: [1, 2, 3], color: "bg-rose-100", borderColor: "border-rose-200", textColor: "text-rose-700" },
-  { id: 2, name: "4, 5, 6", rods: [4, 5, 6], color: "bg-amber-100", borderColor: "border-amber-200", textColor: "text-amber-700" },
-  { id: 3, name: "7, 8, 9", rods: [7, 8, 9], color: "bg-sky-100", borderColor: "border-sky-200", textColor: "text-sky-700" },
-  { id: 4, name: "10", rods: [10], color: "bg-violet-100", borderColor: "border-violet-200", textColor: "text-violet-700" },
+  { id: 1, name: "0, 1, 2, 3, 4", color: "bg-amber-100", borderColor: "border-amber-200", textColor: "text-amber-700" },
+  { id: 2, name: "5, 6, 7, 8, 9", color: "bg-sky-100", borderColor: "border-sky-200", textColor: "text-sky-700" },
 ];
 
 function LockIcon() {
@@ -43,7 +41,7 @@ function CheckIcon() {
   );
 }
 
-export default function NumberRodsHub() {
+export default function SpindleBoxesHub() {
   const router = useRouter();
   const [completedLessons, setCompletedLessons] = useState<number[]>([]);
 
@@ -52,7 +50,7 @@ export default function NumberRodsHub() {
 
     const completed: number[] = [];
     LESSONS.forEach((lesson) => {
-      const key = `number-rods-stage-${lesson.id}-complete`;
+      const key = `spindle-boxes-stage-${lesson.id}-complete`;
       if (window.localStorage.getItem(key) === "true") {
         completed.push(lesson.id);
       }
@@ -71,7 +69,7 @@ export default function NumberRodsHub() {
 
   const handleLessonClick = (lessonId: number) => {
     if (!isLessonUnlocked(lessonId)) return;
-    router.push(`/lessons/number-rods/stage-${lessonId}`);
+    router.push(`/lessons/spindle-boxes/stage-${lessonId}`);
   };
 
   return (
@@ -86,7 +84,7 @@ export default function NumberRodsHub() {
 
         <div className="mb-8 text-center">
           <h1 className="font-display text-3xl font-semibold text-stone-900">
-            Number Rods
+            Spindle Boxes
           </h1>
           <p className="mt-2 text-stone-500">
             Select a lesson to begin
@@ -94,11 +92,7 @@ export default function NumberRodsHub() {
         </div>
 
         <div className="pointer-events-none mx-auto mb-10 h-48 w-full max-w-md overflow-hidden rounded-[28px] shadow-[0_8px_30px_-8px_rgba(0,0,0,0.2)]">
-          <NumberRodsScene
-            playing={false}
-            voiceEnabled={false}
-            className="h-full"
-          />
+          <SpindleBoxesPreview className="h-full" />
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
