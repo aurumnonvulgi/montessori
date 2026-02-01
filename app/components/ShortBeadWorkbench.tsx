@@ -7,14 +7,21 @@ import * as THREE from "three";
 
 const BEAD_DIAMETER = 0.01; // 10 mm
 const BEAD_RADIUS = BEAD_DIAMETER / 2;
-const GREEN_SPACING_OFFSET = 0.0005;
+const GREEN_SPACING_OFFSET = 0.0003;
+const BEAD_OVERLAP = 0.00025;
 const WIRE_LOOP_RADIUS = 0.0015; // 3 mm diameter
 const WIRE_LOOP_TUBE = 0.0003;
 
 const BAR_LAYOUT = [
-  { id: 1, beads: 1, color: "#ef4444", depth: -0.04 },
-  { id: 2, beads: 2, color: "#16a34a", depth: -0.013 },
-  { id: 3, beads: 3, color: "#ec4899", depth: 0.015 },
+  { id: 1, beads: 1, color: "#ef4444", depth: -0.06 },
+  { id: 2, beads: 2, color: "#16a34a", depth: -0.04 },
+  { id: 3, beads: 3, color: "#fec8d8", depth: -0.02 },
+  { id: 4, beads: 4, color: "#fde68a", depth: 0 },
+  { id: 5, beads: 5, color: "#93c5fd", depth: 0.02 },
+  { id: 6, beads: 6, color: "#d8b4fe", depth: 0.04 },
+  { id: 7, beads: 7, color: "#f8fafc", depth: 0.06 },
+  { id: 8, beads: 8, color: "#5d4037", depth: 0.08 },
+  { id: 9, beads: 9, color: "#1e3a8a", depth: 0.1 },
 ];
 
 type ShortBeadWorkbenchProps = {
@@ -54,13 +61,17 @@ const ShortBeadWorkbench = ({ className }: ShortBeadWorkbenchProps) => {
         </mesh>
 
         {BAR_LAYOUT.map((bar) => {
-          const spacing = bar.id === 2 ? BEAD_DIAMETER - GREEN_SPACING_OFFSET : BEAD_DIAMETER;
+          const spacing = bar.id === 2 ? BEAD_DIAMETER - GREEN_SPACING_OFFSET : BEAD_DIAMETER - BEAD_OVERLAP;
           const length = (bar.beads - 1) * spacing + BEAD_DIAMETER;
           const startX = -length / 2 + BEAD_RADIUS;
           const loopOffset = length / 2 + WIRE_LOOP_RADIUS - BEAD_RADIUS * 0.08;
           return (
-            <group key={bar.id} position={[0, BEAD_RADIUS, bar.depth]}>
-              <mesh geometry={wireGeometry} rotation={[0, 0, Math.PI / 2]} scale={[WIRE_LOOP_RADIUS, length + WIRE_LOOP_RADIUS * 2, WIRE_LOOP_RADIUS]}>
+            <group key={bar.id} position={[0, BEAD_RADIUS + 0.015, bar.depth]}>
+              <mesh
+                geometry={wireGeometry}
+                rotation={[0, 0, Math.PI / 2]}
+                scale={[WIRE_LOOP_RADIUS * 1.1, length + WIRE_LOOP_RADIUS * 2, WIRE_LOOP_RADIUS * 1.1]}
+              >
                 <meshStandardMaterial color="#b18b4b" metalness={0.85} roughness={0.25} />
               </mesh>
 
