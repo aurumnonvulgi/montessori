@@ -7,9 +7,10 @@ import * as THREE from "three";
 
 const BEAD_DIAMETER = 0.01;
 const BEAD_RADIUS = BEAD_DIAMETER / 2;
+const BEAD_SPACING = 0.003; // 3 mm between beads
 const WIRE_LOOP_RADIUS = 0.0015;
 const WIRE_LOOP_TUBE = 0.0003;
-const GREEN_OFFSET = 0.0003;
+const GREEN_OFFSET = 0.0005;
 
 type BarDefinition = {
   id: number;
@@ -84,8 +85,9 @@ const ShortBeadStairScene = ({ onHomePositions }: ShortBeadStairSceneProps) => {
         <meshStandardMaterial color="#c8a67d" />
       </mesh>
 
-      {BAR_LAYOUT.map((bar) => {
-        const spacing = bar.id === 2 ? BEAD_DIAMETER - GREEN_OFFSET : BEAD_DIAMETER - 0.0002;
+        {BAR_LAYOUT.map((bar) => {
+          const spacing =
+            bar.id === 2 ? BEAD_DIAMETER + GREEN_OFFSET : BEAD_DIAMETER + BEAD_SPACING;
         const length = (bar.beads - 1) * spacing + BEAD_DIAMETER;
         const startX = -length / 2 + BEAD_RADIUS;
         const loopOffset = length / 2 + WIRE_LOOP_RADIUS * 0.8;
