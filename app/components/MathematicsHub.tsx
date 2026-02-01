@@ -24,13 +24,6 @@ const LESSONS = [
     completionKey: "sandpaper-numerals-complete",
   },
   {
-    key: "shortBeadStair",
-    label: "Short Bead Stair",
-    href: "/lessons/short-bead-stair",
-    preview: <ShortBeadWorkbench className="h-full" />,
-    completionKey: "short-bead-stair-complete",
-  },
-  {
     key: "spindleBoxes",
     label: "Spindle Boxes",
     href: "/lessons/spindle-boxes",
@@ -43,6 +36,13 @@ const LESSONS = [
     href: "/lessons/numerals-and-counters",
     preview: <NumeralsAndCountersPreview className="h-full" />,
     completionKey: "numerals-and-counters-complete",
+  },
+  {
+    key: "shortBeadStair",
+    label: "Short Bead Stair",
+    href: "/lessons/short-bead-stair",
+    preview: <ShortBeadWorkbench className="h-full" />,
+    completionKey: "short-bead-stair-complete",
   },
 ];
 
