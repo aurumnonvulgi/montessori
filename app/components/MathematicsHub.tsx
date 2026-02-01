@@ -4,13 +4,8 @@ import { useEffect, useState } from "react";
 import HomeLink from "./HomeLink";
 import NumberRodsScene from "./NumberRodsScene";
 import NumeralsAndCountersPreview from "./NumeralsAndCountersPreview";
+import SandpaperNumeralsPreview from "./SandpaperNumeralsPreview";
 import SpindleBoxesPreview from "./SpindleBoxesPreview";
-
-const SandpaperPlaceholder = () => (
-  <div className="flex items-center justify-center rounded-[20px] border border-dashed border-stone-300 bg-white/70 p-4 text-sm text-stone-500">
-    <span>Sandpaper cards</span>
-  </div>
-);
 
 const LESSONS = [
   {
@@ -24,7 +19,7 @@ const LESSONS = [
     key: "sandpaperNumerals",
     label: "Sandpaper Numerals",
     href: "/lessons/sandpaper-numerals",
-    preview: <SandpaperPlaceholder />,
+    preview: <SandpaperNumeralsPreview className="h-full" />,
     completionKey: "sandpaper-numerals-complete",
   },
   {
