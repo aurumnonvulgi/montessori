@@ -109,7 +109,6 @@ export default function ShortBeadStairScene({
   const phaseCompleteRef = useRef(false);
   const hintTimeoutRef = useRef<number | null>(null);
 
-  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     setBars(phase === "rebuild" ? createMixedLayout() : createPileLayout());
     setPlacedCount(0);
@@ -119,7 +118,6 @@ export default function ShortBeadStairScene({
     setCountProgress({});
     setCountTarget(1);
   }, [phase]);
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   useEffect(() => {
     if (phase === "count") {

@@ -5,23 +5,7 @@ import { useRouter } from "next/navigation";
 import NumeralsAndCountersScene, {
   NUMERALS_AND_COUNTERS_STAGES,
 } from "./NumeralsAndCountersScene";
-
-const CompletionCheck = () => (
-  <div className="flex h-full items-center justify-center">
-    <div className="flex h-32 w-32 items-center justify-center rounded-full bg-white/85 shadow-lg">
-      <svg viewBox="0 0 120 120" className="h-20 w-20">
-        <path
-          d="M18 64l28 28 56-62"
-          fill="none"
-          stroke="#f2c94c"
-          strokeWidth="14"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    </div>
-  </div>
-);
+import { CompletionCheck } from "./NumeralsAndCountersStagelesson";
 
 export default function NumeralsAndCountersLesson() {
   const router = useRouter();

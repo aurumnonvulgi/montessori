@@ -48,7 +48,6 @@ type CompletionState = Record<string, boolean>;
 export default function MathematicsHub() {
   const [completed, setCompleted] = useState<CompletionState>({});
 
-  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
@@ -59,7 +58,6 @@ export default function MathematicsHub() {
     });
     setCompleted(next);
   }, []);
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   return (
     <div className="relative min-h-screen bg-[radial-gradient(circle_at_top,#f5efe6_0%,#fdfbf8_45%,#f7efe4_100%)]">

@@ -423,9 +423,6 @@ function NumberRodsContent({
           return;
         }
         const isCountActive = t >= countRange.start && t <= countRange.end;
-        const countProgress = isCountActive
-          ? clamp01((t - countRange.start) / (countRange.end - countRange.start))
-          : 0;
         const segmentPulse = isCountActive ? 0.28 : 0;
         const segmentScale = isCountActive ? 1.015 : 1;
         const quizGlow = isQuizLift && quizLiftValue > 0 ? 0.6 : 0;
@@ -582,7 +579,7 @@ export default function NumberRodsScene({
   const quizCompleteRef = useRef(false);
   const promptRef = useRef<Record<string, boolean>>({});
   const timeoutRef = useRef<number | null>(null);
-  const recognitionRef = useRef<any>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
   const awaitingAnswerRef = useRef(false);
 
   const currentTarget =
@@ -608,14 +605,14 @@ export default function NumberRodsScene({
       return false;
     }
 
-    const speechWindow = window as unknown as {
-      SpeechRecognition?: any;
-      webkitSpeechRecognition?: any;
+    const speechWindow = window as Window & {
+      SpeechRecognition?: typeof SpeechRecognition;
+      webkitSpeechRecognition?: typeof SpeechRecognition;
     };
-    const SpeechRecognition =
-      speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
+    const SpeechRecognitionConstructor =
+      speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
 
-    if (!SpeechRecognition) {
+    if (!SpeechRecognitionConstructor) {
       return false;
     }
 
@@ -627,7 +624,7 @@ export default function NumberRodsScene({
       }
     }
 
-    const recognition = new SpeechRecognition();
+    const recognition = new SpeechRecognitionConstructor();
     recognition.lang = "en-US";
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
@@ -688,7 +685,7 @@ export default function NumberRodsScene({
         });
       }, quizLiftDuration * 1000);
     },
-    [currentTarget, quizPhase, voiceEnabled],
+    [currentTarget, quizPhase, voiceEnabled, clickOrder.length],
   );
 
   const resetQuizState = useCallback(() => {
@@ -773,7 +770,7 @@ export default function NumberRodsScene({
         finishAfterDelay();
       }
     }
-  }, [currentTarget, quizPhase, startRecognition, voiceEnabled]);
+  }, [currentTarget, quizPhase, startRecognition, voiceEnabled, nameOrder.length]);
 
   useEffect(() => {
     if (quizPhase !== null) {

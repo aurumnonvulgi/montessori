@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import SandpaperNumeralsScene from "./SandpaperNumeralsScene";
 import HomeLink from "./HomeLink";
@@ -21,28 +21,10 @@ export default function SandpaperNumeralsLesson({
   const router = useRouter();
   const [lessonStarted, setLessonStarted] = useState(false);
   const [resetKey, setResetKey] = useState(0);
-  const [confettiVisible, setConfettiVisible] = useState(false);
-  const [fadeOut, setFadeOut] = useState(false);
-  const fadeTimerRef = useRef<number | null>(null);
-  const advanceTimerRef = useRef<number | null>(null);
-
-  const clearConfettiTimers = useCallback(() => {
-    if (fadeTimerRef.current) {
-      window.clearTimeout(fadeTimerRef.current);
-      fadeTimerRef.current = null;
-    }
-    if (advanceTimerRef.current) {
-      window.clearTimeout(advanceTimerRef.current);
-      advanceTimerRef.current = null;
-    }
-  }, []);
 
   const startLesson = useCallback(() => {
-    clearConfettiTimers();
     setLessonStarted(true);
     setResetKey((value) => value + 1);
-    setConfettiVisible(false);
-    setFadeOut(false);
 
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       const utterance = new SpeechSynthesisUtterance(" ");
@@ -50,58 +32,44 @@ export default function SandpaperNumeralsLesson({
       window.speechSynthesis.cancel();
       window.speechSynthesis.speak(utterance);
     }
-  }, [clearConfettiTimers]);
+  }, []);
 
   const goHome = useCallback(() => {
     router.push("/");
   }, [router]);
 
   const handleLessonComplete = useCallback(() => {
-    clearConfettiTimers();
-    setConfettiVisible(true);
-    setFadeOut(false);
-
-    fadeTimerRef.current = window.setTimeout(() => {
-      setFadeOut(true);
-    }, 2600);
-
-    advanceTimerRef.current = window.setTimeout(() => {
-      setConfettiVisible(false);
-      setFadeOut(false);
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem(
-          `sandpaper-numerals-level-${levelId}-complete`,
-          "true",
-        );
-        const allComplete = SANDPAPER_LEVEL_IDS.every(
-          (id) =>
-            window.localStorage.getItem(
-              `sandpaper-numerals-level-${id}-complete`,
-            ) === "true",
-        );
-        if (allComplete) {
-          window.localStorage.setItem("sandpaper-numerals-complete", "true");
-        }
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(
+        `sandpaper-numerals-level-${levelId}-complete`,
+        "true",
+      );
+      const allComplete = SANDPAPER_LEVEL_IDS.every(
+        (id) =>
+          window.localStorage.getItem(
+            `sandpaper-numerals-level-${id}-complete`,
+          ) === "true",
+      );
+      if (allComplete) {
+        window.localStorage.setItem("sandpaper-numerals-complete", "true");
       }
+    }
+    setTimeout(() => {
       router.push("/");
-    }, 3400);
-  }, [clearConfettiTimers, levelId, router]);
-
-  useEffect(() => {
-    return () => {
-      clearConfettiTimers();
-    };
-  }, [clearConfettiTimers]);
+    }, 600);
+  }, [levelId, router]);
 
   return (
     <div className="relative min-h-screen bg-[radial-gradient(circle_at_top,#f5efe6_0%,#fdfbf8_45%,#f7efe4_100%)]">
       <HomeLink />
       <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 px-6 py-12 sm:px-10">
-        <div className="flex flex-col gap-1 text-[10px] uppercase tracking-[0.3em] text-stone-400">
-          <span>Three-Period Lesson</span>
-          <span className="text-[10px] tracking-[0.25em]">
-            Sandpaper Numerals — {levelName}
-          </span>
+        <div className="flex w-full justify-end">
+          <div className="flex flex-col items-end gap-1 text-[10px] uppercase tracking-[0.3em] text-stone-400 text-right">
+            <span>Three-Period Lesson</span>
+            <span className="text-[10px] tracking-[0.25em]">
+              Sandpaper Numerals — {levelName}
+            </span>
+          </div>
         </div>
 
         <SandpaperNumeralsScene
@@ -131,15 +99,6 @@ export default function SandpaperNumeralsLesson({
           </button>
         )}
       </main>
-      {confettiVisible ? (
-        <div className={`lesson-complete-overlay${fadeOut ? " fade-out" : ""}`}>
-          <div className="lesson-complete-confetti">
-            {Array.from({ length: 16 }).map((_, index) => (
-              <span key={index} className="confetti-piece" />
-            ))}
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }

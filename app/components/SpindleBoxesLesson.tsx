@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import SpindleBoxesScene from "./SpindleBoxesScene";
 import { primeSounds } from "../lib/sounds";
@@ -50,34 +50,12 @@ function RestartIcon() {
   );
 }
 
-const CompletionCheck = () => (
-  <div className="flex h-full items-center justify-center">
-    <div className="flex h-32 w-32 items-center justify-center rounded-full bg-white/85 shadow-lg">
-      <svg viewBox="0 0 120 120" className="h-20 w-20">
-        <path
-          d="M18 64l28 28 56-62"
-          fill="none"
-          stroke="#f2c94c"
-          strokeWidth="14"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    </div>
-  </div>
-);
-
 export default function SpindleBoxesLesson() {
   const router = useRouter();
   const [lessonStarted, setLessonStarted] = useState(false);
   const [resetKey, setResetKey] = useState(0);
-  const [confettiVisible, setConfettiVisible] = useState(false);
-  const [fadeOut, setFadeOut] = useState(false);
   const [isPortraitMobile, setIsPortraitMobile] = useState(false);
   const [isMobileLandscape, setIsMobileLandscape] = useState(false);
-  const fadeTimerRef = useRef<number | null>(null);
-  const advanceTimerRef = useRef<number | null>(null);
-
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -93,9 +71,10 @@ export default function SpindleBoxesLesson() {
 
     const lockLandscape = async () => {
       try {
-        if (screen.orientation && "lock" in screen.orientation) {
-          await (screen.orientation as any).lock("landscape");
-        }
+        const orientation = screen.orientation as ScreenOrientation & {
+          lock?: (orientation: OrientationLockType) => Promise<void>;
+        };
+        await orientation.lock?.("landscape");
       } catch {
         // Orientation lock not supported
       }
@@ -106,26 +85,16 @@ export default function SpindleBoxesLesson() {
     window.addEventListener("resize", checkOrientation);
     window.addEventListener("orientationchange", checkOrientation);
 
-    return () => {
-      window.removeEventListener("resize", checkOrientation);
-      window.removeEventListener("orientationchange", checkOrientation);
-      try {
-        if (screen.orientation && "unlock" in screen.orientation) {
-          (screen.orientation as any).unlock();
-        }
-      } catch { /* ignore */ }
-    };
-  }, []);
-
-  const clearConfettiTimers = useCallback(() => {
-    if (fadeTimerRef.current) {
-      window.clearTimeout(fadeTimerRef.current);
-      fadeTimerRef.current = null;
-    }
-    if (advanceTimerRef.current) {
-      window.clearTimeout(advanceTimerRef.current);
-      advanceTimerRef.current = null;
-    }
+      return () => {
+        window.removeEventListener("resize", checkOrientation);
+        window.removeEventListener("orientationchange", checkOrientation);
+        try {
+          const orientation = screen.orientation as ScreenOrientation & {
+            unlock?: () => void;
+          };
+          orientation.unlock?.();
+        } catch { /* ignore */ }
+      };
   }, []);
 
   const requestFullscreen = useCallback(() => {
@@ -134,22 +103,21 @@ export default function SpindleBoxesLesson() {
     const isMobile = window.innerHeight < 500 || window.innerWidth < 640;
     if (!isMobile) return;
 
-    const elem = document.documentElement;
+    const elem = document.documentElement as HTMLElement & {
+      webkitRequestFullscreen?: () => Promise<void>;
+    };
     try {
       if (elem.requestFullscreen) {
         elem.requestFullscreen().catch(() => {});
-      } else if ((elem as any).webkitRequestFullscreen) {
-        (elem as any).webkitRequestFullscreen();
+      } else if (elem.webkitRequestFullscreen) {
+        elem.webkitRequestFullscreen();
       }
     } catch { /* Fullscreen not supported */ }
   }, []);
 
   const startLesson = useCallback(() => {
-    clearConfettiTimers();
     setLessonStarted(true);
     setResetKey((value) => value + 1);
-    setConfettiVisible(false);
-    setFadeOut(false);
     requestFullscreen();
 
     // Prime audio for mobile browsers
@@ -161,35 +129,24 @@ export default function SpindleBoxesLesson() {
       window.speechSynthesis.cancel();
       window.speechSynthesis.speak(utterance);
     }
-  }, [clearConfettiTimers, requestFullscreen]);
+  }, [requestFullscreen]);
 
   const restartLesson = useCallback(() => {
     setLessonStarted(false);
     setResetKey((value) => value + 1);
-    setConfettiVisible(false);
-    setFadeOut(false);
-    clearConfettiTimers();
-  }, [clearConfettiTimers]);
+  }, []);
 
   const goBack = useCallback(() => { router.back(); }, [router]);
   const goHome = useCallback(() => { router.push("/"); }, [router]);
 
   const handleLessonComplete = useCallback(() => {
-    clearConfettiTimers();
-    setConfettiVisible(true);
-    setFadeOut(false);
-    fadeTimerRef.current = window.setTimeout(() => { setFadeOut(true); }, 2600);
-    advanceTimerRef.current = window.setTimeout(() => {
-      setConfettiVisible(false);
-      setFadeOut(false);
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem("spindle-boxes-complete", "true");
-      }
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("spindle-boxes-complete", "true");
+    }
+    setTimeout(() => {
       router.push("/");
-    }, 3400);
-  }, [clearConfettiTimers, router]);
-
-  useEffect(() => { return () => { clearConfettiTimers(); }; }, [clearConfettiTimers]);
+    }, 600);
+  }, [router]);
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-[radial-gradient(circle_at_top,#f5efe6_0%,#fdfbf8_45%,#f7efe4_100%)]">
@@ -246,12 +203,6 @@ export default function SpindleBoxesLesson() {
           </div>
         )}
       </main>
-
-      {confettiVisible ? (
-        <div className={`lesson-complete-overlay${fadeOut ? " fade-out" : ""}`}>
-          <CompletionCheck />
-        </div>
-      ) : null}
 
       {isPortraitMobile && (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 bg-[#f5efe6]/95 backdrop-blur-sm">

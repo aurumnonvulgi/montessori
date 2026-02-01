@@ -34,9 +34,9 @@ const NUMBER_WORDS = [
 const DEFAULT_NUMBERS = [1, 2, 3];
 const cardSize = { width: 0.36, height: 0.46, thickness: 0.03 };
 const baseY = cardSize.thickness / 2;
-const flipDuration = 2.4;
-const travelDuration = 4.8;
-const slideDelay = 1.8;
+const flipDuration = 1.6;
+const travelDuration = 3.2;
+const slideDelay = 1.2;
 const arcHeight = 0.45;
 const introHighlightDuration = 3.6;
 const introLiftHeight = 0.05;
@@ -246,7 +246,6 @@ function SandpaperNumeralsContent({
 
       const stage = timeline.stages[index];
       const flipStart = stage?.flipStart ?? 0;
-      const flipEnd = stage?.flipEnd ?? 0;
       const travelStart = stage?.travelStart ?? 0;
       const travelEnd = stage?.travelEnd ?? 0;
       const offset = stackOffsets[index] ?? stackOffsets[stackOffsets.length - 1];
@@ -427,7 +426,7 @@ export default function SandpaperNumeralsScene({
   const promptRef = useRef<Record<string, boolean>>({});
   const timeoutRef = useRef<number | null>(null);
   const quizStartTimerRef = useRef<number | null>(null);
-  const recognitionRef = useRef<any>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
   const awaitingAnswerRef = useRef(false);
 
   const effectiveNumbers = useMemo(() => {
@@ -450,7 +449,7 @@ export default function SandpaperNumeralsScene({
       effectiveNumbers.map((_, index) => {
         return new THREE.Vector3(index * 0.035, index * 0.0025, index * 0.035);
       }),
-    [effectiveNumbers.length],
+    [effectiveNumbers],
   );
 
   const clickOrder = useMemo(
@@ -484,14 +483,14 @@ export default function SandpaperNumeralsScene({
       return false;
     }
 
-    const speechWindow = window as unknown as {
-      SpeechRecognition?: any;
-      webkitSpeechRecognition?: any;
+    const speechWindow = window as Window & {
+      SpeechRecognition?: typeof SpeechRecognition;
+      webkitSpeechRecognition?: typeof SpeechRecognition;
     };
-    const SpeechRecognition =
-      speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
+    const SpeechRecognitionConstructor =
+      speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
 
-    if (!SpeechRecognition) {
+    if (!SpeechRecognitionConstructor) {
       return false;
     }
 
@@ -503,7 +502,7 @@ export default function SandpaperNumeralsScene({
       }
     }
 
-    const recognition = new SpeechRecognition();
+    const recognition = new SpeechRecognitionConstructor();
     recognition.lang = "en-US";
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;

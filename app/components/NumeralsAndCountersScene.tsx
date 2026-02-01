@@ -186,7 +186,7 @@ function NumeralsAndCountersContent({
   const quizCompleteRef = useRef(false);
   const promptRef = useRef<Record<string, boolean>>({});
   const timeoutRef = useRef<number | null>(null);
-  const recognitionRef = useRef<any>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
   const awaitingAnswerRef = useRef(false);
 
   const [quizPhase, setQuizPhase] = useState<QuizPhase>(null);
@@ -363,13 +363,14 @@ function NumeralsAndCountersContent({
   const startRecognition = useCallback((onFinished: () => void) => {
     if (typeof window === "undefined") return false;
 
-    const speechWindow = window as unknown as {
-      SpeechRecognition?: new () => any;
-      webkitSpeechRecognition?: new () => any;
+    const speechWindow = window as Window & {
+      SpeechRecognition?: typeof SpeechRecognition;
+      webkitSpeechRecognition?: typeof SpeechRecognition;
     };
-    const SpeechRecognition = speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
+    const SpeechRecognitionConstructor =
+      speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
 
-    if (!SpeechRecognition) return false;
+    if (!SpeechRecognitionConstructor) return false;
 
     if (recognitionRef.current) {
       try {
@@ -379,7 +380,7 @@ function NumeralsAndCountersContent({
       }
     }
 
-    const recognition = new SpeechRecognition();
+    const recognition = new SpeechRecognitionConstructor();
     recognition.lang = "en-US";
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
@@ -402,7 +403,7 @@ function NumeralsAndCountersContent({
   }, []);
 
   // Handle click on card or counter during click quiz
-  const handleItemClick = useCallback((numeral: number, isCounter: boolean) => {
+  const handleItemClick = useCallback((numeral: number) => {
     if (currentTarget === null || quizPhase !== "click") return;
     if (awaitingAnswerRef.current) return;
     if (groupingNumeral !== null) return; // Already animating
@@ -718,7 +719,7 @@ function NumeralsAndCountersContent({
             rotation={[-Math.PI / 2, 0, 0]}
             onClick={(e) => {
               e.stopPropagation();
-              handleItemClick(numeral, false);
+              handleItemClick(numeral);
             }}
           >
             <mesh>
@@ -761,7 +762,7 @@ function NumeralsAndCountersContent({
             position={[info.finalX, 0.025, info.finalZ]}
             onClick={(e) => {
               e.stopPropagation();
-              handleItemClick(numeral, true);
+              handleItemClick(numeral);
             }}
           >
             <cylinderGeometry args={[0.12, 0.12, 0.05, 24]} />

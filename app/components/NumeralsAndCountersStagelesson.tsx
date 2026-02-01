@@ -57,7 +57,7 @@ function RestartIcon() {
   );
 }
 
-const CompletionCheck = () => (
+export const CompletionCheck = () => (
   <div className="flex h-full items-center justify-center">
     <div className="flex h-32 w-32 items-center justify-center rounded-full bg-white/85 shadow-lg">
       <svg viewBox="0 0 120 120" className="h-20 w-20">
@@ -107,9 +107,10 @@ export default function NumeralsAndCountersStageLesson({
     // Try to lock to landscape on mobile
     const lockLandscape = async () => {
       try {
-        if (screen.orientation && "lock" in screen.orientation) {
-          await (screen.orientation as any).lock("landscape");
-        }
+        const orientation = screen.orientation as ScreenOrientation & {
+          lock?: (orientation: OrientationLockType) => Promise<void>;
+        };
+        await orientation.lock?.("landscape");
       } catch {
         // Orientation lock not supported or denied - that's fine
       }
@@ -121,18 +122,19 @@ export default function NumeralsAndCountersStageLesson({
     window.addEventListener("resize", checkOrientation);
     window.addEventListener("orientationchange", checkOrientation);
 
-    return () => {
-      window.removeEventListener("resize", checkOrientation);
-      window.removeEventListener("orientationchange", checkOrientation);
-      // Unlock orientation on unmount
-      try {
-        if (screen.orientation && "unlock" in screen.orientation) {
-          (screen.orientation as any).unlock();
+      return () => {
+        window.removeEventListener("resize", checkOrientation);
+        window.removeEventListener("orientationchange", checkOrientation);
+        // Unlock orientation on unmount
+        try {
+          const orientation = screen.orientation as ScreenOrientation & {
+            unlock?: () => void;
+          };
+          orientation.unlock?.();
+        } catch {
+          // ignore
         }
-      } catch {
-        // ignore
-      }
-    };
+      };
   }, []);
 
   const clearConfettiTimers = useCallback(() => {
@@ -152,12 +154,14 @@ export default function NumeralsAndCountersStageLesson({
     const isMobile = window.innerHeight < 500 || window.innerWidth < 640;
     if (!isMobile) return;
 
-    const elem = document.documentElement;
+    const elem = document.documentElement as HTMLElement & {
+      webkitRequestFullscreen?: () => Promise<void>;
+    };
     try {
       if (elem.requestFullscreen) {
         elem.requestFullscreen().catch(() => {});
-      } else if ((elem as any).webkitRequestFullscreen) {
-        (elem as any).webkitRequestFullscreen();
+      } else if (elem.webkitRequestFullscreen) {
+        elem.webkitRequestFullscreen();
       }
     } catch {
       // Fullscreen not supported - that's fine

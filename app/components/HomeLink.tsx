@@ -17,7 +17,7 @@ export default function HomeLink({ className }: { className?: string }) {
     <button
       type="button"
       onClick={handleClick}
-      className={`group absolute top-4 left-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-stone-200 bg-white/90 text-stone-700 shadow-[0_18px_45px_-20px_rgba(15,23,42,0.9)] transition hover:-translate-y-0.5 hover:border-stone-400 hover:bg-white before:absolute before:-inset-2 before:rounded-[22px] before:bg-gradient-to-r before:from-sky-200/40 before:via-transparent before:to-emerald-200/40 before:blur-3xl before:opacity-60 before:-z-10 ${className ?? ""}`}
+      className={`group z-[999] absolute top-0 left-0 inline-flex h-12 w-12 items-center justify-center rounded-none rounded-br-[28px] border border-stone-200 bg-white/90 text-stone-700 shadow-[0_14px_30px_rgba(15,23,42,0.35)] transition hover:-translate-y-0.5 hover:border-stone-300 hover:bg-white before:absolute before:-inset-2 before:rounded-br-[28px] before:bg-gradient-to-r before:from-sky-200/40 before:via-transparent before:to-emerald-200/40 before:blur-3xl before:opacity-60 before:-z-10 ${className ?? ""}`}
       aria-label="Back"
     >
       <svg viewBox="0 0 24 24" className="h-6 w-6 fill-none stroke-current" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">

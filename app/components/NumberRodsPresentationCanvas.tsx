@@ -136,7 +136,7 @@ export default function NumberRodsPresentationCanvas({
   onComplete,
 }: NumberRodsPresentationCanvasProps) {
   const matRef = useRef<HTMLDivElement>(null);
-  const recognitionRef = useRef<any>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
   const demoTimerRef = useRef<number | null>(null);
   const successTimerRef = useRef<number | null>(null);
   const introSuccessTimerRef = useRef<number | null>(null);
@@ -144,6 +144,7 @@ export default function NumberRodsPresentationCanvas({
   const retryRecognitionRef = useRef(false);
   const fadeTimerRef = useRef<number | null>(null);
   const retryTimerRef = useRef<number | null>(null);
+  const startRecognitionRef = useRef<() => void>(() => {});
   const initialPositionsRef = useRef<Record<RodId, Position>>(
     {} as Record<RodId, Position>,
   );
@@ -198,7 +199,7 @@ export default function NumberRodsPresentationCanvas({
       2: { x: slotX, y: slotY + slotGap },
       3: { x: slotX, y: slotY + slotGap * 2 },
     } as Record<RodId, Position>;
-  }, [layout, metrics.rodHeight]);
+  }, [layout, metrics.rodHeight, metrics.rodLengths]);
 
   const startPositions = useMemo(() => {
     if (!layout.width || !layout.height) {
@@ -440,11 +441,14 @@ export default function NumberRodsPresentationCanvas({
     if (typeof window === "undefined") {
       return;
     }
-    const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-    if (!AudioContext) {
+    const audioWindow = window as Window & {
+      webkitAudioContext?: typeof AudioContext;
+    };
+    const AudioContextConstructor = audioWindow.AudioContext ?? audioWindow.webkitAudioContext;
+    if (!AudioContextConstructor) {
       return;
     }
-    const context = new AudioContext();
+    const context = new AudioContextConstructor();
     const oscillator = context.createOscillator();
     const gain = context.createGain();
     oscillator.type = "sine";
@@ -466,14 +470,14 @@ export default function NumberRodsPresentationCanvas({
     if (typeof window === "undefined") {
       return;
     }
-    const speechWindow = window as unknown as {
-      SpeechRecognition?: any;
-      webkitSpeechRecognition?: any;
+    const speechWindow = window as Window & {
+      SpeechRecognition?: typeof SpeechRecognition;
+      webkitSpeechRecognition?: typeof SpeechRecognition;
     };
-    const SpeechRecognition =
-      speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
+    const SpeechRecognitionConstructor =
+      speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
 
-    if (!SpeechRecognition) {
+    if (!SpeechRecognitionConstructor) {
       setMicError("Speech recognition is not supported in this browser.");
       setMicOverlayState("idle");
       return;
@@ -487,13 +491,13 @@ export default function NumberRodsPresentationCanvas({
       }
     }
 
-    const recognition = new SpeechRecognition();
+    const recognition = new SpeechRecognitionConstructor();
     recognition.lang = "en-US";
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
     retryRecognitionRef.current = true;
 
-    recognition.onresult = (event: any) => {
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
       const transcript = event.results?.[0]?.[0]?.transcript ?? "";
       if (isIntroMatch(transcript)) {
         setMicError("");
@@ -526,7 +530,7 @@ export default function NumberRodsPresentationCanvas({
           window.clearTimeout(retryTimerRef.current);
         }
         retryTimerRef.current = window.setTimeout(() => {
-          startRecognition();
+          startRecognitionRef.current?.();
         }, 350);
       }
     };
@@ -535,6 +539,10 @@ export default function NumberRodsPresentationCanvas({
     setMicOverlayState("listening");
     recognition.start();
   }, [phase, playing]);
+
+  useEffect(() => {
+    startRecognitionRef.current = startRecognition;
+  }, [startRecognition]);
 
   const startIntroSequence = useCallback(() => {
     if (!playing || phase !== "intro" || introSequenceRef.current) {

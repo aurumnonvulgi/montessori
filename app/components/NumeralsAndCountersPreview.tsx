@@ -5,6 +5,8 @@ import { OrbitControls } from "@react-three/drei";
 import { useMemo } from "react";
 import * as THREE from "three";
 
+const PREVIEW_NUMERALS = [1, 2, 3] as const;
+
 type NumeralsAndCountersPreviewProps = {
   className?: string;
 };
@@ -27,17 +29,15 @@ function createNumeralTexture(numeral: number): THREE.CanvasTexture {
 }
 
 function NumeralsAndCountersPreviewContent() {
-  const numerals = [1, 2, 3];
-
   const numeralTextures = useMemo(() => {
-    return numerals.map((n) => createNumeralTexture(n));
+    return PREVIEW_NUMERALS.map((n) => createNumeralTexture(n));
   }, []);
 
   // Calculate counter positions for each numeral (pairs layout)
   const counterPositions = useMemo(() => {
     const positions: { numeral: number; x: number; z: number }[] = [];
 
-    numerals.forEach((numeral, idx) => {
+    PREVIEW_NUMERALS.forEach((numeral, idx) => {
       const cardX = -1.6 + idx * 1.6;
       const baseZ = 0.8;
 
@@ -73,7 +73,7 @@ function NumeralsAndCountersPreviewContent() {
       </mesh>
 
       {/* Numeral cards - laying flat on table */}
-      {numerals.map((numeral, idx) => {
+      {PREVIEW_NUMERALS.map((numeral, idx) => {
         const x = -1.6 + idx * 1.6;
         return (
           <group key={numeral} position={[x, 0.04, -0.3]} rotation={[-Math.PI / 2, 0, 0]}>
