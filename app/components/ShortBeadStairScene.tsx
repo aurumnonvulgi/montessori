@@ -20,15 +20,15 @@ type BarDefinition = {
 };
 
 const BAR_LAYOUT: BarDefinition[] = [
-  { id: 1, beads: 1, color: "#ef4444", depth: -0.08 },
-  { id: 2, beads: 2, color: "#16a34a", depth: -0.05 },
-  { id: 3, beads: 3, color: "#fec8d8", depth: -0.03 },
-  { id: 4, beads: 4, color: "#fde68a", depth: -0.005 },
-  { id: 5, beads: 5, color: "#93c5fd", depth: 0.02 },
-  { id: 6, beads: 6, color: "#d8b4fe", depth: 0.045 },
-  { id: 7, beads: 7, color: "#f8fafc", depth: 0.07 },
-  { id: 8, beads: 8, color: "#5d4037", depth: 0.095 },
-  { id: 9, beads: 9, color: "#1e3a8a", depth: 0.12 },
+  { id: 1, beads: 1, color: "#ef4444", depth: -0.045 },
+  { id: 2, beads: 2, color: "#16a34a", depth: -0.03 },
+  { id: 3, beads: 3, color: "#fec8d8", depth: -0.012 },
+  { id: 4, beads: 4, color: "#fde68a", depth: 0.008 },
+  { id: 5, beads: 5, color: "#93c5fd", depth: 0.027 },
+  { id: 6, beads: 6, color: "#d8b4fe", depth: 0.046 },
+  { id: 7, beads: 7, color: "#f8fafc", depth: 0.065 },
+  { id: 8, beads: 8, color: "#7a4f31", depth: 0.084 },
+  { id: 9, beads: 9, color: "#1e3a8a", depth: 0.103 },
 ];
 
 type HomePositions = Record<number, THREE.Vector3[]>;
