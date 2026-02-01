@@ -5,6 +5,7 @@ import HomeLink from "./HomeLink";
 import NumberRodsScene from "./NumberRodsScene";
 import NumeralsAndCountersPreview from "./NumeralsAndCountersPreview";
 import SandpaperNumeralsPreview from "./SandpaperNumeralsPreview";
+import ShortBeadStairDisplay from "./ShortBeadStairDisplay";
 import SpindleBoxesPreview from "./SpindleBoxesPreview";
 
 const LESSONS = [
@@ -21,6 +22,13 @@ const LESSONS = [
     href: "/lessons/sandpaper-numerals",
     preview: <SandpaperNumeralsPreview className="h-full" />,
     completionKey: "sandpaper-numerals-complete",
+  },
+  {
+    key: "shortBeadStair",
+    label: "Short Bead Stair",
+    href: "/lessons/short-bead-stair",
+    preview: <ShortBeadStairDisplay className="h-full" />,
+    completionKey: "short-bead-stair-complete",
   },
   {
     key: "spindleBoxes",
