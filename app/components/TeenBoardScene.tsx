@@ -1,6 +1,6 @@
 "use client";
 
-import { Canvas, useThree } from "@react-three/fiber";
+import { Canvas, useThree, ThreeEvent } from "@react-three/fiber";
 import { Text, OrbitControls as DreiOrbitControls } from "@react-three/drei";
 import { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import * as THREE from "three";
@@ -166,8 +166,8 @@ function SceneContent({ interactive }: { interactive: boolean }) {
     };
   }, [interactive, gl.domElement, pointerMoveHandler]);
 
-  const handleBarPointerDown = useCallback(
-    (id: string) => (event) => {
+const handleBarPointerDown = useCallback(
+    (id: string) => (event: ThreeEvent<PointerEvent>) => {
       event.stopPropagation();
       if (!interactive) {
         return;
@@ -182,8 +182,8 @@ function SceneContent({ interactive }: { interactive: boolean }) {
     [interactive, barPositions],
   );
 
-  const handleTilePointerDown = useCallback(
-    (id: string) => (event) => {
+const handleTilePointerDown = useCallback(
+    (id: string) => (event: ThreeEvent<PointerEvent>) => {
       event.stopPropagation();
       if (!interactive) {
         return;
