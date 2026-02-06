@@ -4,7 +4,7 @@ import { Canvas, useThree, ThreeEvent } from "@react-three/fiber";
 import { Text, OrbitControls as DreiOrbitControls } from "@react-three/drei";
 import { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import * as THREE from "three";
-import { OrbitControls as ThreeOrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { OrbitControls as ThreeOrbitControls } from "three-stdlib/controls/OrbitControls";
 
 const BEAD_RADIUS = 0.01;
 const BEAD_SPACING = BEAD_RADIUS * 1.05;
