@@ -4,14 +4,14 @@ import { Canvas, useThree } from "@react-three/fiber";
 import { Text, OrbitControls as DreiOrbitControls } from "@react-three/drei";
 import { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import * as THREE from "three";
-import { OrbitControls as ThreeOrbitControls } from "three/examples/jsm/controls/OrbitControls";
+import { OrbitControls as ThreeOrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 const BEAD_RADIUS = 0.01;
 const BEAD_SPACING = BEAD_RADIUS * 1.05;
 const TEN_BAR_COUNT = 5;
 const UNIT_BAR_COUNT = 9;
 
-const TEN_BOARD_POSITION = { x: -0.15, y: BEAD_RADIUS + 0.001, z: 0 };
+const TEN_BOARD_POSITION = { x: 0, y: BEAD_RADIUS + 0.001, z: 0 };
 const TEN_BOARD_LENGTH = 0.62;
 const TEN_BOARD_WIDTH = 0.27;
 const TEN_BAR_START = {
@@ -25,7 +25,7 @@ const TILE_DEPTH = ROW_SPACING * 0.8;
 const SLAT_TOP_Y = TEN_BOARD_POSITION.y + TILE_SLAT_THICKNESS / 2;
 const TILE_OFFSET_Y = SLAT_TOP_Y - 0.004;
 const TILE_ELEVATION = TILE_OFFSET_Y + 0.02;
-const TILE_STAGING_X = TEN_BOARD_POSITION.x + TEN_BOARD_WIDTH / 2 + 0.11;
+const TILE_STAGING_X = TEN_BOARD_POSITION.x + TEN_BOARD_WIDTH / 2 + 0.15;
 const ZERO_BAR_OFFSET_X = TEN_BOARD_POSITION.x + TEN_BOARD_WIDTH / 2 + BEAD_SPACING * 4;
 const STAIR_BASE_X = TEN_BOARD_POSITION.x - 0.35;
 const STAIR_BASE_Z = TEN_BOARD_POSITION.z + TEN_BOARD_LENGTH / 2 - 0.04;
@@ -50,20 +50,26 @@ const tileDefinitions: TileDefinition[] = Array.from({ length: TEN_BAR_COUNT }).
 }));
 
 const UNIT_BAR_START = { x: STAIR_BASE_X + 0.01, z: STAIR_BASE_Z - 0.02 };
+const UNIT_BEAD_TRIANGLE_X = TEN_BOARD_POSITION.x - 0.48;
+const UNIT_BEAD_TRIANGLE_START_Z = TEN_BOARD_POSITION.z + 0.25;
 
 const createInitialPositions = () => {
   const positions: Record<string, [number, number, number]> = {};
     const tenGap = TEN_BAR_GAP;
     for (let i = 0; i < TEN_BAR_COUNT; i += 1) {
-      positions[`ten-${i + 1}`] = [TEN_BAR_START.x, BEAD_RADIUS, TEN_BAR_START.z - i * tenGap];
+      positions[`ten-${i + 1}`] = [
+        TEN_BAR_START.x,
+        BEAD_RADIUS,
+        TEN_BAR_START.z - i * tenGap,
+      ];
     }
 
     for (let idx = 0; idx < UNIT_BAR_COUNT; idx += 1) {
-      const step = idx + 1;
-      positions[`unit-${step}`] = [
-        UNIT_BAR_START.x,
+      const xOffset = idx * 0.015;
+      positions[`unit-${idx + 1}`] = [
+        UNIT_BEAD_TRIANGLE_X + xOffset,
         BEAD_RADIUS,
-        UNIT_BAR_START.z - step * UNIT_BAR_SPACING,
+        UNIT_BEAD_TRIANGLE_START_Z - idx * 0.035,
       ];
     }
 
