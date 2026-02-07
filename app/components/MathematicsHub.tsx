@@ -6,6 +6,7 @@ import NumberRodsScene from "./NumberRodsScene";
 import NumeralsAndCountersPreview from "./NumeralsAndCountersPreview";
 import SandpaperNumeralsPreview from "./SandpaperNumeralsPreview";
 import ShortBeadWorkbench from "./ShortBeadWorkbench";
+import TeenBoardPreview from "./TeenBoardPreview";
 import SpindleBoxesPreview from "./SpindleBoxesPreview";
 
 const LESSONS = [
@@ -43,6 +44,20 @@ const LESSONS = [
     href: "/lessons/short-bead-stair",
     preview: <ShortBeadWorkbench className="h-full" />,
     completionKey: "short-bead-stair-complete",
+  },
+  {
+    key: "teenBoardQuantities",
+    label: "Teen Board Quantities",
+    href: "/lessons/teen-board",
+    preview: <TeenBoardPreview className="h-full" />,  
+    completionKey: "teen-board-quantities-complete",
+  },
+  {
+    key: "teenBoardSymbols",
+    label: "Teen Board Symbols",
+    href: "/lessons/teen-board-symbols",
+    preview: <TeenBoardPreview className="h-full" />,  
+    completionKey: "teen-board-symbols-complete",
   },
 ];
 
