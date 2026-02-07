@@ -85,15 +85,13 @@ type TeenBoardSceneProps = {
   className?: string;
   interactive?: boolean;
   preview?: boolean;
-  showGrid?: boolean;
-  showLabels?: boolean;
 };
 
 const dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 const pointer = new THREE.Vector2();
 const raycaster = new THREE.Raycaster();
 
-function SceneContent({ interactive, showGrid, showLabels }: { interactive: boolean; showGrid?: boolean; showLabels?: boolean }) {
+function SceneContent({ interactive }: { interactive: boolean }) {
   const { camera, gl } = useThree();
   const orbitRef = useRef<any>(null);
   const [barPositions, setBarPositions] = useState(() => createInitialPositions());
@@ -322,11 +320,11 @@ function SceneContent({ interactive, showGrid, showLabels }: { interactive: bool
   );
 }
 
-export default function TeenBoardScene({ className, interactive = true, showGrid, showLabels }: TeenBoardSceneProps) {
+export default function TeenBoardSceneSymbols({ className, interactive = true }: TeenBoardSceneProps) {
   return (
     <div className={className ?? "h-full w-full"}>
       <Canvas camera={{ position: [0, 0.35, 0.8], fov: 45 }}>
-        <SceneContent interactive={interactive} showGrid={showGrid} showLabels={showLabels} />
+        <SceneContent interactive={interactive} />
       </Canvas>
     </div>
   );
