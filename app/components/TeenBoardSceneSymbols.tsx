@@ -1,10 +1,9 @@
 "use client";
 
-import { Canvas, useThree } from "@react-three/fiber";
+import { Canvas, ThreeEvent, useThree } from "@react-three/fiber";
 import { Text, OrbitControls as DreiOrbitControls } from "@react-three/drei";
 import { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import * as THREE from "three";
-import { OrbitControls as ThreeOrbitControls } from "three/examples/jsm/controls/OrbitControls";
 
 const BEAD_RADIUS = 0.01;
 const BEAD_SPACING = BEAD_RADIUS * 1.05;
@@ -94,7 +93,7 @@ const raycaster = new THREE.Raycaster();
 
 function SceneContent({ interactive }: { interactive: boolean }) {
   const { camera, gl } = useThree();
-  const orbitRef = useRef<ThreeOrbitControls | null>(null);
+  const orbitRef = useRef<any>(null);
   const [barPositions, setBarPositions] = useState(() => createInitialPositions());
   const [tilePositions, setTilePositions] = useState(() => createTilePositions());
   const [dragTarget, setDragTarget] = useState<{
@@ -161,7 +160,7 @@ function SceneContent({ interactive }: { interactive: boolean }) {
   }, [interactive, gl.domElement, pointerMoveHandler]);
 
   const handleBarPointerDown = useCallback(
-    (id: string) => (event) => {
+    (id: string) => (event: ThreeEvent<PointerEvent>) => {
       event.stopPropagation();
       if (!interactive) {
         return;
@@ -177,7 +176,7 @@ function SceneContent({ interactive }: { interactive: boolean }) {
   );
 
   const handleTilePointerDown = useCallback(
-    (id: string) => (event) => {
+    (id: string) => (event: ThreeEvent<PointerEvent>) => {
       event.stopPropagation();
       if (!interactive) {
         return;
