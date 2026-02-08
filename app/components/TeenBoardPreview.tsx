@@ -1,15 +1,21 @@
 "use client";
 
 import TeenBoardScene from "./TeenBoardScene";
+import TeenBoardSceneSymbols from "./TeenBoardSceneSymbols";
 
 type TeenBoardPreviewProps = {
   className?: string;
+  scene?: "quantities" | "symbols";
 };
 
-export default function TeenBoardPreview({ className }: TeenBoardPreviewProps) {
+export default function TeenBoardPreview({ className, scene = "quantities" }: TeenBoardPreviewProps) {
   return (
     <div className={`h-full w-full ${className ?? ""}`}>
-      <TeenBoardScene interactive={false} />
+      {scene === "symbols" ? (
+        <TeenBoardSceneSymbols interactive={false} />
+      ) : (
+        <TeenBoardScene interactive={false} />
+      )}
     </div>
   );
 }

@@ -1,216 +1,134 @@
 "use client";
 
 import { Canvas, ThreeEvent, useThree } from "@react-three/fiber";
-import { Text, OrbitControls as DreiOrbitControls } from "@react-three/drei";
-import { useRef, useState, useEffect, useCallback, useMemo } from "react";
+import { OrbitControls as DreiOrbitControls } from "@react-three/drei";
+import { useRef, useState, useEffect, useCallback } from "react";
 import * as THREE from "three";
 
 const BEAD_RADIUS = 0.01;
 const BEAD_SPACING = BEAD_RADIUS * 1.05;
 const TEN_BAR_COUNT = 5;
 const UNIT_BAR_COUNT = 9;
+const X_MIN = -1.5;
+const X_MAX = 0.6;
+const Z_MIN = -0.2;
+const Z_MAX = 0.5;
 
-const TEN_BOARD_POSITION = { x: -0.15, y: BEAD_RADIUS + 0.001, z: 0 };
-const TEN_BOARD_LENGTH = 0.62;
-const TEN_BOARD_WIDTH = 0.27;
-const TEN_BAR_START = {
-  x: TEN_BOARD_POSITION.x - 0.3,
-  z: TEN_BOARD_POSITION.z + TEN_BOARD_LENGTH / 2 - 0.08,
-};
-const ROW_SPACING = TEN_BOARD_LENGTH / TEN_BAR_COUNT;
-const TILE_SLAT_THICKNESS = 0.01;
-const TILE_WIDTH = TEN_BOARD_WIDTH * 0.55;
-const TILE_DEPTH = ROW_SPACING * 0.8;
-const SLAT_TOP_Y = TEN_BOARD_POSITION.y + TILE_SLAT_THICKNESS / 2;
-const TILE_OFFSET_Y = SLAT_TOP_Y - 0.004;
-const TILE_ELEVATION = TILE_OFFSET_Y + 0.02;
-const TILE_STAGING_X = TEN_BOARD_POSITION.x + TEN_BOARD_WIDTH / 2 + 0.11;
-const ZERO_BAR_OFFSET_X = TEN_BOARD_POSITION.x + TEN_BOARD_WIDTH / 2 + BEAD_SPACING * 4;
-const STAIR_BASE_X = TEN_BOARD_POSITION.x - 0.35;
-const STAIR_BASE_Z = TEN_BOARD_POSITION.z + TEN_BOARD_LENGTH / 2 - 0.04;
-const MIN_Z = -0.35;
-const MAX_Z = 0.35;
-const MAX_X = 0.4;
-const TILE_MIN_X = TEN_BOARD_POSITION.x - 0.1;
-const BAR_MIN_X = -0.75;
-const BAR_MAX_X = TEN_BOARD_POSITION.x - TEN_BOARD_WIDTH / 2 - 0.04;
-const TEN_BAR_GAP = 0.11;
-const UNIT_BAR_SPACING = 0.05;
-const BOARD_TEXT_Y = TEN_BOARD_POSITION.y + 0.02;
+const TEN_BAR_POSITIONS: [number, number, number][] = [
+  [0.2544291310525646, BEAD_RADIUS, 0.3830499503033003],
+  [0.2964945229880483, BEAD_RADIUS, 0.38143310142231546],
+  [0.3324896828143259, BEAD_RADIUS, 0.38317598280595333],
+  [0.3670180914921699, BEAD_RADIUS, 0.3842294037152537],
+  [0.4, BEAD_RADIUS, 0.3843294241470268],
+];
 
-type TilePlacement = "board" | "zero";
-type TileDefinition = { id: string; label: string; row: number; type: TilePlacement };
-
-const tileDefinitions: TileDefinition[] = Array.from({ length: TEN_BAR_COUNT }).map((_, index) => ({
-  id: `tile-${index + 1}`,
-  label: `${index + 1}`,
-  row: index,
-  type: "board",
-}));
-
-const UNIT_BAR_START = { x: STAIR_BASE_X + 0.01, z: STAIR_BASE_Z - 0.02 };
+const UNIT_BAR_POSITIONS: [number, number, number][] = [
+  [0.20537113299389023, BEAD_RADIUS, 0.338328648968787],
+  [0.17635774889097386, BEAD_RADIUS, 0.3463879177084178],
+  [0.14273459141629924, BEAD_RADIUS, 0.35462013982961765],
+  [0.10725065582754717, BEAD_RADIUS, 0.3558826808307598],
+  [0.072061890131814, BEAD_RADIUS, 0.3566419065781292],
+  [0.042415639180468735, BEAD_RADIUS, 0.36087392866364587],
+  [0.011742108415274802, BEAD_RADIUS, 0.364216913327867],
+  [-0.020349038228586837, BEAD_RADIUS, 0.36535836788649084],
+  [-0.04957198048503151, BEAD_RADIUS, 0.36646124952720893],
+];
 
 const createInitialPositions = () => {
   const positions: Record<string, [number, number, number]> = {};
-    const tenGap = TEN_BAR_GAP;
-    for (let i = 0; i < TEN_BAR_COUNT; i += 1) {
-      positions[`ten-${i + 1}`] = [TEN_BAR_START.x, BEAD_RADIUS, TEN_BAR_START.z - i * tenGap];
-    }
-
-    for (let idx = 0; idx < UNIT_BAR_COUNT; idx += 1) {
-      const step = idx + 1;
-      positions[`unit-${step}`] = [
-        UNIT_BAR_START.x,
-        BEAD_RADIUS,
-        UNIT_BAR_START.z - step * UNIT_BAR_SPACING,
-      ];
-    }
-
-  return positions;
-};
-
-const createTilePositions = () => {
-  const positions: Record<string, [number, number, number]> = {};
-  const startZ = TEN_BOARD_POSITION.z - TEN_BOARD_LENGTH / 2 + ROW_SPACING / 2;
-  tileDefinitions.forEach((tile) => {
-    const rowOffset = startZ + ROW_SPACING * tile.row;
-    positions[tile.id] = [TILE_STAGING_X, TILE_ELEVATION, rowOffset];
+  TEN_BAR_POSITIONS.forEach((pos, index) => {
+    positions[`ten-${index + 1}`] = pos;
+  });
+  UNIT_BAR_POSITIONS.forEach((pos, index) => {
+    positions[`unit-${index + 1}`] = pos;
   });
   return positions;
 };
 
-const unitBarColors = ["#ef4444", "#16a34a", "#fec8d8", "#fde68a", "#93c5fd", "#d8b4fe", "#f8fafc", "#7a4f31", "#1e3a8a"];
-
 type TeenBoardSceneProps = {
   className?: string;
   interactive?: boolean;
-  preview?: boolean;
-  showGrid?: boolean;
-  showLabels?: boolean;
+  onPositionsChange?: (positions: Record<string, [number, number, number]>) => void;
 };
 
 const dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 const pointer = new THREE.Vector2();
 const raycaster = new THREE.Raycaster();
 
-function SceneContent({ interactive, showGrid, showLabels }: { interactive: boolean; showGrid?: boolean; showLabels?: boolean }) {
+function SceneContent({
+  interactive,
+  onPositionsChange,
+}: {
+  interactive: boolean;
+  onPositionsChange?: (positions: Record<string, [number, number, number]>) => void;
+}) {
   const { camera, gl } = useThree();
   const orbitRef = useRef<any>(null);
   const [barPositions, setBarPositions] = useState(() => createInitialPositions());
-  const [tilePositions, setTilePositions] = useState(() => createTilePositions());
-  const [dragTarget, setDragTarget] = useState<{
-    id: string;
-    offset: THREE.Vector3;
-    type: "bar" | "tile";
-  } | null>(null);
+  const [dragTarget, setDragTarget] = useState<{ id: string; offset: THREE.Vector3 } | null>(null);
 
-  const pointerMoveHandler = useCallback(
+  const pointerMove = useCallback(
     (event: PointerEvent) => {
-      if (!dragTarget) {
-        return;
-      }
+      if (!dragTarget) return;
       const rect = gl.domElement.getBoundingClientRect();
       pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
       raycaster.setFromCamera(pointer, camera);
-      const intersection = new THREE.Vector3();
-      if (raycaster.ray.intersectPlane(dragPlane, intersection)) {
-        const positionY =
-          dragTarget.type === "tile"
-            ? tilePositions[dragTarget.id]?.[1] ?? TILE_ELEVATION
-            : BEAD_RADIUS;
-        const newPosition = intersection.clone().sub(dragTarget.offset);
-        newPosition.y = positionY;
-        const minX = dragTarget.type === "tile" ? TILE_MIN_X : BAR_MIN_X;
-        const maxX = dragTarget.type === "bar" ? BAR_MAX_X : MAX_X;
-        newPosition.x = Math.max(Math.min(newPosition.x, maxX), minX);
-        newPosition.z = Math.min(Math.max(newPosition.z, MIN_Z), MAX_Z);
+      const hit = new THREE.Vector3();
+      if (raycaster.ray.intersectPlane(dragPlane, hit)) {
         const candidate: [number, number, number] = [
-          newPosition.x,
-          newPosition.y,
-          newPosition.z,
+          Math.max(Math.min(hit.x - dragTarget.offset.x, X_MAX), X_MIN),
+          BEAD_RADIUS,
+          Math.min(Math.max(hit.z - dragTarget.offset.z, Z_MIN), Z_MAX),
         ];
-        if (dragTarget.type === "bar") {
-          setBarPositions((previous) => ({ ...previous, [dragTarget.id]: candidate }));
-        } else {
-          setTilePositions((previous) => ({ ...previous, [dragTarget.id]: candidate }));
-        }
+        setBarPositions((prev) => ({ ...prev, [dragTarget.id]: candidate }));
       }
     },
-    [camera, dragTarget, gl.domElement, tilePositions],
+    [camera, dragTarget, gl.domElement],
   );
 
   useEffect(() => {
-    if (!interactive) {
-      return undefined;
-    }
     const canvas = gl.domElement;
-    const handleUp = () => {
+    const release = () => {
       setDragTarget(null);
-      if (orbitRef.current) {
-        orbitRef.current.enabled = true;
-      }
+      if (orbitRef.current) orbitRef.current.enabled = true;
     };
-    canvas.addEventListener("pointermove", pointerMoveHandler);
-    canvas.addEventListener("pointerup", handleUp);
-    canvas.addEventListener("pointerleave", handleUp);
+    canvas.addEventListener("pointermove", pointerMove);
+    canvas.addEventListener("pointerup", release);
+    canvas.addEventListener("pointerleave", release);
     return () => {
-      canvas.removeEventListener("pointermove", pointerMoveHandler);
-      canvas.removeEventListener("pointerup", handleUp);
-      canvas.removeEventListener("pointerleave", handleUp);
+      canvas.removeEventListener("pointermove", pointerMove);
+      canvas.removeEventListener("pointerup", release);
+      canvas.removeEventListener("pointerleave", release);
     };
-  }, [interactive, gl.domElement, pointerMoveHandler]);
+  }, [gl.domElement, pointerMove]);
 
-  const handleBarPointerDown = useCallback(
+  const handleDown = useCallback(
     (id: string) => (event: ThreeEvent<PointerEvent>) => {
       event.stopPropagation();
-      if (!interactive) {
-        return;
-      }
-      const currentPosition = new THREE.Vector3(...(barPositions[id] ?? [0, 0, 0]));
-      const offset = event.point.clone().sub(currentPosition);
-      setDragTarget({ id, offset, type: "bar" });
-      if (orbitRef.current) {
-        orbitRef.current.enabled = false;
-      }
+      if (!interactive) return;
+      const current = new THREE.Vector3(...(barPositions[id] ?? [0, 0, 0]));
+      setDragTarget({ id, offset: event.point.clone().sub(current) });
+      if (orbitRef.current) orbitRef.current.enabled = false;
     },
-    [interactive, barPositions],
+    [barPositions, interactive],
   );
 
-  const handleTilePointerDown = useCallback(
-    (id: string) => (event: ThreeEvent<PointerEvent>) => {
-      event.stopPropagation();
-      if (!interactive) {
-        return;
-      }
-      const currentPosition = new THREE.Vector3(...(tilePositions[id] ?? [0, 0, 0]));
-      const offset = event.point.clone().sub(currentPosition);
-      setDragTarget({ id, offset, type: "tile" });
-      if (orbitRef.current) {
-        orbitRef.current.enabled = false;
-      }
-    },
-    [interactive, tilePositions],
-  );
+  useEffect(() => {
+    onPositionsChange?.(barPositions);
+  }, [barPositions, onPositionsChange]);
 
-  const renderBeadBar = (beadCount: number, color: string, id: string) => {
+  const renderBar = (id: string, beadCount: number, color: string) => {
     const length = beadCount * BEAD_SPACING;
     const startX = -((beadCount - 1) * BEAD_SPACING) / 2;
     return (
-      <group
-        key={id}
-        position={barPositions[id] ?? [0, BEAD_RADIUS, 0]}
-        onPointerDown={handleBarPointerDown(id)}
-      >
+      <group key={id} position={barPositions[id] ?? [0, BEAD_RADIUS, 0]} onPointerDown={handleDown(id)}>
         <mesh rotation={[Math.PI / 2, 0, 0]}>
           <cylinderGeometry args={[0.002, 0.002, length + 0.02, 12]} />
           <meshStandardMaterial color="#a37432" />
         </mesh>
         {Array.from({ length: beadCount }).map((_, index) => (
-          <mesh
-            key={`${id}-bead-${index}`}
-            position={[0, 0, startX + index * BEAD_SPACING]}
-          >
+          <mesh key={`${id}-bead-${index}`} position={[0, 0, startX + index * BEAD_SPACING]}>
             <sphereGeometry args={[BEAD_RADIUS, 32, 32]} />
             <meshStandardMaterial color={color} metalness={0.2} roughness={0.3} />
           </mesh>
@@ -219,114 +137,38 @@ function SceneContent({ interactive, showGrid, showLabels }: { interactive: bool
     );
   };
 
-  const tenBars = Array.from({ length: TEN_BAR_COUNT }).map((_, index) =>
-    renderBeadBar(10, "#d4b896", `ten-${index + 1}`),
-  );
-  const unitBars = Array.from({ length: UNIT_BAR_COUNT }).map((_, index) =>
-    renderBeadBar(index + 1, unitBarColors[index], `unit-${index + 1}`),
-  );
-
-  const boardSlats = Array.from({ length: TEN_BAR_COUNT + 1 }).map((_, idx) => {
-    const z = -TEN_BOARD_LENGTH / 2 + idx * ROW_SPACING;
-    return (
-      <mesh key={`slat-${idx}`} position={[0, TILE_SLAT_THICKNESS / 2, z]}>
-        <boxGeometry args={[TEN_BOARD_WIDTH, TILE_SLAT_THICKNESS, 0.025]} />
-        <meshStandardMaterial color="#c79a5a" />
-      </mesh>
-    );
-  });
-
-  const tileElements = tileDefinitions.map((tile) => {
-    const position = tilePositions[tile.id] ?? [TEN_BOARD_POSITION.x, TEN_BOARD_POSITION.y, TEN_BOARD_POSITION.z];
-    return (
-      <group key={tile.id} position={position} onPointerDown={handleTilePointerDown(tile.id)}>
-        <mesh>
-          <boxGeometry args={[TILE_WIDTH, TILE_SLAT_THICKNESS, TILE_DEPTH]} />
-          <meshStandardMaterial color="#f7f3e8" />
-        </mesh>
-        <Text
-          fontSize={0.045}
-          color="#2c1b0a"
-          rotation={[-Math.PI / 2, 0, 0]}
-          position={[0, 0.02, 0]}
-        >
-          {tile.label}
-        </Text>
-      </group>
-    );
-  });
-
-  const boardTexts = Array.from({ length: TEN_BAR_COUNT }).map((_, index) => {
-    const z = TEN_BOARD_POSITION.z - TEN_BOARD_LENGTH / 2 + ROW_SPACING / 2 + ROW_SPACING * index;
-    return (
-      <Text
-        key={`board-text-${index}`}
-        fontSize={0.05}
-        color="#2c1b0a"
-        position={[TEN_BOARD_POSITION.x - 0.08, BOARD_TEXT_Y, z]}
-        rotation={[-Math.PI / 2, 0, 0]}
-      >
-        1
-      </Text>
-    );
-  });
-
-  const zeroBaseTexts = Array.from({ length: TEN_BAR_COUNT }).map((_, index) => {
-    const z = TEN_BOARD_POSITION.z - TEN_BOARD_LENGTH / 2 + ROW_SPACING / 2 + ROW_SPACING * index;
-    return (
-      <Text
-        key={`zero-base-${index}`}
-        fontSize={0.05}
-        color="#2c1b0a"
-        position={[ZERO_BAR_OFFSET_X - 0.12, BOARD_TEXT_Y, z]}
-        rotation={[-Math.PI / 2, 0, 0]}
-      >
-        0
-      </Text>
-    );
-  });
-
   return (
-      <>
-      <ambientLight intensity={0.75} />
-      <directionalLight position={[0.7, 1.2, 0.5]} intensity={0.9} />
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
-        <planeGeometry args={[1.8, 1.0]} />
-        <meshStandardMaterial color="#9c7b58" />
+    <>
+      <ambientLight intensity={0.7} />
+      <directionalLight position={[0.5, 1, 0.3]} intensity={0.8} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[2, 1.2]} />
+        <meshStandardMaterial color="#a27d53" />
       </mesh>
-      <group>{tenBars}</group>
-      <group>{unitBars}</group>
-      <group position={[TEN_BOARD_POSITION.x, TEN_BOARD_POSITION.y, TEN_BOARD_POSITION.z]}>
-        <mesh>
-          <boxGeometry args={[TEN_BOARD_WIDTH, 0.01, TEN_BOARD_LENGTH]} />
-          <meshStandardMaterial color="#f7f3e8" />
-        </mesh>
-        <group position={[0, TILE_SLAT_THICKNESS / 2, 0]}>{boardSlats}</group>
-      </group>
-      {boardTexts}
-      {zeroBaseTexts}
-      {tileElements}
-
-      <DreiOrbitControls
-        ref={orbitRef}
-        makeDefault
-        maxPolarAngle={Math.PI / 2}
-        minPolarAngle={0.15}
-        maxDistance={1.8}
-        minDistance={0.6}
-        enablePan
-        enableZoom
-        enableRotate
-      />
+      {Array.from({ length: TEN_BAR_COUNT }).map((_, index) => renderBar(`ten-${index + 1}`, 10, "#d4b896"))}
+      {Array.from({ length: UNIT_BAR_COUNT }).map((_, index) =>
+        renderBar(`unit-${index + 1}`, index + 1, [
+          "#ef4444",
+          "#16a34a",
+          "#fec8d8",
+          "#fde68a",
+          "#93c5fd",
+          "#d8b4fe",
+          "#f8fafc",
+          "#7a4f31",
+          "#1e3a8a",
+        ][index]),
+      )}
+      <DreiOrbitControls ref={orbitRef} maxPolarAngle={Math.PI / 2} minDistance={0.2} maxDistance={3} enablePan enableZoom />
     </>
   );
 }
 
-export default function TeenBoardScene({ className, interactive = true, showGrid, showLabels }: TeenBoardSceneProps) {
+export default function TeenBoardScene({ className, interactive = true, onPositionsChange }: TeenBoardSceneProps) {
   return (
     <div className={className ?? "h-full w-full"}>
-      <Canvas camera={{ position: [0, 0.35, 0.8], fov: 45 }}>
-        <SceneContent interactive={interactive} showGrid={showGrid} showLabels={showLabels} />
+      <Canvas camera={{ position: [0, 0.35, -0.8], fov: 45 }}>
+        <SceneContent interactive={interactive} onPositionsChange={onPositionsChange} />
       </Canvas>
     </div>
   );

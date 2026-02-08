@@ -49,14 +49,14 @@ const LESSONS = [
     key: "teenBoardQuantities",
     label: "Teen Board Quantities",
     href: "/lessons/teen-board",
-    preview: <TeenBoardPreview className="h-full" />,  
+    preview: <TeenBoardPreview className="h-full" scene="quantities" />,
     completionKey: "teen-board-quantities-complete",
   },
   {
     key: "teenBoardSymbols",
     label: "Teen Board Symbols",
     href: "/lessons/teen-board-symbols",
-    preview: <TeenBoardPreview className="h-full" />,  
+    preview: <TeenBoardPreview className="h-full" scene="symbols" />,
     completionKey: "teen-board-symbols-complete",
   },
 ];

@@ -5,8 +5,14 @@ import HomeLink from "./HomeLink";
 import TeenBoardScene from "./TeenBoardScene";
 
 export default function TeenBoardQuantitiesLesson() {
-  const [showGrid, setShowGrid] = useState(true);
-  const [showLabels, setShowLabels] = useState(true);
+  const [positions, setPositions] = useState<Record<string, [number, number, number]>>({});
+  const [snapshot, setSnapshot] = useState<string>("");
+
+  const captureLayout = () => {
+    const payload = JSON.stringify(positions, null, 2);
+    setSnapshot(payload);
+    navigator.clipboard?.writeText(payload).catch(() => {});
+  };
 
   return (
     <div className="relative min-h-screen bg-[radial-gradient(circle_at_top,#f5efe6_0%,#fdfbf8_45%,#f7efe4_100%)]">
@@ -21,27 +27,32 @@ export default function TeenBoardQuantitiesLesson() {
         </div>
 
         <section className="rounded-[36px] border border-stone-100 bg-white/90 p-6 shadow-[0_40px_70px_-50px_rgba(15,23,42,0.8)]">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-xs font-semibold uppercase tracking-[0.35em] text-stone-400">Dev overlay</span>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setShowGrid((prev) => !prev)}
-                className="rounded-full border border-stone-200 bg-white/80 px-4 py-1 text-[10px] font-semibold uppercase tracking-[0.4em] text-stone-600 shadow-sm"
-              >
-                {showGrid ? "Hide grid" : "Show grid"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowLabels((prev) => !prev)}
-                className="rounded-full border border-stone-200 bg-white/80 px-4 py-1 text-[10px] font-semibold uppercase tracking-[0.4em] text-stone-600 shadow-sm"
-              >
-                {showLabels ? "Hide labels" : "Show labels"}
-              </button>
-            </div>
-          </div>
           <div className="h-[520px]">
-            <TeenBoardScene className="h-full" showGrid={showGrid} showLabels={showLabels} />
+            <TeenBoardScene className="h-full" onPositionsChange={setPositions} />
+          </div>
+          <div className="mt-4 flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={captureLayout}
+              className="rounded-full border border-stone-200 bg-black/90 px-5 py-2 text-xs font-semibold uppercase tracking-[0.4em] text-white shadow-sm"
+            >
+              Capture layout
+            </button>
+            {snapshot && (
+              <div className="max-h-40 overflow-y-auto rounded-xl border border-stone-200 bg-stone-50 p-3 text-[10px] font-mono text-stone-700">
+                <div className="flex items-center justify-between text-[9px] uppercase tracking-[0.3em] text-stone-500">
+                  <span>Last capture</span>
+                  <button
+                    type="button"
+                    onClick={() => navigator.clipboard?.writeText(snapshot).catch(() => {})}
+                    className="text-stone-400 hover:text-stone-600"
+                  >
+                    Copy again
+                  </button>
+                </div>
+                <pre className="whitespace-pre-wrap">{snapshot}</pre>
+              </div>
+            )}
           </div>
         </section>
       </main>
