@@ -70,7 +70,8 @@ function SceneContent({
   onStartComplete?: () => void;
 }) {
   const { camera, gl } = useThree();
-  const orbitRef = useRef<DreiOrbitControls | null>(null);
+  type DreiControlsType = React.ElementRef<typeof DreiOrbitControls>;
+  const orbitRef = useRef<DreiControlsType | null>(null);
   const [barPositions, setBarPositions] = useState(() => createInitialPositions());
   const [dragTarget, setDragTarget] = useState<{ id: string; offset: THREE.Vector3 } | null>(null);
 
@@ -123,7 +124,7 @@ function SceneContent({
 
   const [animationActive, setAnimationActive] = useState(false);
   const animationRef = useRef({ elapsed: 0, duration: 1500 });
-  const prevStartKey = useRef<number>();
+  const prevStartKey = useRef<number | null>(null);
 
   const triggerAnimation = useCallback(() => {
     setAnimationActive(true);

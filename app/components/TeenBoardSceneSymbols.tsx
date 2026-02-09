@@ -93,7 +93,8 @@ const raycaster = new THREE.Raycaster();
 
 function SceneContent({ interactive }: { interactive: boolean }) {
   const { camera, gl } = useThree();
-  const orbitRef = useRef<DreiOrbitControls | null>(null);
+  type DreiControlsType = React.ElementRef<typeof DreiOrbitControls>;
+  const orbitRef = useRef<DreiControlsType | null>(null);
   const [barPositions, setBarPositions] = useState(() => createInitialPositions());
   const [tilePositions, setTilePositions] = useState(() => createTilePositions());
   const [dragTarget, setDragTarget] = useState<{
