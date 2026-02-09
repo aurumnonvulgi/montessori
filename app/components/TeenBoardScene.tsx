@@ -1,6 +1,6 @@
 "use client";
 
-import { Canvas, ThreeEvent, useThree } from "@react-three/fiber";
+import { Canvas, ThreeEvent, useThree, useFrame } from "@react-three/fiber";
 import { OrbitControls as DreiOrbitControls } from "@react-three/drei";
 import { useRef, useState, useEffect, useCallback } from "react";
 import * as THREE from "three";
@@ -21,6 +21,7 @@ const TEN_BAR_POSITIONS: [number, number, number][] = [
   [0.5734324089395717, BEAD_RADIUS, 0.46815815735814703],
   [0.6, BEAD_RADIUS, 0.46700580175231876],
 ];
+const START_TEN5_POSITION: [number, number, number] = [0.1348647988627374, BEAD_RADIUS, 0.2044872045820188];
 
 const UNIT_BAR_POSITIONS: [number, number, number][] = [
   [0.45340489606460965, BEAD_RADIUS, 0.4200131494607512],
@@ -49,6 +50,8 @@ type TeenBoardSceneProps = {
   className?: string;
   interactive?: boolean;
   onPositionsChange?: (positions: Record<string, [number, number, number]>) => void;
+  startAnimationKey?: number;
+  onStartComplete?: () => void;
 };
 
 const dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
@@ -58,12 +61,16 @@ const raycaster = new THREE.Raycaster();
 function SceneContent({
   interactive,
   onPositionsChange,
+  startAnimationKey,
+  onStartComplete,
 }: {
   interactive: boolean;
   onPositionsChange?: (positions: Record<string, [number, number, number]>) => void;
+  startAnimationKey?: number;
+  onStartComplete?: () => void;
 }) {
   const { camera, gl } = useThree();
-  const orbitRef = useRef<any>(null);
+  const orbitRef = useRef<DreiOrbitControls | null>(null);
   const [barPositions, setBarPositions] = useState(() => createInitialPositions());
   const [dragTarget, setDragTarget] = useState<{ id: string; offset: THREE.Vector3 } | null>(null);
 
@@ -114,6 +121,42 @@ function SceneContent({
     [barPositions, interactive],
   );
 
+  const [animationActive, setAnimationActive] = useState(false);
+  const animationRef = useRef({ elapsed: 0, duration: 1500 });
+  const prevStartKey = useRef<number>();
+
+  const triggerAnimation = useCallback(() => {
+    setAnimationActive(true);
+    animationRef.current.elapsed = 0;
+    setBarPositions((prev) => ({ ...prev, ["ten-5"]: TEN_BAR_POSITIONS[4] }));
+    console.log("Teen Board start animation triggered");
+  }, []);
+
+  useEffect(() => {
+    if (!startAnimationKey || startAnimationKey === prevStartKey.current) return;
+    prevStartKey.current = startAnimationKey;
+    triggerAnimation();
+  }, [startAnimationKey, triggerAnimation]);
+
+  useFrame((_, delta) => {
+    if (!animationActive) return;
+    const state = animationRef.current;
+    state.elapsed += delta * 1000;
+    const t = Math.min(state.elapsed / state.duration, 1);
+    const eased = 0.5 - 0.5 * Math.cos(Math.PI * t);
+    const home = TEN_BAR_POSITIONS[4];
+    const target = START_TEN5_POSITION;
+    const newX = THREE.MathUtils.lerp(home[0], target[0], eased);
+    const newZ = THREE.MathUtils.lerp(home[2], target[2], eased);
+    const newY = BEAD_RADIUS + Math.sin(Math.PI * t) * 0.04;
+    setBarPositions((prev) => ({ ...prev, ["ten-5"]: [newX, newY, newZ] }));
+    if (t >= 1) {
+      setAnimationActive(false);
+      onStartComplete?.();
+      console.log("Teen Board start animation completed");
+    }
+  });
+
   useEffect(() => {
     onPositionsChange?.(barPositions);
   }, [barPositions, onPositionsChange]);
@@ -130,8 +173,8 @@ function SceneContent({
         {Array.from({ length: beadCount }).map((_, index) => (
           <mesh key={`${id}-bead-${index}`} position={[0, 0, startX + index * BEAD_SPACING]}>
             <sphereGeometry args={[BEAD_RADIUS, 32, 32]} />
-            <meshStandardMaterial color={color} metalness={0.2} roughness={0.3} />
-          </mesh>
+          <meshStandardMaterial color={color} metalness={0.2} roughness={0.3} />
+        </mesh>
         ))}
       </group>
     );
@@ -159,16 +202,28 @@ function SceneContent({
           "#1e3a8a",
         ][index]),
       )}
-      <DreiOrbitControls ref={orbitRef} maxPolarAngle={Math.PI / 2} minDistance={0.2} maxDistance={3} enablePan enableZoom />
+      <DreiOrbitControls
+        ref={orbitRef}
+        maxPolarAngle={Math.PI / 2}
+        minDistance={0.2}
+        maxDistance={3}
+        enablePan
+        enableZoom
+      />
     </>
   );
 }
 
-export default function TeenBoardScene({ className, interactive = true, onPositionsChange }: TeenBoardSceneProps) {
+export default function TeenBoardScene({ className, interactive = true, onPositionsChange, startAnimationKey, onStartComplete }: TeenBoardSceneProps) {
   return (
     <div className={className ?? "h-full w-full"}>
       <Canvas camera={{ position: [0, 0.35, -0.8], fov: 45 }}>
-        <SceneContent interactive={interactive} onPositionsChange={onPositionsChange} />
+        <SceneContent
+          interactive={interactive}
+          onPositionsChange={onPositionsChange}
+          startAnimationKey={startAnimationKey}
+          onStartComplete={onStartComplete}
+        />
       </Canvas>
     </div>
   );

@@ -7,6 +7,8 @@ import TeenBoardScene from "./TeenBoardScene";
 export default function TeenBoardQuantitiesLesson() {
   const [positions, setPositions] = useState<Record<string, [number, number, number]>>({});
   const [snapshot, setSnapshot] = useState<string>("");
+  const [startKey, setStartKey] = useState(0);
+  const [animationRunning, setAnimationRunning] = useState(false);
 
   const captureLayout = () => {
     const payload = JSON.stringify(positions, null, 2);
@@ -28,7 +30,25 @@ export default function TeenBoardQuantitiesLesson() {
 
         <section className="rounded-[36px] border border-stone-100 bg-white/90 p-6 shadow-[0_40px_70px_-50px_rgba(15,23,42,0.8)]">
           <div className="h-[520px]">
-            <TeenBoardScene className="h-full" onPositionsChange={setPositions} />
+            <TeenBoardScene
+              className="h-full"
+              onPositionsChange={setPositions}
+              startAnimationKey={startKey}
+              onStartComplete={() => setAnimationRunning(false)}
+            />
+          </div>
+          <div className="mt-4 flex items-center justify-center gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                setAnimationRunning(true);
+                setStartKey((prev) => prev + 1);
+              }}
+              className="rounded-full border border-slate-700 bg-slate-900 px-6 py-2 text-xs font-semibold uppercase tracking-[0.4em] text-white shadow-lg disabled:opacity-50"
+              disabled={animationRunning}
+            >
+              {animationRunning ? "Moving…" : "Start"}
+            </button>
           </div>
           <div className="mt-4 flex flex-col gap-2">
             <button
