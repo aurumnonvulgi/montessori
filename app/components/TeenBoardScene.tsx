@@ -50,24 +50,38 @@ type TeenBoardSceneProps = {
   className?: string;
   interactive?: boolean;
   onPositionsChange?: (positions: Record<string, [number, number, number]>) => void;
+  cameraSettings?: { x: number; y: number; z: number; fov: number };
   startAnimationKey?: number;
   onStartComplete?: () => void;
+  onCameraChange?: (settings: { x: number; y: number; z: number; fov: number }) => void;
 };
 
 const dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 const pointer = new THREE.Vector2();
 const raycaster = new THREE.Raycaster();
 
+const speakText = (text: string) => {
+  if (typeof window === "undefined" || !window.speechSynthesis) return;
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.rate = 0.9;
+  utterance.pitch = 1;
+  window.speechSynthesis.speak(utterance);
+};
+
 function SceneContent({
   interactive,
   onPositionsChange,
   startAnimationKey,
   onStartComplete,
+  cameraSettings,
+  onCameraChange,
 }: {
   interactive: boolean;
   onPositionsChange?: (positions: Record<string, [number, number, number]>) => void;
   startAnimationKey?: number;
   onStartComplete?: () => void;
+  cameraSettings?: { x: number; y: number; z: number; fov: number };
+  onCameraChange?: (settings: { x: number; y: number; z: number; fov: number }) => void;
 }) {
   const { camera, gl } = useThree();
   type DreiControlsType = React.ElementRef<typeof DreiOrbitControls>;
@@ -124,14 +138,54 @@ function SceneContent({
 
   const [animationActive, setAnimationActive] = useState(false);
   const animationRef = useRef({ elapsed: 0, duration: 1500 });
+  const [unitAnimationActive, setUnitAnimationActive] = useState(false);
+  const unitAnimationRef = useRef({ elapsed: 0, duration: 1000, start: [0, 0, 0], target: START_TEN5_POSITION });
   const prevStartKey = useRef<number | null>(null);
 
+  const speechTimers = useRef<number[]>([]);
+  const actionTimers = useRef<number[]>([]);
+
+  const queueSpeech = useCallback(
+    (text: string, delay: number) => {
+      if (typeof window === "undefined") return;
+      const timer = window.setTimeout(() => speakText(text), delay);
+      speechTimers.current.push(timer);
+    },
+    [],
+  );
+
+  const queueAction = useCallback((callback: () => void, delay: number) => {
+    if (typeof window === "undefined") return;
+    const timer = window.setTimeout(callback, delay);
+    actionTimers.current.push(timer);
+  }, []);
+
+  const clearSpeechTimers = useCallback(() => {
+    speechTimers.current.forEach((timer) => window.clearTimeout(timer));
+    speechTimers.current = [];
+    if (typeof window !== "undefined") window.speechSynthesis?.cancel();
+  }, []);
+
+  const clearActionTimers = useCallback(() => {
+    actionTimers.current.forEach((timer) => window.clearTimeout(timer));
+    actionTimers.current = [];
+  }, []);
+
+  const [highlightCircle, setHighlightCircle] = useState<
+    | null
+    | { position: [number, number, number]; radius: number }
+  >(null);
+
   const triggerAnimation = useCallback(() => {
+    clearSpeechTimers();
+    clearActionTimers();
+    setUnitAnimationActive(false);
+    setHighlightCircle(null);
     setAnimationActive(true);
     animationRef.current.elapsed = 0;
     setBarPositions((prev) => ({ ...prev, ["ten-5"]: TEN_BAR_POSITIONS[4] }));
     console.log("Teen Board start animation triggered");
-  }, []);
+  }, [clearActionTimers, clearSpeechTimers]);
 
   useEffect(() => {
     if (!startAnimationKey || startAnimationKey === prevStartKey.current) return;
@@ -154,13 +208,51 @@ function SceneContent({
     if (t >= 1) {
       setAnimationActive(false);
       onStartComplete?.();
+    onCameraChange?.({ x: 0, y: 0.35, z: -0.8, fov: 45 });
       console.log("Teen Board start animation completed");
+      queueSpeech("Ten", 0);
+      queueAction(() => {
+        const startPos = barPositions["unit-1"] ?? UNIT_BAR_POSITIONS[0];
+        unitAnimationRef.current.elapsed = 0;
+        unitAnimationRef.current.start = startPos;
+        unitAnimationRef.current.target = [0.09980412168875688, 0.01, 0.15851754700455564];
+        setUnitAnimationActive(true);
+      }, 2000);
+    }
+  });
+
+  useFrame((_, delta) => {
+    if (!unitAnimationActive) return;
+    const state = unitAnimationRef.current;
+    state.elapsed += delta * 1000;
+    const tt = Math.min(state.elapsed / state.duration, 1);
+    const eased = 0.5 - 0.5 * Math.cos(Math.PI * tt);
+    const interpolated: [number, number, number] = [
+      THREE.MathUtils.lerp(state.start[0], state.target[0], eased),
+      THREE.MathUtils.lerp(state.start[1], state.target[1], eased),
+      THREE.MathUtils.lerp(state.start[2], state.target[2], eased),
+    ];
+    setBarPositions((prev) => ({ ...prev, ["unit-1"]: interpolated }));
+    if (tt >= 1) {
+      setUnitAnimationActive(false);
+      queueSpeech("And one more are", 500);
+      queueSpeech("Eleven", 2000);
+      queueAction(() => setHighlightCircle({ position: state.target, radius: 0.08 }), 500);
     }
   });
 
   useEffect(() => {
     onPositionsChange?.(barPositions);
   }, [barPositions, onPositionsChange]);
+
+  useEffect(() => {
+    if (!cameraSettings) return;
+    const cam = camera as THREE.PerspectiveCamera;
+    cam.position.set(cameraSettings.x, cameraSettings.y, cameraSettings.z);
+    // eslint-disable-next-line react-hooks/immutability
+    cam.fov = cameraSettings.fov;
+    cam.updateProjectionMatrix();
+  }, [cameraSettings, camera]);
 
   const renderBar = (id: string, beadCount: number, color: string) => {
     const length = beadCount * BEAD_SPACING;
@@ -174,8 +266,8 @@ function SceneContent({
         {Array.from({ length: beadCount }).map((_, index) => (
           <mesh key={`${id}-bead-${index}`} position={[0, 0, startX + index * BEAD_SPACING]}>
             <sphereGeometry args={[BEAD_RADIUS, 32, 32]} />
-          <meshStandardMaterial color={color} metalness={0.2} roughness={0.3} />
-        </mesh>
+            <meshStandardMaterial color={color} metalness={0.2} roughness={0.3} />
+          </mesh>
         ))}
       </group>
     );
@@ -215,15 +307,16 @@ function SceneContent({
   );
 }
 
-export default function TeenBoardScene({ className, interactive = true, onPositionsChange, startAnimationKey, onStartComplete }: TeenBoardSceneProps) {
+export default function TeenBoardScene({ className, interactive = true, onPositionsChange, startAnimationKey, onStartComplete, cameraSettings }: TeenBoardSceneProps) {
   return (
     <div className={className ?? "h-full w-full"}>
-      <Canvas camera={{ position: [0, 0.35, -0.8], fov: 45 }}>
+      <Canvas>
         <SceneContent
           interactive={interactive}
           onPositionsChange={onPositionsChange}
           startAnimationKey={startAnimationKey}
           onStartComplete={onStartComplete}
+          cameraSettings={cameraSettings}
         />
       </Canvas>
     </div>

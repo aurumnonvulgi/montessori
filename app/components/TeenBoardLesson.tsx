@@ -9,9 +9,10 @@ export default function TeenBoardQuantitiesLesson() {
   const [snapshot, setSnapshot] = useState<string>("");
   const [startKey, setStartKey] = useState(0);
   const [animationRunning, setAnimationRunning] = useState(false);
+  const [cameraSettings, setCameraSettings] = useState({ x: 0, y: 0.35, z: -0.8, fov: 45 });
 
   const captureLayout = () => {
-    const payload = JSON.stringify(positions, null, 2);
+    const payload = JSON.stringify({ positions, cameraSettings }, null, 2);
     setSnapshot(payload);
     navigator.clipboard?.writeText(payload).catch(() => {});
   };
@@ -30,12 +31,37 @@ export default function TeenBoardQuantitiesLesson() {
 
         <section className="rounded-[36px] border border-stone-100 bg-white/90 p-6 shadow-[0_40px_70px_-50px_rgba(15,23,42,0.8)]">
           <div className="h-[520px]">
-            <TeenBoardScene
-              className="h-full"
-              onPositionsChange={setPositions}
-              startAnimationKey={startKey}
-              onStartComplete={() => setAnimationRunning(false)}
-            />
+          <TeenBoardScene
+            className="h-full"
+            onPositionsChange={setPositions}
+            startAnimationKey={startKey}
+            onStartComplete={() => setAnimationRunning(false)}
+            cameraSettings={cameraSettings}
+            onCameraChange={(settings) => setCameraSettings(settings)}
+          />
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
+            {[
+              { label: "X", key: "x", min: -1.5, max: 1.5, step: 0.01 },
+              { label: "Y", key: "y", min: 0.05, max: 1.5, step: 0.01 },
+              { label: "Z", key: "z", min: -2, max: 1, step: 0.01 },
+              { label: "FOV", key: "fov", min: 25, max: 75, step: 1 },
+            ].map(({ label, key, min, max, step }) => (
+              <label key={key} className="flex flex-col gap-1">
+                <span className="uppercase tracking-[0.3em] text-stone-400">{label}</span>
+                <input
+                  type="range"
+                  min={min}
+                  max={max}
+                  step={step}
+                  value={cameraSettings[key as keyof typeof cameraSettings]}
+                  onChange={(event) =>
+                    setCameraSettings((prev) => ({ ...prev, [key]: Number(event.target.value) }))
+                  }
+                  className="w-full cursor-pointer"
+                />
+              </label>
+            ))}
           </div>
           <div className="mt-4 flex items-center justify-center gap-3">
             <button

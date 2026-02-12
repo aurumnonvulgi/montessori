@@ -51,15 +51,15 @@ export default function MontessoriHome() {
           </a>
 
           <a
-            href="/lessons/language-arts/phonic-picture-cards"
-            aria-label="Open Language Arts card"
+            href="/lessons/language-arts"
+            aria-label="Open Language Arts hub"
             className={`${CARD_STYLE} max-w-full`}
           >
             <div className="flex flex-col gap-5 sm:gap-8">
               <h2 className="font-display text-3xl font-semibold text-stone-900">Language Arts</h2>
               <LanguageArtsPreview className="h-48" />
               <p className="text-sm text-stone-500">
-                Phonic Picture Cards & Moveable Alphabet — drag letters to the black lines that spell each CVC word.
+                Initial Sound Cards — trace each letter as you hear its matching object.
               </p>
             </div>
           </a>
