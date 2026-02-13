@@ -14,7 +14,7 @@ export default function LanguageArtsHub() {
           <h1 className="font-display text-4xl font-semibold text-stone-900">Language Arts Materials</h1>
           <p className="text-sm text-stone-600">Choose a material to explore letter and phonics experiences.</p>
         </div>
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-3">
           <Link
             href="/lessons/language-arts/initial-sound-cards"
             className="group flex h-48 flex-col justify-between rounded-3xl border border-stone-200 bg-white/90 p-6 shadow-[0_30px_60px_-40px_rgba(15,23,42,0.8)] transition hover:-translate-y-0.5 hover:shadow-[0_40px_90px_-50px_rgba(15,23,42,0.7)]"
@@ -22,6 +22,16 @@ export default function LanguageArtsHub() {
             <h2 className="font-display text-2xl font-semibold text-stone-900">Initial Sound Cards</h2>
             <LanguageArtsPreview className="h-32" />
             <p className="text-xs uppercase tracking-[0.35em] text-stone-500">Trace letters & match images</p>
+          </Link>
+          <Link
+            href="/lessons/language-arts/initial-sound-tracing"
+            className="group flex h-48 flex-col justify-between rounded-3xl border border-stone-200 bg-white/90 p-6 shadow-[0_30px_60px_-40px_rgba(15,23,42,0.8)] transition hover:-translate-y-0.5 hover:shadow-[0_40px_90px_-50px_rgba(15,23,42,0.7)]"
+          >
+            <h2 className="font-display text-2xl font-semibold text-stone-900">Initial Sound Tracing</h2>
+            <div className="flex h-32 flex-col items-center justify-center text-center">
+              <p className="text-lg font-semibold text-stone-600">Prepare to draw letters by following animated paths.</p>
+            </div>
+            <p className="text-xs uppercase tracking-[0.35em] text-stone-500">Sneak peek – SVG assets coming soon</p>
           </Link>
           <Link
             href="/lessons/language-arts/phonic-picture-cards"
