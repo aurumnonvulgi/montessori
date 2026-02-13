@@ -148,6 +148,15 @@ const P_SLIDES: InitialSoundSlide[] = [
   { word: "pumpkin", image: "/assets/language_arts/initial_sound/Initial Sound - P/p---pumpkin___initial_sound.png" },
 ];
 
+const T_SLIDES: InitialSoundSlide[] = [
+  { word: "table", image: "/assets/language_arts/initial_sound/Initial Sound - T/t---table___initial_sound.png" },
+  { word: "tent", image: "/assets/language_arts/initial_sound/Initial Sound - T/t---tent___initial_sound.png" },
+  { word: "tiger", image: "/assets/language_arts/initial_sound/Initial Sound - T/t---tiger___initial_sound.png" },
+  { word: "tooth", image: "/assets/language_arts/initial_sound/Initial Sound - T/t---tooth___initial_sound.png" },
+  { word: "top", image: "/assets/language_arts/initial_sound/Initial Sound - T/t---top___initial_sound.png" },
+  { word: "turtle", image: "/assets/language_arts/initial_sound/Initial Sound - T/t---turtle___initial_sound.png" },
+];
+
 const G_SLIDES: InitialSoundSlide[] = [
   { word: "garden", image: "/assets/language_arts/initial_sound/Initial Sound - G/g---garden___initial_sound.png" },
   { word: "gate", image: "/assets/language_arts/initial_sound/Initial Sound - G/g---gate___initial_sound.png" },
