@@ -109,6 +109,26 @@ const L_SLIDES: InitialSoundSlide[] = [
   { word: "lion", image: "/assets/language_arts/initial_sound/Initial Sound - L/l---lion___initial_sound.png" },
 ];
 
+
+const M_SLIDES: InitialSoundSlide[] = [
+  { word: "map", image: "/assets/language_arts/initial_sound/Initial Sound - M/m---map___initial_sound.png" },
+  { word: "milk", image: "/assets/language_arts/initial_sound/Initial Sound - M/m---milk___initial_sound.png" },
+  { word: "mix", image: "/assets/language_arts/initial_sound/Initial Sound - M/m---mix___initial_sound.png" },
+  { word: "monkey", image: "/assets/language_arts/initial_sound/Initial Sound - M/m---monkey___initial_sound.png" },
+  { word: "moon", image: "/assets/language_arts/initial_sound/Initial Sound - M/m---moon___initial_sound.png" },
+  { word: "mouse", image: "/assets/language_arts/initial_sound/Initial Sound - M/m---mouse___initial_sound.png" },
+  { word: "muffin", image: "/assets/language_arts/initial_sound/Initial Sound - M/m---muffin___initial_sound.png" },
+];
+
+const N_SLIDES: InitialSoundSlide[] = [
+  { word: "nail", image: "/assets/language_arts/initial_sound/Initial Sound - N/n---nail___initial_sound.png" },
+  { word: "nest", image: "/assets/language_arts/initial_sound/Initial Sound - N/n---nest___initial_sound.png" },
+  { word: "net", image: "/assets/language_arts/initial_sound/Initial Sound - N/n---net___initial_sound.png" },
+  { word: "noodles", image: "/assets/language_arts/initial_sound/Initial Sound - N/n---noodles___initial_sound.png" },
+  { word: "nose", image: "/assets/language_arts/initial_sound/Initial Sound - N/n---nose___initial_sound.png" },
+  { word: "nut", image: "/assets/language_arts/initial_sound/Initial Sound - N/n---nut___initial_sound.png" },
+];
+
 const O_SLIDES: InitialSoundSlide[] = [
   { word: "octagon", image: "/assets/language_arts/initial_sound/Initial Sound - O/o---octagon___initial_sound.png" },
   { word: "octopus", image: "/assets/language_arts/initial_sound/Initial Sound - O/o---octopus___initial_sound.png" },
@@ -116,6 +136,16 @@ const O_SLIDES: InitialSoundSlide[] = [
   { word: "ostrich", image: "/assets/language_arts/initial_sound/Initial Sound - O/o---ostrich___initial_sound.png" },
   { word: "otter", image: "/assets/language_arts/initial_sound/Initial Sound - O/o---otter___initial_sound.png" },
   { word: "ox", image: "/assets/language_arts/initial_sound/Initial Sound - O/o---ox___initial_sound.png" },
+];
+
+
+const P_SLIDES: InitialSoundSlide[] = [
+  { word: "pan", image: "/assets/language_arts/initial_sound/Initial Sound - P/p---pan___initial_sound.png" },
+  { word: "pencil", image: "/assets/language_arts/initial_sound/Initial Sound - P/p---pencil___initial_sound.png" },
+  { word: "penguin", image: "/assets/language_arts/initial_sound/Initial Sound - P/p---penguin___initial_sound.png" },
+  { word: "pig", image: "/assets/language_arts/initial_sound/Initial Sound - P/p---pig___initial_sound.png" },
+  { word: "pizza", image: "/assets/language_arts/initial_sound/Initial Sound - P/p---pizza___initial_sound.png" },
+  { word: "pumpkin", image: "/assets/language_arts/initial_sound/Initial Sound - P/p---pumpkin___initial_sound.png" },
 ];
 
 const G_SLIDES: InitialSoundSlide[] = [
@@ -204,7 +234,7 @@ export const initialSoundGroups: InitialSoundGroup[] = [
     label: "Group 1",
     letters: ["a", "m", "n", "p", "t"],
     color: "#d62828", // red
-    slides: A_SLIDES,
+    slides: [...A_SLIDES, ...M_SLIDES, ...N_SLIDES, ...P_SLIDES, ...T_SLIDES],
   },
   {
     slug: "e-d-f-r-s",

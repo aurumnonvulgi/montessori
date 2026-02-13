@@ -9,25 +9,35 @@ const tracingLetters = [
     letter: "a",
     word: "apple",
     description: "Round the circle, then drop the stick to finish the lowercase a.",
-    previewImage: "/assets/initial_sound_tracing/a-image.png",
-    strokePath: "/assets/initial_sound_tracing/a-path.svg",
+    previewImage: "/assets/language_arts/initial_sound_tracing/a-image.png",
+    strokePath: "/assets/language_arts/initial_sound_tracing/a-path.svg",
   },
 ];
 
 export default function InitialSoundTracing() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isTracing, setIsTracing] = useState(false);
+  const [feedback, setFeedback] = useState("");
   const timerRef = useRef<number>();
+  const feedbackRef = useRef<number>();
   const currentLetter = tracingLetters[activeIndex];
 
   useEffect(() => {
-    return () => window.clearTimeout(timerRef.current);
+    return () => {
+      window.clearTimeout(timerRef.current);
+      window.clearTimeout(feedbackRef.current);
+    };
   }, []);
 
   const handleTrace = () => {
     setIsTracing(true);
     window.clearTimeout(timerRef.current);
-    timerRef.current = window.setTimeout(() => setIsTracing(false), 2000);
+    window.clearTimeout(feedbackRef.current);
+    timerRef.current = window.setTimeout(() => {
+      setIsTracing(false);
+      setFeedback("Nice tracing!");
+      feedbackRef.current = window.setTimeout(() => setFeedback(""), 1500);
+    }, 2000);
   };
 
   const letterBlocks = useMemo(
