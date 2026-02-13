@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import HomeLink from "../../components/HomeLink";
+import HomeLink from "../../../components/HomeLink";
 import Link from "next/link";
 
 const tracingLetters = [
