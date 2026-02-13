@@ -18,8 +18,8 @@ export default function InitialSoundTracing() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isTracing, setIsTracing] = useState(false);
   const [feedback, setFeedback] = useState("");
-  const timerRef = useRef<number>();
-  const feedbackRef = useRef<number>();
+  const timerRef = useRef<number | undefined>(undefined);
+  const feedbackRef = useRef<number | undefined>(undefined);
   const currentLetter = tracingLetters[activeIndex];
 
   useEffect(() => {
