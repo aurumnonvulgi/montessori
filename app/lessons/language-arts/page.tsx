@@ -34,12 +34,28 @@ export default function LanguageArtsHub() {
             <p className="text-xs uppercase tracking-[0.35em] text-stone-500">Sneak peek – SVG assets coming soon</p>
           </Link>
           <Link
-            href="/lessons/language-arts/phonic-picture-cards"
-            className="group flex h-48 flex-col justify-between rounded-3xl border border-stone-200 bg-white/90 p-6 shadow-[0_30px_60px_-40px_rgba(15,23,42,0.8)] transition hover:-translate-y-0.5 hover:shadow-[0_40px_90px_-50px_rgba(15,23,42,0.7)]"
+            href="/lessons/language-arts/concept-development"
+            className="group relative flex h-48 flex-col justify-between rounded-3xl border border-stone-200 bg-gradient-to-b from-amber-100 to-yellow-50 p-6 shadow-[0_30px_60px_-40px_rgba(15,23,42,0.8)] transition hover:-translate-y-0.5 hover:shadow-[0_40px_90px_-50px_rgba(15,23,42,0.7)]"
           >
-            <h2 className="font-display text-2xl font-semibold text-stone-900">Phonic Picture Cards</h2>
-            <div className="flex h-32 items-center justify-center text-4xl font-bold text-stone-400">ABC</div>
-            <p className="text-xs uppercase tracking-[0.35em] text-stone-500">Blend sounds with visual cues</p>
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-amber-400 bg-amber-50 text-xl font-semibold text-amber-600">📁</span>
+              <h2 className="font-display text-2xl font-semibold text-stone-900">Concept Development</h2>
+            </div>
+            <p className="text-xs uppercase tracking-[0.35em] text-stone-600">Organize playful explorations</p>
+            <div className="absolute -bottom-3 right-4 rounded-full border border-amber-400 bg-amber-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-amber-700">
+              Folder
+            </div>
+          </Link>
+          <Link
+            href="/lessons/language-arts/moveable-alphabet"
+            className="group flex h-48 flex-col justify-between rounded-3xl border border-stone-200 bg-gradient-to-b from-emerald-100 to-sky-50 p-6 shadow-[0_30px_60px_-40px_rgba(15,23,42,0.8)] transition hover:-translate-y-0.5 hover:shadow-[0_40px_90px_-50px_rgba(15,23,42,0.7)]"
+          >
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-sky-400 bg-sky-50 text-xl font-semibold text-sky-600">✦</span>
+              <h2 className="font-display text-2xl font-semibold text-stone-900">Moveable Alphabet Board</h2>
+            </div>
+            <p className="text-xs uppercase tracking-[0.35em] text-stone-500">Choose a vowel group and build words.</p>
+            <p className="text-xs uppercase tracking-[0.35em] text-sky-600">Vowel groups · drag & drop</p>
           </Link>
         </div>
       </main>
