@@ -30,6 +30,7 @@ export default function InitialSoundTracing() {
   const pathLengthRef = useRef(0);
   const [pathLength, setPathLength] = useState(0);
   const pathBBoxRef = useRef<DOMRect | null>(null);
+  const touchedRef = useRef<boolean[]>([]);
   const feedbackTimeoutRef = useRef<number | null>(null);
   const [pathData, setPathData] = useState("");
   const currentLetter = tracingLetters[0];
@@ -127,7 +128,7 @@ export default function InitialSoundTracing() {
   }, []);
 
   const resetTracing = useCallback(() => {
-    touchedRef.current.fill(false);
+    touchedRef.current = [];
     setProgress(0);
     setCompleted(false);
     setFeedback("");
