@@ -283,7 +283,7 @@ export default function MoveableAlphabet() {
         const files = Array.isArray(data?.files) ? data.files : Array.isArray(data) ? data : null;
         if (!files || !files.length) return;
         if (!active) return;
-        setPictureFiles(files.filter((file) => typeof file === "string"));
+        setPictureFiles(files.filter((file: unknown): file is string => typeof file === "string"));
       } catch {
         // ignore manifest load failures; fallback list will be used
       }
