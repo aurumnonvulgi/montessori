@@ -3,66 +3,62 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import HomeLink from "../../../../components/HomeLink";
 
-const BOARD_IMAGE = "/assets/language_arts/concept_development/opposites/matching_board6x6.svg";
+const BOARD_IMAGE = "/assets/language_arts/concept_development/association/Images/9matchingwith6deck.svg";
 const BOARD_WIDTH = 1366;
 const BOARD_HEIGHT = 768;
 const SLOT_SIZE = 169.3;
 const DROP_THRESHOLD = 90;
 
-const OPPOSITE_PAIRS = [
-  { left: "big", right: "small" },
-  { left: "hot", right: "cold" },
-  { left: "full", right: "empty" },
-  { left: "clean", right: "dirty" },
-  { left: "open", right: "closed" },
-  { left: "fast", right: "slow" },
-  { left: "heavy", right: "light" },
-  { left: "tall", right: "short" },
-  { left: "happy", right: "sad" },
-  { left: "wet", right: "dry" },
-  { left: "day", right: "night" },
-  { left: "up", right: "down" },
-  { left: "in", right: "out" },
-  { left: "soft", right: "hard" },
-  { left: "rough", right: "smooth" },
-  { left: "left", right: "right" },
-  { left: "new", right: "old" },
-  { left: "same", right: "different" },
-];
-
-const STAGE_SIZE = 6;
-
-const LEFT_SLOTS = [
-  { id: "op-1-1", x: 470.41, y: 100.04 },
-  { id: "op-2-1", x: 470.41, y: 291.49 },
-  { id: "op-3-1", x: 470.41, y: 482.94 },
-  { id: "op-4-1", x: 911.77, y: 100.04 },
-  { id: "op-5-1", x: 911.77, y: 291.49 },
-  { id: "op-6-1", x: 911.77, y: 482.94 },
-];
-
-const RIGHT_SLOTS = [
-  { id: "op-1-2", x: 657.47, y: 100.04 },
-  { id: "op-2-2", x: 657.47, y: 291.49 },
-  { id: "op-3-2", x: 657.47, y: 482.94 },
-  { id: "op-4-2", x: 1098.84, y: 100.04 },
-  { id: "op-5-2", x: 1098.84, y: 291.49 },
-  { id: "op-6-2", x: 1098.84, y: 482.94 },
+const ASSOCIATION_SETS: [string, string, string][] = [
+  ["glass of water", "pitcher", "cup"],
+  ["toothpaste", "toothbrush", "dental floss"],
+  ["pencil", "notebook", "eraser"],
+  ["fork", "spoon", "plate"],
+  ["soap", "towel", "shampoo"],
+  ["shoes", "socks", "shoelaces"],
+  ["phone", "charger", "headphones"],
+  ["key", "lock", "door"],
+  ["paintbrush", "paint", "canvas"],
+  ["broom", "dustpan", "trash bin"],
+  ["hammer", "nail", "wood"],
+  ["screwdriver", "screw", "toolbox"],
+  ["refrigerator", "milk", "eggs"],
+  ["stove", "pot", "spatula"],
+  ["bed", "pillow", "blanket"],
+  ["umbrella", "raincoat", "boots"],
+  ["book", "bookmark", "library card"],
+  ["ball", "goal", "whistle"],
 ];
 
 const STACK_SLOTS = [
-  { id: "stack-1", x: 205.76, y: 206.84 },
-  { id: "stack-2", x: 174.34, y: 175.42 },
-  { id: "stack-3", x: 142.92, y: 144.0 },
-  { id: "stack-4", x: 110.15, y: 111.23 },
-  { id: "stack-5", x: 81.65, y: 82.73 },
-  { id: "stack-6", x: 58.27, y: 59.35 },
+  { id: "stack-1", x: 54.12, y: 100.04 },
+  { id: "stack-2", x: 233.41, y: 100.04 },
+  { id: "stack-3", x: 412.7, y: 100.04 },
+  { id: "stack-4", x: 54.12, y: 275.67 },
+  { id: "stack-5", x: 233.41, y: 275.67 },
+  { id: "stack-6", x: 412.7, y: 275.67 },
 ];
 
-type OppositePair = {
-  left: string;
-  right: string;
-};
+const LINE_SLOTS = [
+  { id: "line1-box1", x: 756.41, y: 100.04, line: 1, box: 1 },
+  { id: "line1-box2", x: 943.47, y: 100.04, line: 1, box: 2 },
+  { id: "line1-box3", x: 1130.53, y: 100.04, line: 1, box: 3 },
+  { id: "line2-box1", x: 756.41, y: 291.49, line: 2, box: 1 },
+  { id: "line2-box2", x: 943.47, y: 291.49, line: 2, box: 2 },
+  { id: "line2-box3", x: 1130.53, y: 291.49, line: 2, box: 3 },
+  { id: "line3-box1", x: 756.41, y: 482.94, line: 3, box: 1 },
+  { id: "line3-box2", x: 943.47, y: 482.94, line: 3, box: 2 },
+  { id: "line3-box3", x: 1130.53, y: 482.94, line: 3, box: 3 },
+];
+
+const slugify = (word: string) =>
+  word
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+const toImage = (word: string) =>
+  `/assets/language_arts/concept_development/association/${slugify(word)}___association.png`;
 
 type CardState = {
   id: string;
@@ -73,37 +69,77 @@ type CardState = {
   homeY: number;
 };
 
+type Slot = {
+  id: string;
+  x: number;
+  y: number;
+  line: number;
+  box: number;
+};
+
 type RowStatus = {
-  row: number;
-  target: string;
-  placed: string | null;
+  line: number;
+  targets: string[];
+  placed: string[];
   matched: boolean;
 };
 
-const toImage = (word: string) => `/assets/language_arts/concept_development/opposites/images/${word}___opposites.png`;
+const STAGE_SIZE = 3;
 
-export default function OppositesGame() {
+export default function AssociationsGame() {
   const boardRef = useRef<HTMLDivElement | null>(null);
   const [stageIndex, setStageIndex] = useState(0);
   const [cards, setCards] = useState<CardState[]>([]);
   const [assignments, setAssignments] = useState<Record<string, string>>({});
   const [dragging, setDragging] = useState<{ id: string; offsetX: number; offsetY: number } | null>(null);
-
-  const stagePairs = useMemo<OppositePair[]>(() => {
-    const start = stageIndex * STAGE_SIZE;
-    return OPPOSITE_PAIRS.slice(start, start + STAGE_SIZE);
-  }, [stageIndex]);
-
-  const stageCount = Math.ceil(OPPOSITE_PAIRS.length / STAGE_SIZE);
+  const [availableFiles, setAvailableFiles] = useState<string[]>([]);
 
   useEffect(() => {
-    const nextCards = stagePairs.map((pair, index) => {
+    let active = true;
+    const loadManifest = async () => {
+      try {
+        const response = await fetch("/assets/language_arts/concept_development/association/manifest.json");
+        if (!response.ok) return;
+        const data = await response.json();
+        const files = Array.isArray(data?.files) ? data.files : Array.isArray(data) ? data : null;
+        if (!files || !files.length) return;
+        if (!active) return;
+        setAvailableFiles(files.filter((file: unknown): file is string => typeof file === "string"));
+      } catch {
+        // ignore manifest load failures
+      }
+    };
+    loadManifest();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const availableSets = useMemo(() => {
+    if (!availableFiles.length) return ASSOCIATION_SETS;
+    const fileSet = new Set(availableFiles);
+    return ASSOCIATION_SETS.filter((set) =>
+      set.every((word) => fileSet.has(`${slugify(word)}___association.png`))
+    );
+  }, [availableFiles]);
+
+  const stageSets = useMemo(() => {
+    const start = stageIndex * STAGE_SIZE;
+    return availableSets.slice(start, start + STAGE_SIZE);
+  }, [availableSets, stageIndex]);
+
+  const stageCount = Math.max(1, Math.ceil(availableSets.length / STAGE_SIZE));
+
+  useEffect(() => {
+    const restWords = stageSets.flatMap((set) => set.slice(1));
+    const shuffled = [...restWords].sort(() => Math.random() - 0.5);
+    const nextCards = shuffled.map((word, index) => {
       const slot = STACK_SLOTS[index] ?? STACK_SLOTS[STACK_SLOTS.length - 1];
       const x = slot.x + SLOT_SIZE / 2;
       const y = slot.y + SLOT_SIZE / 2;
       return {
-        id: `card-${stageIndex}-${pair.right}`,
-        word: pair.right,
+        id: `card-${stageIndex}-${word}`,
+        word,
         x,
         y,
         homeX: x,
@@ -113,7 +149,7 @@ export default function OppositesGame() {
     setCards(nextCards);
     setAssignments({});
     setDragging(null);
-  }, [stagePairs, stageIndex]);
+  }, [stageSets, stageIndex]);
 
   const boardRectRef = useRef<DOMRect | null>(null);
   useEffect(() => {
@@ -159,6 +195,11 @@ export default function OppositesGame() {
     });
   }, []);
 
+  const dropSlots: Slot[] = useMemo(
+    () => LINE_SLOTS.filter((slot) => slot.box !== 1),
+    []
+  );
+
   useEffect(() => {
     if (!dragging) return;
     const handleMove = (event: PointerEvent) => {
@@ -168,9 +209,7 @@ export default function OppositesGame() {
       if (!point) return;
       setCards((current) =>
         current.map((card) =>
-          card.id === dragging.id
-            ? { ...card, x: point.x - dragging.offsetX, y: point.y - dragging.offsetY }
-            : card
+          card.id === dragging.id ? { ...card, x: point.x - dragging.offsetX, y: point.y - dragging.offsetY } : card
         )
       );
     };
@@ -184,12 +223,13 @@ export default function OppositesGame() {
         return;
       }
       removeAssignment(card.id);
-      const target = RIGHT_SLOTS.map((slot) => ({
-        ...slot,
-        centerX: slot.x + SLOT_SIZE / 2,
-        centerY: slot.y + SLOT_SIZE / 2,
-        dist: Math.hypot(card.x - (slot.x + SLOT_SIZE / 2), card.y - (slot.y + SLOT_SIZE / 2)),
-      }))
+      const target = dropSlots
+        .map((slot) => ({
+          ...slot,
+          centerX: slot.x + SLOT_SIZE / 2,
+          centerY: slot.y + SLOT_SIZE / 2,
+          dist: Math.hypot(card.x - (slot.x + SLOT_SIZE / 2), card.y - (slot.y + SLOT_SIZE / 2)),
+        }))
         .filter((slot) => slot.dist <= DROP_THRESHOLD)
         .sort((a, b) => a.dist - b.dist)[0];
 
@@ -199,9 +239,7 @@ export default function OppositesGame() {
           const existingCardId = next[target.id];
           if (existingCardId && existingCardId !== card.id) {
             setCards((current) =>
-              current.map((item) =>
-                item.id === existingCardId ? { ...item, x: item.homeX, y: item.homeY } : item
-              )
+              current.map((item) => (item.id === existingCardId ? { ...item, x: item.homeX, y: item.homeY } : item))
             );
           }
           next[target.id] = card.id;
@@ -228,7 +266,7 @@ export default function OppositesGame() {
       window.removeEventListener("pointerup", handleUp);
       window.removeEventListener("pointercancel", handleUp);
     };
-  }, [cards, convertPointerToBoard, dragging, removeAssignment]);
+  }, [cards, convertPointerToBoard, dragging, dropSlots, removeAssignment]);
 
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>, card: CardState) => {
     event.preventDefault();
@@ -241,21 +279,9 @@ export default function OppositesGame() {
     setDragging({ id: card.id, offsetX: point.x - card.homeX, offsetY: point.y - card.homeY });
   };
 
-  const leftSlots = useMemo(
+  const renderSlots = useMemo(
     () =>
-      LEFT_SLOTS.map((slot) => ({
-        ...slot,
-        left: `${(slot.x / BOARD_WIDTH) * 100}%`,
-        top: `${(slot.y / BOARD_HEIGHT) * 100}%`,
-        width: `${(SLOT_SIZE / BOARD_WIDTH) * 100}%`,
-        height: `${(SLOT_SIZE / BOARD_HEIGHT) * 100}%`,
-      })),
-    []
-  );
-
-  const rightSlots = useMemo(
-    () =>
-      RIGHT_SLOTS.map((slot) => ({
+      LINE_SLOTS.map((slot) => ({
         ...slot,
         left: `${(slot.x / BOARD_WIDTH) * 100}%`,
         top: `${(slot.y / BOARD_HEIGHT) * 100}%`,
@@ -266,35 +292,40 @@ export default function OppositesGame() {
   );
 
   const rowStatuses = useMemo<RowStatus[]>(() => {
-    return stagePairs.map((pair, index) => {
-      const rightSlot = RIGHT_SLOTS[index];
-      if (!rightSlot) {
-        return { row: index + 1, target: pair.right, placed: null, matched: false };
-      }
-      const cardId = assignments[rightSlot.id];
-      const card = cards.find((item) => item.id === cardId);
-      const placed = card?.word ?? null;
-      const matched = placed === pair.right;
-      return { row: index + 1, target: pair.right, placed, matched };
+    return stageSets.map((set, index) => {
+      const line = index + 1;
+      const targets = set.slice(1);
+      const slotIds = [`line${line}-box2`, `line${line}-box3`];
+      const placed = slotIds
+        .map((slotId) => {
+          const cardId = assignments[slotId];
+          const card = cards.find((item) => item.id === cardId);
+          return card?.word;
+        })
+        .filter((word): word is string => Boolean(word));
+      const matched =
+        placed.length === 2 &&
+        targets.every((target) => placed.includes(target)) &&
+        placed.every((item) => targets.includes(item));
+      return { line, targets, placed, matched };
     });
-  }, [assignments, cards, stagePairs]);
+  }, [assignments, cards, stageSets]);
 
   const rowOverlays = useMemo(() => {
     return rowStatuses
       .filter((status) => status.matched)
       .map((status) => {
-        const index = status.row - 1;
-        const leftSlot = LEFT_SLOTS[index];
-        const rightSlot = RIGHT_SLOTS[index];
+        const leftSlot = LINE_SLOTS.find((slot) => slot.line === status.line && slot.box === 1);
+        const rightSlot = LINE_SLOTS.find((slot) => slot.line === status.line && slot.box === 3);
         if (!leftSlot || !rightSlot) return null;
         const left = (leftSlot.x / BOARD_WIDTH) * 100;
         const top = (leftSlot.y / BOARD_HEIGHT) * 100;
         const height = (SLOT_SIZE / BOARD_HEIGHT) * 100;
         const endX = rightSlot.x + SLOT_SIZE;
         const width = ((endX - leftSlot.x) / BOARD_WIDTH) * 100;
-        return { row: status.row, left, top, width, height };
+        return { line: status.line, left, top, width, height };
       })
-      .filter(Boolean) as { row: number; left: number; top: number; width: number; height: number }[];
+      .filter(Boolean) as { line: number; left: number; top: number; width: number; height: number }[];
   }, [rowStatuses]);
 
   const advanceRef = useRef<number | null>(null);
@@ -320,9 +351,9 @@ export default function OppositesGame() {
       <HomeLink />
       <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-6 py-10">
         <header className="space-y-3 text-center">
-          <p className="text-xs uppercase tracking-[0.35em] text-stone-400">Opposites · Drag & Drop</p>
-          <h1 className="font-display text-4xl font-semibold text-stone-900">Opposites</h1>
-          <p className="text-sm text-stone-600">Match each picture to its opposite.</p>
+          <p className="text-xs uppercase tracking-[0.35em] text-stone-400">Associations · Matching</p>
+          <h1 className="font-display text-4xl font-semibold text-stone-900">Associations</h1>
+          <p className="text-sm text-stone-600">Match the related items for each row.</p>
         </header>
         <div className="relative mx-auto w-full max-w-[1200px]">
           <div
@@ -330,22 +361,23 @@ export default function OppositesGame() {
             className="relative w-full overflow-visible rounded-3xl border border-stone-200 shadow-[0_25px_60px_-40px_rgba(15,23,42,0.8)]"
             style={{ paddingTop: `${(BOARD_HEIGHT / BOARD_WIDTH) * 100}%` }}
           >
-            <img src={BOARD_IMAGE} alt="Opposites board" className="absolute inset-0 h-full w-full object-cover" />
+            <img src={BOARD_IMAGE} alt="Associations board" className="absolute inset-0 h-full w-full object-cover" />
 
-            {stagePairs.map((pair, index) => {
-              const slot = leftSlots[index];
+            {stageSets.map((set, index) => {
+              const slot = renderSlots.find((item) => item.line === index + 1 && item.box === 1);
               if (!slot) return null;
+              const word = set[0];
               return (
                 <div
-                  key={`${pair.left}-${slot.id}`}
+                  key={`${word}-${slot.id}`}
                   className="absolute"
                   style={{ left: slot.left, top: slot.top, width: slot.width, height: slot.height }}
                 >
-                  <img src={toImage(pair.left)} alt={pair.left} className="h-full w-full object-contain" />
+                  <img src={toImage(word)} alt={word} className="h-full w-full object-contain" />
                   <button
                     type="button"
-                    onClick={() => handleSpeak(pair.left)}
-                    aria-label={`Say ${pair.left}`}
+                    onClick={() => handleSpeak(word)}
+                    aria-label={`Say ${word}`}
                     className="absolute right-1.5 bottom-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-xs text-stone-600 shadow shadow-stone-400 transition hover:bg-white sm:right-2 sm:bottom-2 sm:h-8 sm:w-8 sm:text-base"
                   >
                     🔊
@@ -354,7 +386,7 @@ export default function OppositesGame() {
               );
             })}
 
-            {rightSlots.map((slot) => (
+            {renderSlots.map((slot) => (
               <div
                 key={slot.id}
                 className="pointer-events-none absolute"
@@ -393,7 +425,7 @@ export default function OppositesGame() {
 
             {rowOverlays.map((overlay) => (
               <div
-                key={`overlay-${overlay.row}`}
+                key={`overlay-${overlay.line}`}
                 className="pointer-events-none absolute z-20 bg-emerald-500/40"
                 style={{
                   left: `${overlay.left}%`,

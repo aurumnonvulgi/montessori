@@ -17,6 +17,10 @@ export const metadata: Metadata = {
   title: "Montessori Studio",
   description: "A playful Montessori materials lab with 3D learning.",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/favicon.png",
+    apple: "/apple-touch-icon.png",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",

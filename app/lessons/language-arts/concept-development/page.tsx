@@ -3,11 +3,58 @@
 import Link from "next/link";
 import HomeLink from "../../../components/HomeLink";
 
+type PreviewImage = {
+  src: string;
+  alt: string;
+};
+
+function ImageGridPreview({
+  images,
+  className,
+}: {
+  images: PreviewImage[];
+  className?: string;
+}) {
+  return (
+    <div
+      className={`grid h-24 grid-cols-3 gap-2 rounded-2xl border border-white/70 bg-white/70 p-2 shadow-inner ${className ?? ""}`}
+    >
+      {images.map((image, index) => (
+        <div
+          key={`${image.alt}-${index}`}
+          className="flex items-center justify-center overflow-hidden rounded-xl border border-white/80 bg-white/90"
+        >
+          <img src={image.src} alt={image.alt} className="h-full w-full object-contain" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 const cards = [
   {
     title: "Opposites",
     description: "Drag pairs to their matching opposites.",
     href: "/lessons/language-arts/concept-development/opposites",
+    accent: "from-emerald-50 via-white to-sky-50",
+    previewClassName: "bg-emerald-50/70",
+    images: [
+      "/assets/language_arts/concept_development/opposites/images/big___opposites.png",
+      "/assets/language_arts/concept_development/opposites/images/small___opposites.png",
+      "/assets/language_arts/concept_development/opposites/images/hot___opposites.png",
+    ],
+  },
+  {
+    title: "Associations",
+    description: "Match items that belong together.",
+    href: "/lessons/language-arts/concept-development/associations",
+    accent: "from-amber-50 via-white to-rose-50",
+    previewClassName: "bg-amber-50/70",
+    images: [
+      "/assets/language_arts/concept_development/association/toothbrush___association.png",
+      "/assets/language_arts/concept_development/association/toothpaste___association.png",
+      "/assets/language_arts/concept_development/association/dental-floss___association.png",
+    ],
   },
 ];
 
@@ -26,9 +73,16 @@ export default function ConceptDevelopment() {
             <Link
               key={card.title}
               href={card.href}
-              className="group flex h-48 flex-col justify-between rounded-3xl border border-stone-200 bg-white/90 p-6 shadow-[0_30px_60px_-40px_rgba(15,23,42,0.8)] transition hover:-translate-y-0.5 hover:shadow-[0_40px_90px_-50px_rgba(15,23,42,0.7)]"
+              className={`group flex h-56 flex-col justify-between rounded-3xl border border-stone-200 bg-gradient-to-br ${card.accent} p-6 shadow-[0_30px_60px_-40px_rgba(15,23,42,0.8)] transition hover:-translate-y-0.5 hover:shadow-[0_40px_90px_-50px_rgba(15,23,42,0.7)]`}
             >
               <h2 className="font-display text-2xl font-semibold text-stone-900">{card.title}</h2>
+              <ImageGridPreview
+                images={card.images.map((src, index) => ({
+                  src,
+                  alt: `${card.title} preview ${index + 1}`,
+                }))}
+                className={card.previewClassName}
+              />
               <p className="text-sm font-medium text-stone-600">{card.description}</p>
               <p className="text-xs uppercase tracking-[0.35em] text-stone-500">Drag & drop concept game</p>
             </Link>

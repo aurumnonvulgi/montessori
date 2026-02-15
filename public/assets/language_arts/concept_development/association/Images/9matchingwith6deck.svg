@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1366 768">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+      }
+
+      .cls-2 {
+        fill: #b8e0f4;
+      }
+
+      .cls-3 {
+        fill: #0972b2;
+      }
+
+      .cls-4 {
+        fill: #fff;
+        isolation: isolate;
+        opacity: .2;
+      }
+    </style>
+  </defs>
+  <rect class="cls-2" width="1366" height="768"/>
+  <rect id="line1-box1" class="cls-3" x="756.41" y="100.04" width="169.3" height="169.3"/>
+  <rect id="line1-box2" class="cls-4" x="943.47" y="100.04" width="169.3" height="169.3"/>
+  <rect id="line2-box2" class="cls-4" x="943.47" y="291.49" width="169.3" height="169.3"/>
+  <rect id="stack-6" class="cls-1" x="412.7" y="275.67" width="169.3" height="169.3"/>
+  <rect id="stack-5" class="cls-1" x="233.41" y="275.67" width="169.3" height="169.3"/>
+  <rect id="stack-4" class="cls-1" x="54.12" y="275.67" width="169.3" height="169.3"/>
+  <rect id="stack-3" class="cls-1" x="412.7" y="100.04" width="169.3" height="169.3"/>
+  <rect id="stack-2" class="cls-1" x="233.41" y="100.04" width="169.3" height="169.3"/>
+  <rect id="stack-1" class="cls-1" x="54.12" y="100.04" width="169.3" height="169.3"/>
+  <rect id="line2-box1" class="cls-3" x="756.41" y="291.49" width="169.3" height="169.3"/>
+  <rect id="line3-box2" class="cls-4" x="943.47" y="482.94" width="169.3" height="169.3"/>
+  <rect id="line3-box1" class="cls-3" x="756.41" y="482.94" width="169.3" height="169.3"/>
+  <rect id="line1-box3" class="cls-4" x="1130.53" y="100.04" width="169.3" height="169.3"/>
+  <rect id="line2-box3" class="cls-4" x="1130.53" y="291.49" width="169.3" height="169.3"/>
+  <rect id="op-6-2" class="cls-4" x="1130.53" y="482.94" width="169.3" height="169.3"/>
+</svg>
