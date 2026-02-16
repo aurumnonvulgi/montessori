@@ -36,8 +36,8 @@ const cards = [
     title: "Opposites",
     description: "Drag pairs to their matching opposites.",
     href: "/lessons/language-arts/concept-development/opposites",
-    accent: "from-emerald-50 via-white to-sky-50",
-    previewClassName: "bg-emerald-50/70",
+    accent: "from-amber-100 via-yellow-50 to-amber-50",
+    previewClassName: "bg-amber-50/70",
     images: [
       "/assets/language_arts/concept_development/opposites/images/big___opposites.png",
       "/assets/language_arts/concept_development/opposites/images/small___opposites.png",
@@ -48,12 +48,24 @@ const cards = [
     title: "Associations",
     description: "Match items that belong together.",
     href: "/lessons/language-arts/concept-development/associations",
-    accent: "from-amber-50 via-white to-rose-50",
+    accent: "from-amber-100 via-yellow-50 to-amber-50",
     previewClassName: "bg-amber-50/70",
     images: [
       "/assets/language_arts/concept_development/association/toothbrush___association.png",
       "/assets/language_arts/concept_development/association/toothpaste___association.png",
       "/assets/language_arts/concept_development/association/dental-floss___association.png",
+    ],
+  },
+  {
+    title: "Transportation",
+    description: "Sort by land, air, and water.",
+    href: "/lessons/language-arts/concept-development/transportation",
+    accent: "from-amber-100 via-yellow-50 to-amber-50",
+    previewClassName: "bg-amber-50/70",
+    images: [
+      "/assets/language_arts/concept_development/transportation/land---bus___transportation.png",
+      "/assets/language_arts/concept_development/transportation/air---jet-airliner___transportation.png",
+      "/assets/language_arts/concept_development/transportation/water---ferry___transportation.png",
     ],
   },
 ];
