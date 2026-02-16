@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import HomeLink from "../../../../components/HomeLink";
 
+type Category = "air" | "land" | "water";
+
 const BOARD_IMAGE = "/assets/language_arts/concept_development/transportation/matching_board_9deck-9match.svg";
 const BOARD_WIDTH = 1366;
 const BOARD_HEIGHT = 768;
@@ -10,7 +12,7 @@ const SLOT_SIZE = 169.3;
 const LABEL_HEIGHT = 84.65;
 const DROP_THRESHOLD = 90;
 
-const LABEL_SLOTS = [
+const LABEL_SLOTS: { id: string; category: Category; x: number; y: number }[] = [
   { id: "by-air-label", category: "air", x: 756.41, y: 58.08 },
   { id: "by-land-label", category: "land", x: 943.47, y: 58.08 },
   { id: "by-water-label", category: "water", x: 1130.53, y: 58.08 },
@@ -22,7 +24,7 @@ const ROWS = [
   { row: 3, y: 540.63 },
 ];
 
-const COLUMNS = [
+const COLUMNS: { column: number; category: Category; x: number }[] = [
   { column: 1, category: "air", x: 756.41 },
   { column: 2, category: "land", x: 943.47 },
   { column: 3, category: "water", x: 1130.53 },
@@ -40,13 +42,11 @@ const STACK_SLOTS = [
   { id: "stack-9", x: 412.7, y: 451.3 },
 ];
 
-const LABEL_IMAGES: Record<string, string> = {
+const LABEL_IMAGES: Record<Category, string> = {
   air: "/assets/language_arts/concept_development/transportation/by-air-label.png",
   land: "/assets/language_arts/concept_development/transportation/by-land-label.png",
   water: "/assets/language_arts/concept_development/transportation/by-water-label.png",
 };
-
-type Category = "air" | "land" | "water";
 
 type TransportItem = {
   id: string;
