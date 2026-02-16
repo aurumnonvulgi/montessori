@@ -54,6 +54,11 @@ export default function PhonicsHub() {
     { src: "/assets/language_arts/moveable_alphabet/phonic_labels/a-cat-label.png", alt: "cat label" },
     { src: "/assets/language_arts/moveable_alphabet/phonic_labels/a-hat-label.png", alt: "hat label" },
   ];
+  const readingBookImages: PreviewImage[] = [
+    { src: "/assets/language_arts/moveable_alphabet/phonic_pictures/a-picture-cat.png", alt: "cat" },
+    { src: "/assets/language_arts/moveable_alphabet/phonic_pictures/a-picture-hat.png", alt: "hat" },
+    { src: "/assets/language_arts/moveable_alphabet/phonic_pictures/a-picture-rat.png", alt: "rat" },
+  ];
 
   return (
     <div className="relative min-h-screen bg-[radial-gradient(circle_at_top,#f5efe6,#fdfbf8_55%,#f7efe4)]">
@@ -114,6 +119,17 @@ export default function PhonicsHub() {
             </div>
             <ImageGridPreview images={threePartLabelImages} className="bg-pink-50/70" />
             <p className="text-xs uppercase tracking-[0.35em] text-pink-700">Match labels to pictures</p>
+          </Link>
+          <Link
+            href="/lessons/language-arts/phonics/reading-book"
+            className="group flex h-56 flex-col justify-between rounded-3xl border border-pink-200 bg-gradient-to-br from-pink-100 via-white to-rose-50 p-6 shadow-[0_30px_60px_-40px_rgba(15,23,42,0.8)] transition hover:-translate-y-0.5 hover:shadow-[0_40px_90px_-50px_rgba(15,23,42,0.7)]"
+          >
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-pink-300 bg-pink-100 text-xl font-semibold text-pink-700">✦</span>
+              <h2 className="font-display text-2xl font-semibold text-stone-900">Phonic Reading Books</h2>
+            </div>
+            <ImageGridPreview images={readingBookImages} className="bg-pink-50/70" />
+            <p className="text-xs uppercase tracking-[0.35em] text-pink-700">Read along with audio</p>
           </Link>
         </div>
       </main>
