@@ -44,26 +44,28 @@ const VOWELS = [
 const toCardImage = (letter: string, word: string) =>
   `/assets/language_arts/moveable_alphabet/Phonic_picture_cards/${letter}-tcp-${word}.png`;
 
-const toPictureImage = (letter: string, word: string) =>
-  `/assets/language_arts/moveable_alphabet/phonic_pictures/${letter}-picture-${word}.png`;
+const toLabelImage = (letter: string, word: string) =>
+  `/assets/language_arts/moveable_alphabet/phonic_labels/${letter}-${word}-label.png`;
 
-export default function PhonicThreePartCardsHub() {
+export default function PhonicThreePartCardsLabelsHub() {
   return (
     <div className="relative min-h-screen bg-[radial-gradient(circle_at_top,#f5efe6,#fdfbf8_55%,#f7efe4)]">
       <HomeLink />
       <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-6 py-10">
         <header className="space-y-3 text-center">
           <p className="text-xs uppercase tracking-[0.35em] text-stone-400">
-            Language Arts · Phonic Three-Part Cards Pictures
+            Language Arts · Phonic Three-Part Cards Pictures & Labels
           </p>
-          <h1 className="font-display text-4xl font-semibold text-stone-900">Phonic Three-Part Cards Pictures</h1>
-          <p className="text-sm text-stone-600">Choose a vowel group to match pictures to the three-part cards.</p>
+          <h1 className="font-display text-4xl font-semibold text-stone-900">
+            Phonic Three-Part Cards Pictures &amp; Labels
+          </h1>
+          <p className="text-sm text-stone-600">Choose a vowel group to match pictures and labels.</p>
         </header>
         <div className="grid gap-6 md:grid-cols-2">
           {VOWELS.map((vowel) => (
             <Link
               key={vowel.letter}
-              href={`/lessons/language-arts/phonic-three-part-cards/${vowel.letter}`}
+              href={`/lessons/language-arts/phonic-three-part-cards-labels/${vowel.letter}`}
               className="group flex h-48 flex-col justify-between rounded-3xl border border-stone-200 bg-white/90 p-6 shadow-[0_30px_60px_-40px_rgba(15,23,42,0.8)] transition hover:-translate-y-0.5 hover:shadow-[0_40px_90px_-50px_rgba(15,23,42,0.7)]"
             >
               <div className="flex items-center justify-between">
@@ -82,10 +84,10 @@ export default function PhonicThreePartCardsHub() {
                     className="h-full w-full object-contain"
                   />
                 </div>
-                <div className="flex h-20 w-20 items-center justify-center rounded-2xl border border-stone-200 bg-white/90 p-2 shadow-inner">
+                <div className="flex h-12 w-20 items-center justify-center rounded-xl border border-stone-200 bg-white/90 p-1 shadow-[0_8px_18px_-14px_rgba(0,0,0,0.8)]">
                   <img
-                    src={toPictureImage(vowel.letter, vowel.word)}
-                    alt={vowel.word}
+                    src={toLabelImage(vowel.letter, vowel.word)}
+                    alt={`${vowel.word} label`}
                     className="h-full w-full object-contain"
                   />
                 </div>

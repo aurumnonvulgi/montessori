@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import HomeLink from "../../../../components/HomeLink";
 
-const BOARD_IMAGE = "/assets/language_arts/moveable_alphabet/tcp-pic-pic.svg";
+const BOARD_IMAGE = "/assets/language_arts/moveable_alphabet/tcp-pic-label.svg";
 const BOARD_WIDTH = 1366;
 const BOARD_HEIGHT = 768;
 const DROP_THRESHOLD = 90;
@@ -12,21 +12,33 @@ const DROP_THRESHOLD = 90;
 const VALID_VOWELS = new Set(["a", "e", "i", "o", "u"]);
 
 const CARD_SLOTS = [
-  { id: "line1-box1", x: 544.51, y: 21.06, width: 181.34, height: 229.91 },
-  { id: "line1-box2", x: 544.51, y: 268.11, width: 181.34, height: 229.91 },
-  { id: "line1-box3", x: 544.51, y: 516.16, width: 181.34, height: 229.91 },
+  { id: "line1-box1", x: 513.31, y: 21.06, width: 165.92, height: 210.37 },
+  { id: "line1-box2", x: 513.31, y: 260.5, width: 165.92, height: 210.37 },
+  { id: "line1-box3", x: 513.31, y: 513.27, width: 165.92, height: 210.37 },
 ];
 
 const ANSWER_SLOTS = [
-  { id: "answer-1", x: 737.7, y: 21.06, width: 180, height: 180 },
-  { id: "answer-2", x: 737.7, y: 274.67, width: 180, height: 180 },
-  { id: "answer-3", x: 737.7, y: 515.16, width: 180, height: 180 },
+  { id: "answer-1", x: 690.08, y: 21.06, width: 164.7, height: 164.7 },
+  { id: "answer-2", x: 690.08, y: 266.5, width: 164.7, height: 164.7 },
+  { id: "answer-3", x: 690.08, y: 512.36, width: 164.7, height: 164.7 },
 ];
 
-const STACK_SLOTS = [
-  { id: "stack-1", x: 177.44, y: 59.62, width: 181.34, height: 180 },
-  { id: "stack-2", x: 189.88, y: 69.72, width: 181.34, height: 180 },
-  { id: "stack-3", x: 201.48, y: 78.88, width: 181.34, height: 180 },
+const LABEL_ANSWER_SLOTS = [
+  { id: "label-answer-1", x: 690.08, y: 192.45, width: 164.7, height: 64.05 },
+  { id: "label-answer-2", x: 690.08, y: 439.76, width: 164.7, height: 64.05 },
+  { id: "label-answer-3", x: 690.08, y: 685.61, width: 164.7, height: 64.05 },
+];
+
+const PICTURE_STACK_SLOTS = [
+  { id: "stack-1", x: 94.87, y: 56.35, width: 165.92, height: 164.7 },
+  { id: "stack-2", x: 106.25, y: 65.58, width: 165.92, height: 164.7 },
+  { id: "stack-3", x: 116.86, y: 73.96, width: 165.92, height: 164.7 },
+];
+
+const LABEL_STACK_SLOTS = [
+  { id: "label-stack-1", x: 83.49, y: 277.51, width: 164.7, height: 64.05 },
+  { id: "label-stack-2", x: 95.48, y: 290.41, width: 164.7, height: 64.05 },
+  { id: "label-stack-3", x: 107.47, y: 301.63, width: 164.7, height: 64.05 },
 ];
 
 type ThreePartPair = {
@@ -36,11 +48,15 @@ type ThreePartPair = {
   wordLabel: string;
   cardFile: string;
   pictureFile: string;
+  labelFile: string;
 };
+
+type CardType = "picture" | "label";
 
 type CardState = {
   id: string;
   pairId: string;
+  type: CardType;
   x: number;
   y: number;
   homeX: number;
@@ -53,6 +69,9 @@ const toCardImage = (file: string) =>
 const toPictureImage = (file: string) =>
   `/assets/language_arts/moveable_alphabet/phonic_pictures/${file}`;
 
+const toLabelImage = (file: string) =>
+  `/assets/language_arts/moveable_alphabet/phonic_labels/${file}`;
+
 const parseCardFile = (file: string) => {
   if (!file.endsWith(".png")) return null;
   const base = file.replace(/\.png$/i, "");
@@ -63,12 +82,28 @@ const parseCardFile = (file: string) => {
   return { letter, wordSlug, wordLabel };
 };
 
+const parseLabelFile = (file: string) => {
+  if (!file.endsWith("-label.png")) return null;
+  const base = file.replace(/-label\.png$/i, "");
+  const [letter, ...rest] = base.split("-");
+  if (!letter || rest.length === 0) return null;
+  const wordSlug = rest.join("-");
+  const wordLabel = rest.join(" ");
+  return { letter, wordSlug, wordLabel };
+};
+
 const buildPictureFile = (letter: string, wordSlug: string) =>
   `${letter}-picture-${wordSlug}.png`;
 
+const buildCardFile = (letter: string, wordSlug: string) =>
+  `${letter}-tcp-${wordSlug}.png`;
+
+const buildLabelFile = (letter: string, wordSlug: string) =>
+  `${letter}-${wordSlug}-label.png`;
+
 const STAGE_SIZE = 3;
 
-export default function PhonicThreePartCardsLesson() {
+export default function PhonicThreePartCardsLabelsLesson() {
   const params = useParams();
   const vowelParam = Array.isArray(params?.vowel) ? params?.vowel[0] : params?.vowel;
   const vowel =
@@ -80,18 +115,21 @@ export default function PhonicThreePartCardsLesson() {
   const [pairs, setPairs] = useState<ThreePartPair[]>([]);
   const [stageIndex, setStageIndex] = useState(0);
   const [cards, setCards] = useState<CardState[]>([]);
-  const [assignments, setAssignments] = useState<Record<string, string>>({});
+  const [pictureAssignments, setPictureAssignments] = useState<Record<string, string>>({});
+  const [labelAssignments, setLabelAssignments] = useState<Record<string, string>>({});
   const [dragging, setDragging] = useState<{ id: string; offsetX: number; offsetY: number } | null>(null);
   const [cardFiles, setCardFiles] = useState<string[]>([]);
   const [pictureFiles, setPictureFiles] = useState<string[]>([]);
+  const [labelFiles, setLabelFiles] = useState<string[]>([]);
 
   useEffect(() => {
     let active = true;
     const loadManifests = async () => {
       try {
-        const [cardsResponse, picturesResponse] = await Promise.all([
+        const [cardsResponse, picturesResponse, labelsResponse] = await Promise.all([
           fetch("/assets/language_arts/moveable_alphabet/Phonic_picture_cards/manifest.json"),
           fetch("/assets/language_arts/moveable_alphabet/phonic_pictures/manifest.json"),
+          fetch("/assets/language_arts/moveable_alphabet/phonic_labels/manifest.json"),
         ]);
         if (cardsResponse.ok) {
           const data = await cardsResponse.json();
@@ -107,6 +145,13 @@ export default function PhonicThreePartCardsLesson() {
             setPictureFiles(files.filter((file: unknown): file is string => typeof file === "string"));
           }
         }
+        if (labelsResponse.ok) {
+          const data = await labelsResponse.json();
+          const files = Array.isArray(data?.files) ? data.files : Array.isArray(data) ? data : null;
+          if (active && files?.length) {
+            setLabelFiles(files.filter((file: unknown): file is string => typeof file === "string"));
+          }
+        }
       } catch {
         // ignore manifest load failures
       }
@@ -118,31 +163,38 @@ export default function PhonicThreePartCardsLesson() {
   }, []);
 
   useEffect(() => {
-    if (!cardFiles.length || !pictureFiles.length) {
+    if (!cardFiles.length || !pictureFiles.length || !labelFiles.length) {
       setPairs([]);
       return;
     }
     const pictureSet = new Set(pictureFiles);
-    const nextPairs = cardFiles
+    const cardSet = new Set(cardFiles);
+    const labelSet = new Set(labelFiles);
+    const nextPairs = labelFiles
       .map((file) => {
-        const parsed = parseCardFile(file);
+        const parsed = parseLabelFile(file);
         if (!parsed) return null;
         if (parsed.letter.toLowerCase() !== vowel) return null;
         const pictureFile = buildPictureFile(parsed.letter, parsed.wordSlug);
+        const cardFile = buildCardFile(parsed.letter, parsed.wordSlug);
+        const labelFile = buildLabelFile(parsed.letter, parsed.wordSlug);
         if (!pictureSet.has(pictureFile)) return null;
+        if (!cardSet.has(cardFile)) return null;
+        if (!labelSet.has(labelFile)) return null;
         return {
           id: `${parsed.letter}-${parsed.wordSlug}`,
           letter: parsed.letter,
           wordSlug: parsed.wordSlug,
           wordLabel: parsed.wordLabel,
-          cardFile: file,
+          cardFile,
           pictureFile,
+          labelFile,
         };
       })
       .filter(Boolean) as ThreePartPair[];
     setPairs(nextPairs);
     setStageIndex(0);
-  }, [cardFiles, pictureFiles, vowel]);
+  }, [cardFiles, pictureFiles, labelFiles, vowel]);
 
   const stagePairs = useMemo(() => {
     const start = stageIndex * STAGE_SIZE;
@@ -153,21 +205,32 @@ export default function PhonicThreePartCardsLesson() {
 
   useEffect(() => {
     const shuffled = [...stagePairs].sort(() => Math.random() - 0.5);
-    const nextCards = shuffled.map((pair, index) => {
-      const slot = STACK_SLOTS[index] ?? STACK_SLOTS[STACK_SLOTS.length - 1];
-      const x = slot.x + slot.width / 2;
-      const y = slot.y + slot.height / 2;
-      return {
+    const nextCards: CardState[] = [];
+    shuffled.forEach((pair, index) => {
+      const pictureSlot = PICTURE_STACK_SLOTS[index] ?? PICTURE_STACK_SLOTS[PICTURE_STACK_SLOTS.length - 1];
+      const labelSlot = LABEL_STACK_SLOTS[index] ?? LABEL_STACK_SLOTS[LABEL_STACK_SLOTS.length - 1];
+      nextCards.push({
         id: `pic-${stageIndex}-${pair.id}`,
         pairId: pair.id,
-        x,
-        y,
-        homeX: x,
-        homeY: y,
-      };
+        type: "picture",
+        x: pictureSlot.x + pictureSlot.width / 2,
+        y: pictureSlot.y + pictureSlot.height / 2,
+        homeX: pictureSlot.x + pictureSlot.width / 2,
+        homeY: pictureSlot.y + pictureSlot.height / 2,
+      });
+      nextCards.push({
+        id: `label-${stageIndex}-${pair.id}`,
+        pairId: pair.id,
+        type: "label",
+        x: labelSlot.x + labelSlot.width / 2,
+        y: labelSlot.y + labelSlot.height / 2,
+        homeX: labelSlot.x + labelSlot.width / 2,
+        homeY: labelSlot.y + labelSlot.height / 2,
+      });
     });
     setCards(nextCards);
-    setAssignments({});
+    setPictureAssignments({});
+    setLabelAssignments({});
     setDragging(null);
   }, [stagePairs, stageIndex]);
 
@@ -197,12 +260,17 @@ export default function PhonicThreePartCardsLesson() {
   }, []);
 
   const removeAssignment = useCallback((cardId: string) => {
-    setAssignments((prev) => {
+    setPictureAssignments((prev) => {
       const next = { ...prev };
       Object.keys(next).forEach((slotId) => {
-        if (next[slotId] === cardId) {
-          delete next[slotId];
-        }
+        if (next[slotId] === cardId) delete next[slotId];
+      });
+      return next;
+    });
+    setLabelAssignments((prev) => {
+      const next = { ...prev };
+      Object.keys(next).forEach((slotId) => {
+        if (next[slotId] === cardId) delete next[slotId];
       });
       return next;
     });
@@ -219,7 +287,6 @@ export default function PhonicThreePartCardsLesson() {
     if (!dragging) return;
     const handleMove = (event: PointerEvent) => {
       event.preventDefault();
-      if (!dragging) return;
       const point = convertPointerToBoard(event);
       if (!point) return;
       setCards((current) =>
@@ -237,12 +304,16 @@ export default function PhonicThreePartCardsLesson() {
       setDragging(null);
       if (!card || !point) return;
 
-      const candidates = ANSWER_SLOTS.map((slot) => ({
-        slot,
-        centerX: slot.x + slot.width / 2,
-        centerY: slot.y + slot.height / 2,
-        dist: Math.hypot(point.x - (slot.x + slot.width / 2), point.y - (slot.y + slot.height / 2)),
-      }))
+      const slots = card.type === "picture" ? ANSWER_SLOTS : LABEL_ANSWER_SLOTS;
+      const assignments = card.type === "picture" ? pictureAssignments : labelAssignments;
+
+      const candidates = slots
+        .map((slot) => ({
+          slot,
+          centerX: slot.x + slot.width / 2,
+          centerY: slot.y + slot.height / 2,
+          dist: Math.hypot(point.x - (slot.x + slot.width / 2), point.y - (slot.y + slot.height / 2)),
+        }))
         .filter(({ slot }) => !assignments[slot.id])
         .sort((a, b) => a.dist - b.dist);
 
@@ -255,7 +326,11 @@ export default function PhonicThreePartCardsLesson() {
               : item
           )
         );
-        setAssignments((prev) => ({ ...prev, [target.id]: card.id }));
+        if (card.type === "picture") {
+          setPictureAssignments((prev) => ({ ...prev, [target.id]: card.id }));
+        } else {
+          setLabelAssignments((prev) => ({ ...prev, [target.id]: card.id }));
+        }
         return;
       }
 
@@ -270,7 +345,7 @@ export default function PhonicThreePartCardsLesson() {
       window.removeEventListener("pointermove", handleMove);
       window.removeEventListener("pointerup", handleUp);
     };
-  }, [cards, convertPointerToBoard, dragging, assignments]);
+  }, [cards, convertPointerToBoard, dragging, labelAssignments, pictureAssignments]);
 
   const handlePointerDown = useCallback(
     (event: React.PointerEvent<HTMLDivElement>, card: CardState) => {
@@ -291,20 +366,33 @@ export default function PhonicThreePartCardsLesson() {
     [removeAssignment]
   );
 
-  const assignedMatches = useMemo(() => {
-    return ANSWER_SLOTS.map((slot, index) => {
-      const assignedCardId = assignments[slot.id];
+  const activePictureSlots = ANSWER_SLOTS.slice(0, stagePairs.length);
+  const activeLabelSlots = LABEL_ANSWER_SLOTS.slice(0, stagePairs.length);
+
+  const pictureMatches = useMemo(() => {
+    return activePictureSlots.map((slot, index) => {
+      const assignedCardId = pictureAssignments[slot.id];
       const pair = stagePairs[index];
       const card = cards.find((item) => item.id === assignedCardId);
       const matched = Boolean(pair && card && card.pairId === pair.id);
       return { slot, matched, pair };
     });
-  }, [assignments, cards, stagePairs]);
+  }, [activePictureSlots, pictureAssignments, cards, stagePairs]);
 
-  const allMatched = useMemo(
-    () => assignedMatches.length && assignedMatches.every((item) => item.matched),
-    [assignedMatches]
-  );
+  const labelMatches = useMemo(() => {
+    return activeLabelSlots.map((slot, index) => {
+      const assignedCardId = labelAssignments[slot.id];
+      const pair = stagePairs[index];
+      const card = cards.find((item) => item.id === assignedCardId);
+      const matched = Boolean(pair && card && card.pairId === pair.id);
+      return { slot, matched, pair };
+    });
+  }, [activeLabelSlots, labelAssignments, cards, stagePairs]);
+
+  const allMatched = useMemo(() => {
+    if (!pictureMatches.length || !labelMatches.length) return false;
+    return pictureMatches.every((item) => item.matched) && labelMatches.every((item) => item.matched);
+  }, [pictureMatches, labelMatches]);
 
   const spokenMatchesRef = useRef<Set<string>>(new Set());
 
@@ -313,14 +401,14 @@ export default function PhonicThreePartCardsLesson() {
   }, [stageIndex, vowel]);
 
   useEffect(() => {
-    assignedMatches.forEach((item) => {
+    pictureMatches.forEach((item) => {
       if (!item.matched || !item.pair) return;
       const key = item.pair.id;
       if (spokenMatchesRef.current.has(key)) return;
       spokenMatchesRef.current.add(key);
       handleSpeak(item.pair.wordLabel);
     });
-  }, [assignedMatches, handleSpeak]);
+  }, [pictureMatches, handleSpeak]);
 
   const advanceRef = useRef<number | null>(null);
   useEffect(() => {
@@ -345,10 +433,12 @@ export default function PhonicThreePartCardsLesson() {
       <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-6 py-10">
         <header className="space-y-3 text-center">
           <p className="text-xs uppercase tracking-[0.35em] text-stone-400">
-            Phonic Three-Part Cards Pictures · Vowel {vowel}
+            Phonic Three-Part Cards Pictures & Labels · Vowel {vowel}
           </p>
-          <h1 className="font-display text-4xl font-semibold text-stone-900">Match Picture to Three-Part Card</h1>
-          <p className="text-sm text-stone-600">Drag the picture onto the matching three-part card.</p>
+          <h1 className="font-display text-4xl font-semibold text-stone-900">
+            Match Pictures & Labels to Three-Part Cards
+          </h1>
+          <p className="text-sm text-stone-600">Drag the picture and label to the matching card.</p>
         </header>
         <div className="relative mx-auto w-full max-w-[1200px]">
           <div
@@ -365,13 +455,13 @@ export default function PhonicThreePartCardsLesson() {
                 <div
                   key={`${pair.id}-${slot.id}`}
                   className="absolute"
-              style={{
-                left: `${(slot.x / BOARD_WIDTH) * 100}%`,
-                top: `${(slot.y / BOARD_HEIGHT) * 100}%`,
-                width: `${(slot.width / BOARD_WIDTH) * 100}%`,
-                height: `${(slot.height / BOARD_HEIGHT) * 100}%`,
-              }}
-            >
+                  style={{
+                    left: `${(slot.x / BOARD_WIDTH) * 100}%`,
+                    top: `${(slot.y / BOARD_HEIGHT) * 100}%`,
+                    width: `${(slot.width / BOARD_WIDTH) * 100}%`,
+                    height: `${(slot.height / BOARD_HEIGHT) * 100}%`,
+                  }}
+                >
                   <img src={toCardImage(pair.cardFile)} alt={pair.wordLabel} className="h-full w-full object-contain" />
                   <button
                     type="button"
@@ -385,87 +475,108 @@ export default function PhonicThreePartCardsLesson() {
               );
             })}
 
-            {ANSWER_SLOTS.map((slot) => (
+            {activePictureSlots.map((slot) => (
               <div
                 key={slot.id}
                 className="pointer-events-none absolute"
-              style={{
-                left: `${(slot.x / BOARD_WIDTH) * 100}%`,
-                top: `${(slot.y / BOARD_HEIGHT) * 100}%`,
-                width: `${(slot.width / BOARD_WIDTH) * 100}%`,
-                height: `${(slot.height / BOARD_HEIGHT) * 100}%`,
-              }}
-            />
-          ))}
-
-            {cards.map((card) => (
-              <div
-                key={card.id}
-                onPointerDown={(event) => handlePointerDown(event, card)}
-                className="pointer-events-auto absolute z-10 -translate-x-1/2 -translate-y-1/2 rounded-none border-none bg-transparent shadow-none"
                 style={{
-                  left: `${(card.x / BOARD_WIDTH) * 100}%`,
-                  top: `${(card.y / BOARD_HEIGHT) * 100}%`,
-                  width: `${((STACK_SLOTS[0]?.width ?? 180) / BOARD_WIDTH) * 100}%`,
-                  height: `${((STACK_SLOTS[0]?.height ?? 180) / BOARD_HEIGHT) * 100}%`,
-                  touchAction: "none",
+                  left: `${(slot.x / BOARD_WIDTH) * 100}%`,
+                  top: `${(slot.y / BOARD_HEIGHT) * 100}%`,
+                  width: `${(slot.width / BOARD_WIDTH) * 100}%`,
+                  height: `${(slot.height / BOARD_HEIGHT) * 100}%`,
                 }}
-              >
-                <div className="relative h-full w-full rounded-md bg-white/90 p-1 shadow-[0_8px_18px_-14px_rgba(0,0,0,0.8)] sm:p-1.5">
-                  {(() => {
-                    const pair = stagePairs.find((item) => item.id === card.pairId);
-                    if (!pair) return null;
-                    return (
-                      <>
-                        <img
-                          src={toPictureImage(pair.pictureFile)}
-                          alt={pair.wordLabel}
-                          className="h-full w-full object-contain"
-                        />
-                        <button
-                          type="button"
-                          onPointerDown={(event) => event.stopPropagation()}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            handleSpeak(pair.wordLabel);
-                          }}
-                          aria-label={`Say ${pair.wordLabel}`}
-                          className="absolute right-1 bottom-1 flex h-5 w-5 items-center justify-center rounded-full bg-white/90 text-[10px] text-stone-600 shadow shadow-stone-400 transition hover:bg-white sm:right-1.5 sm:bottom-1.5 sm:h-6 sm:w-6 sm:text-xs"
-                        >
-                          🔊
-                        </button>
-                      </>
-                    );
-                  })()}
-                </div>
-              </div>
+              />
             ))}
 
-            {assignedMatches.map((item, index) => {
-              if (!item.matched) return null;
-              const cardSlot = CARD_SLOTS[index];
-              if (!cardSlot) return null;
+            {activeLabelSlots.map((slot) => (
+              <div
+                key={slot.id}
+                className="pointer-events-none absolute"
+                style={{
+                  left: `${(slot.x / BOARD_WIDTH) * 100}%`,
+                  top: `${(slot.y / BOARD_HEIGHT) * 100}%`,
+                  width: `${(slot.width / BOARD_WIDTH) * 100}%`,
+                  height: `${(slot.height / BOARD_HEIGHT) * 100}%`,
+                }}
+              />
+            ))}
+
+            {cards.map((card) => {
+              const isPicture = card.type === "picture";
+              const slotSize = isPicture ? ANSWER_SLOTS[0] : LABEL_ANSWER_SLOTS[0];
               return (
-                <div key={`match-${item.slot.id}`}>
-                  <div
-                    className="pointer-events-none absolute z-20 bg-emerald-500/35"
-                    style={{
-                      left: `${(cardSlot.x / BOARD_WIDTH) * 100}%`,
-                      top: `${(cardSlot.y / BOARD_HEIGHT) * 100}%`,
-                      width: `${(cardSlot.width / BOARD_WIDTH) * 100}%`,
-                      height: `${(cardSlot.height / BOARD_HEIGHT) * 100}%`,
-                    }}
-                  />
-                  <div
-                    className="pointer-events-none absolute z-20 bg-emerald-500/35"
-                    style={{
-                      left: `${(item.slot.x / BOARD_WIDTH) * 100}%`,
-                      top: `${(item.slot.y / BOARD_HEIGHT) * 100}%`,
-                      width: `${(item.slot.width / BOARD_WIDTH) * 100}%`,
-                      height: `${(item.slot.height / BOARD_HEIGHT) * 100}%`,
-                    }}
-                  />
+                <div
+                  key={card.id}
+                  onPointerDown={(event) => handlePointerDown(event, card)}
+                  className="pointer-events-auto absolute z-10 -translate-x-1/2 -translate-y-1/2 rounded-none border-none bg-transparent shadow-none"
+                  style={{
+                    left: `${(card.x / BOARD_WIDTH) * 100}%`,
+                    top: `${(card.y / BOARD_HEIGHT) * 100}%`,
+                    width: `${(slotSize.width / BOARD_WIDTH) * 100}%`,
+                    height: `${(slotSize.height / BOARD_HEIGHT) * 100}%`,
+                    touchAction: "none",
+                  }}
+                >
+                  <div className="relative h-full w-full rounded-md bg-white/90 p-1 shadow-[0_8px_18px_-14px_rgba(0,0,0,0.8)] sm:p-1.5">
+                    {(() => {
+                      const pair = stagePairs.find((item) => item.id === card.pairId);
+                      if (!pair) return null;
+                      return (
+                        <>
+                          <img
+                            src={isPicture ? toPictureImage(pair.pictureFile) : toLabelImage(pair.labelFile)}
+                            alt={pair.wordLabel}
+                            className="h-full w-full object-contain"
+                          />
+                          <button
+                            type="button"
+                            onPointerDown={(event) => event.stopPropagation()}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleSpeak(pair.wordLabel);
+                            }}
+                            aria-label={`Say ${pair.wordLabel}`}
+                            className="absolute right-1 bottom-1 flex h-5 w-5 items-center justify-center rounded-full bg-white/90 text-[10px] text-stone-600 shadow shadow-stone-400 transition hover:bg-white sm:right-1.5 sm:bottom-1.5 sm:h-6 sm:w-6 sm:text-xs"
+                          >
+                            🔊
+                          </button>
+                        </>
+                      );
+                    })()}
+                  </div>
                 </div>
+              );
+            })}
+
+            {pictureMatches.map((item) => {
+              if (!item.matched) return null;
+              return (
+                <div
+                  key={`match-picture-${item.slot.id}`}
+                  className="pointer-events-none absolute z-20 bg-emerald-500/35"
+                  style={{
+                    left: `${(item.slot.x / BOARD_WIDTH) * 100}%`,
+                    top: `${(item.slot.y / BOARD_HEIGHT) * 100}%`,
+                    width: `${(item.slot.width / BOARD_WIDTH) * 100}%`,
+                    height: `${(item.slot.height / BOARD_HEIGHT) * 100}%`,
+                  }}
+                />
+              );
+            })}
+
+            {labelMatches.map((item) => {
+              if (!item.matched) return null;
+              return (
+                <div
+                  key={`match-label-${item.slot.id}`}
+                  className="pointer-events-none absolute z-20 bg-emerald-500/35"
+                  style={{
+                    left: `${(item.slot.x / BOARD_WIDTH) * 100}%`,
+                    top: `${(item.slot.y / BOARD_HEIGHT) * 100}%`,
+                    width: `${(item.slot.width / BOARD_WIDTH) * 100}%`,
+                    height: `${(item.slot.height / BOARD_HEIGHT) * 100}%`,
+                  }}
+                />
               );
             })}
           </div>

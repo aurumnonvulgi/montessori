@@ -49,6 +49,11 @@ export default function PhonicsHub() {
     { src: "/assets/language_arts/moveable_alphabet/Phonic_picture_cards/a-tcp-cat.png", alt: "cat" },
     { src: "/assets/language_arts/moveable_alphabet/Phonic_picture_cards/a-tcp-hat.png", alt: "hat" },
   ];
+  const threePartLabelImages: PreviewImage[] = [
+    { src: "/assets/language_arts/moveable_alphabet/phonic_labels/a-bat-label.png", alt: "bat label" },
+    { src: "/assets/language_arts/moveable_alphabet/phonic_labels/a-cat-label.png", alt: "cat label" },
+    { src: "/assets/language_arts/moveable_alphabet/phonic_labels/a-hat-label.png", alt: "hat label" },
+  ];
 
   return (
     <div className="relative min-h-screen bg-[radial-gradient(circle_at_top,#f5efe6,#fdfbf8_55%,#f7efe4)]">
@@ -92,10 +97,23 @@ export default function PhonicsHub() {
           >
             <div className="flex items-center gap-3">
               <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-pink-300 bg-pink-100 text-xl font-semibold text-pink-700">✦</span>
-              <h2 className="font-display text-2xl font-semibold text-stone-900">Phonic three-Part Cards</h2>
+              <h2 className="font-display text-2xl font-semibold text-stone-900">Phonic three-Part Cards Pictures</h2>
             </div>
             <ImageGridPreview images={threePartCardImages} className="bg-pink-50/70" />
             <p className="text-xs uppercase tracking-[0.35em] text-pink-700">Match pictures to cards</p>
+          </Link>
+          <Link
+            href="/lessons/language-arts/phonic-three-part-cards-labels"
+            className="group flex h-56 flex-col justify-between rounded-3xl border border-pink-200 bg-gradient-to-br from-pink-100 via-white to-rose-50 p-6 shadow-[0_30px_60px_-40px_rgba(15,23,42,0.8)] transition hover:-translate-y-0.5 hover:shadow-[0_40px_90px_-50px_rgba(15,23,42,0.7)]"
+          >
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-pink-300 bg-pink-100 text-xl font-semibold text-pink-700">✦</span>
+              <h2 className="font-display text-2xl font-semibold text-stone-900">
+                Phonic three-Part Cards Pictures &amp; Labels
+              </h2>
+            </div>
+            <ImageGridPreview images={threePartLabelImages} className="bg-pink-50/70" />
+            <p className="text-xs uppercase tracking-[0.35em] text-pink-700">Match labels to pictures</p>
           </Link>
         </div>
       </main>
