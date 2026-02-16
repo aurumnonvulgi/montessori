@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1366 768">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+      }
+
+      .cls-2 {
+        fill: #b8e0f4;
+      }
+
+      .cls-3 {
+        fill: #fff;
+        isolation: isolate;
+        opacity: .2;
+      }
+    </style>
+  </defs>
+  <rect class="cls-2" width="1366" height="768"/>
+  <rect id="line1-box1" class="cls-3" x="544.51" y="21.06" width="181.34" height="229.91" rx="8.21" ry="8.21"/>
+  <rect id="line1-box2" class="cls-3" x="544.51" y="268.11" width="181.34" height="229.91" rx="8.14" ry="8.14"/>
+  <rect id="stack-3" class="cls-1" x="201.48" y="78.88" width="181.34" height="180" rx="8.38" ry="8.38"/>
+  <rect id="stack-2" class="cls-1" x="189.88" y="69.72" width="181.34" height="180" rx="8.61" ry="8.61"/>
+  <rect id="stack-1" class="cls-1" x="177.44" y="59.62" width="181.34" height="180" rx="8.17" ry="8.17"/>
+  <rect id="line1-box3" class="cls-3" x="544.51" y="516.16" width="181.34" height="229.91" rx="8.92" ry="8.92"/>
+  <rect id="answer-1" class="cls-3" x="737.7" y="21.06" width="180" height="180" rx="8.21" ry="8.21"/>
+  <rect id="answer-2" class="cls-3" x="737.7" y="274.67" width="180" height="180" rx="8.21" ry="8.21"/>
+  <rect id="answer-3" class="cls-3" x="737.7" y="515.16" width="180" height="180" rx="8.21" ry="8.21"/>
+</svg>
