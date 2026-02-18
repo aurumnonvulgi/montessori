@@ -32,6 +32,8 @@ function ImageGridPreview({
 }
 
 export default function LanguageArtsHub() {
+  const lilacPreviewWords = ["a", "and", "come", "look", "you"];
+
   const phonicsImages: PreviewImage[] = [
     { src: "/assets/language_arts/moveable_alphabet/images/a---cat___moveable_phonics.png", alt: "cat" },
     { src: "/assets/language_arts/moveable_alphabet/images/a---bat___moveable_phonics.png", alt: "bat" },
@@ -74,7 +76,7 @@ export default function LanguageArtsHub() {
               </div>
             </div>
             <ImageGridPreview images={initialSoundImages} className="bg-rose-50/70" />
-            <p className="text-xs uppercase tracking-[0.35em] text-rose-700">Cards + tracing</p>
+            <p className="text-xs uppercase tracking-[0.35em] text-rose-700">Cards</p>
             <div className="absolute -bottom-3 right-4 rounded-full border border-rose-300 bg-rose-200 px-3 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-rose-800">
               Folder
             </div>
@@ -90,6 +92,32 @@ export default function LanguageArtsHub() {
             <ImageGridPreview images={phonicsImages} className="bg-pink-50/70" />
             <p className="text-xs uppercase tracking-[0.35em] text-pink-700">Moveable alphabet + labels</p>
             <div className="absolute -bottom-3 right-4 rounded-full border border-pink-300 bg-pink-200 px-3 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-pink-800">
+              Folder
+            </div>
+          </Link>
+          <Link
+            href="/lessons/language-arts/lilac-word-lists"
+            className="group relative flex h-56 flex-col justify-between rounded-3xl border border-fuchsia-200 bg-gradient-to-br from-fuchsia-100 via-violet-50 to-purple-100 p-6 shadow-[0_30px_60px_-40px_rgba(15,23,42,0.8)] transition hover:-translate-y-0.5 hover:shadow-[0_40px_90px_-50px_rgba(15,23,42,0.7)]"
+          >
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-fuchsia-300 bg-fuchsia-100 text-xl font-semibold text-fuchsia-700">📁</span>
+              <div className="flex flex-col">
+                <h2 className="font-display text-2xl font-semibold text-stone-900">Lilac</h2>
+                <p className="text-[11px] uppercase tracking-[0.22em] text-fuchsia-700">Most Frequently used Words</p>
+              </div>
+            </div>
+            <div className="grid h-24 grid-cols-3 gap-2 rounded-2xl border border-fuchsia-200 bg-white/70 p-2">
+              {lilacPreviewWords.map((word) => (
+                <span
+                  key={word}
+                  className="inline-flex items-center justify-center rounded-xl border border-fuchsia-200 bg-white text-sm font-semibold text-fuchsia-700"
+                >
+                  {word}
+                </span>
+              ))}
+            </div>
+            <p className="text-xs uppercase tracking-[0.35em] text-fuchsia-700">Speaker + mic practice</p>
+            <div className="absolute -bottom-3 right-4 rounded-full border border-fuchsia-300 bg-fuchsia-200 px-3 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-fuchsia-800">
               Folder
             </div>
           </Link>

@@ -3,15 +3,24 @@
 import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 
-export default function HomeLink({ className }: { className?: string }) {
+type HomeLinkProps = {
+  className?: string;
+  onClick?: () => void;
+};
+
+export default function HomeLink({ className, onClick }: HomeLinkProps) {
   const router = useRouter();
   const handleClick = useCallback(() => {
+    if (onClick) {
+      onClick();
+      return;
+    }
     if (typeof window !== "undefined" && window.history.length > 1) {
       router.back();
       return;
     }
     router.push("/");
-  }, [router]);
+  }, [onClick, router]);
 
   return (
     <button

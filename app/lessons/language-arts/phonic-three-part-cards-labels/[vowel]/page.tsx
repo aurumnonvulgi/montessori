@@ -243,21 +243,39 @@ export default function PhonicThreePartCardsLabelsLesson() {
     };
     updateRect();
     window.addEventListener("resize", updateRect);
+    window.addEventListener("scroll", updateRect, { passive: true });
+    const viewport = window.visualViewport;
+    viewport?.addEventListener("resize", updateRect);
+    viewport?.addEventListener("scroll", updateRect);
     const observer = new ResizeObserver(() => updateRect());
     observer.observe(board);
     return () => {
       window.removeEventListener("resize", updateRect);
+      window.removeEventListener("scroll", updateRect);
+      viewport?.removeEventListener("resize", updateRect);
+      viewport?.removeEventListener("scroll", updateRect);
       observer.disconnect();
     };
   }, []);
 
-  const convertPointerToBoard = useCallback((event: PointerEvent) => {
-    const rect = boardRectRef.current;
-    if (!rect) return null;
-    const x = ((event.clientX - rect.left) / rect.width) * BOARD_WIDTH;
-    const y = ((event.clientY - rect.top) / rect.height) * BOARD_HEIGHT;
-    return { x, y };
+  const getPointerClient = useCallback((event: PointerEvent) => {
+    const viewport = typeof window !== "undefined" ? window.visualViewport : null;
+    const offsetLeft = viewport?.offsetLeft ?? 0;
+    const offsetTop = viewport?.offsetTop ?? 0;
+    return { x: event.clientX + offsetLeft, y: event.clientY + offsetTop };
   }, []);
+
+  const convertPointerToBoard = useCallback(
+    (event: PointerEvent) => {
+      const rect = boardRectRef.current;
+      if (!rect) return null;
+      const point = getPointerClient(event);
+      const x = ((point.x - rect.left) / rect.width) * BOARD_WIDTH;
+      const y = ((point.y - rect.top) / rect.height) * BOARD_HEIGHT;
+      return { x, y };
+    },
+    [getPointerClient]
+  );
 
   const removeAssignment = useCallback((cardId: string) => {
     setPictureAssignments((prev) => {
@@ -353,7 +371,10 @@ export default function PhonicThreePartCardsLabelsLesson() {
       event.stopPropagation();
       const board = boardRef.current;
       if (!board) return;
-      const rect = board.getBoundingClientRect();
+      boardRectRef.current = board.getBoundingClientRect();
+      event.currentTarget.setPointerCapture?.(event.pointerId);
+      const rect = boardRectRef.current;
+      if (!rect) return;
       const x = ((event.clientX - rect.left) / rect.width) * BOARD_WIDTH;
       const y = ((event.clientY - rect.top) / rect.height) * BOARD_HEIGHT;
       removeAssignment(card.id);
@@ -400,15 +421,25 @@ export default function PhonicThreePartCardsLabelsLesson() {
     spokenMatchesRef.current = new Set();
   }, [stageIndex, vowel]);
 
+  const combinedMatches = useMemo(() => {
+    return pictureMatches.map((pictureMatch, index) => {
+      const labelMatch = labelMatches[index];
+      return {
+        pair: pictureMatch.pair ?? labelMatch?.pair,
+        matched: Boolean(pictureMatch.matched && labelMatch?.matched),
+      };
+    });
+  }, [pictureMatches, labelMatches]);
+
   useEffect(() => {
-    pictureMatches.forEach((item) => {
+    combinedMatches.forEach((item) => {
       if (!item.matched || !item.pair) return;
       const key = item.pair.id;
       if (spokenMatchesRef.current.has(key)) return;
       spokenMatchesRef.current.add(key);
       handleSpeak(item.pair.wordLabel);
     });
-  }, [pictureMatches, handleSpeak]);
+  }, [combinedMatches, handleSpeak]);
 
   const advanceRef = useRef<number | null>(null);
   useEffect(() => {

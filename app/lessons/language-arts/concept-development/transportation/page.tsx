@@ -214,21 +214,39 @@ export default function TransportationGame() {
     };
     updateRect();
     window.addEventListener("resize", updateRect);
+    window.addEventListener("scroll", updateRect, { passive: true });
+    const viewport = window.visualViewport;
+    viewport?.addEventListener("resize", updateRect);
+    viewport?.addEventListener("scroll", updateRect);
     const observer = new ResizeObserver(() => updateRect());
     observer.observe(board);
     return () => {
       window.removeEventListener("resize", updateRect);
+      window.removeEventListener("scroll", updateRect);
+      viewport?.removeEventListener("resize", updateRect);
+      viewport?.removeEventListener("scroll", updateRect);
       observer.disconnect();
     };
   }, []);
 
-  const convertPointerToBoard = useCallback((event: PointerEvent) => {
-    const rect = boardRectRef.current;
-    if (!rect) return null;
-    const x = ((event.clientX - rect.left) / rect.width) * BOARD_WIDTH;
-    const y = ((event.clientY - rect.top) / rect.height) * BOARD_HEIGHT;
-    return { x, y };
+  const getPointerClient = useCallback((event: PointerEvent) => {
+    const viewport = typeof window !== "undefined" ? window.visualViewport : null;
+    const offsetLeft = viewport?.offsetLeft ?? 0;
+    const offsetTop = viewport?.offsetTop ?? 0;
+    return { x: event.clientX + offsetLeft, y: event.clientY + offsetTop };
   }, []);
+
+  const convertPointerToBoard = useCallback(
+    (event: PointerEvent) => {
+      const rect = boardRectRef.current;
+      if (!rect) return null;
+      const point = getPointerClient(event);
+      const x = ((point.x - rect.left) / rect.width) * BOARD_WIDTH;
+      const y = ((point.y - rect.top) / rect.height) * BOARD_HEIGHT;
+      return { x, y };
+    },
+    [getPointerClient]
+  );
 
   const handleSpeak = useCallback((label: string) => {
     if (typeof window === "undefined") return;
@@ -329,7 +347,10 @@ export default function TransportationGame() {
       event.stopPropagation();
       const board = boardRef.current;
       if (!board) return;
-      const rect = board.getBoundingClientRect();
+      boardRectRef.current = board.getBoundingClientRect();
+      event.currentTarget.setPointerCapture?.(event.pointerId);
+      const rect = boardRectRef.current;
+      if (!rect) return;
       const x = ((event.clientX - rect.left) / rect.width) * BOARD_WIDTH;
       const y = ((event.clientY - rect.top) / rect.height) * BOARD_HEIGHT;
       removeAssignment(card.id);

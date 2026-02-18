@@ -83,11 +83,11 @@ const B_SLIDES: InitialSoundSlide[] = [
 ];
 
 const C_SLIDES: InitialSoundSlide[] = [
-  { word: "cake", image: "/assets/language_arts/initial_sound/Initial Sound - C/c---cake___initial_sound-20260209_194158-1.png" },
-  { word: "car", image: "/assets/language_arts/initial_sound/Initial Sound - C/c---car___initial_sound-20260209_192817-1.png" },
+  { word: "cake", image: "/assets/language_arts/initial_sound/Initial Sound - C/c---cake___initial_sound-20260209_194845-1.png" },
+  { word: "car", image: "/assets/language_arts/initial_sound/Initial Sound - C/c---car___initial_sound-20260209_193511-1.png" },
   { word: "cat", image: "/assets/language_arts/initial_sound/Initial Sound - C/c---cat___initial_sound-20260209_193035-1.png" },
-  { word: "corn", image: "/assets/language_arts/initial_sound/Initial Sound - C/c---corn___initial_sound-20260209_194630-1.png" },
-  { word: "cow", image: "/assets/language_arts/initial_sound/Initial Sound - C/c---cow___initial_sound-20260209_193727-1.png" },
+  { word: "corn", image: "/assets/language_arts/initial_sound/Initial Sound - C/c---corn___initial_sound-20260209_195100-1.png" },
+  { word: "cow", image: "/assets/language_arts/initial_sound/Initial Sound - C/c---cow___initial_sound-20260209_194414-1.png" },
   { word: "cup", image: "/assets/language_arts/initial_sound/Initial Sound - C/c---cup___initial_sound-20260209_193254-1.png" },
 ];
 

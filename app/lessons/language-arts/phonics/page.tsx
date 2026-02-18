@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import HomeLink from "../../../components/HomeLink";
 
 type PreviewImage = {
@@ -32,6 +33,7 @@ function ImageGridPreview({
 }
 
 export default function PhonicsHub() {
+  const router = useRouter();
   const moveableAlphabetImages: PreviewImage[] = [
     { src: "/assets/language_arts/moveable_alphabet/images/a---cat___moveable_phonics.png", alt: "cat" },
     { src: "/assets/language_arts/moveable_alphabet/images/a---bat___moveable_phonics.png", alt: "bat" },
@@ -62,7 +64,7 @@ export default function PhonicsHub() {
 
   return (
     <div className="relative min-h-screen bg-[radial-gradient(circle_at_top,#f5efe6,#fdfbf8_55%,#f7efe4)]">
-      <HomeLink />
+      <HomeLink onClick={() => router.push("/lessons/language-arts")} />
       <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-6 py-10">
         <header className="space-y-3 text-center">
           <p className="text-xs uppercase tracking-[0.35em] text-stone-400">Language Arts · Phonics</p>

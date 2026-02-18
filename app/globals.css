@@ -19,6 +19,35 @@ body {
   font-family: 'Poppins', 'Comfortaa', system-ui, sans-serif;
 }
 
+/* iOS interaction guard: prevent long-press menus and text selection */
+html,
+body {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+img,
+a {
+  -webkit-touch-callout: none;
+}
+
+img {
+  -webkit-user-drag: none;
+}
+
+input,
+textarea,
+select,
+[contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 .font-display {
   font-family: var(--font-display), "Times New Roman", serif;
 }
