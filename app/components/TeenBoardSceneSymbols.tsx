@@ -4,6 +4,7 @@ import { Canvas, ThreeEvent, useThree } from "@react-three/fiber";
 import { Text, OrbitControls as DreiOrbitControls } from "@react-three/drei";
 import { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import * as THREE from "three";
+import ZoomResetButton from "./ZoomResetButton";
 
 const BEAD_RADIUS = 0.01;
 const BEAD_SPACING = BEAD_RADIUS * 1.05;
@@ -85,16 +86,22 @@ type TeenBoardSceneProps = {
   className?: string;
   interactive?: boolean;
   preview?: boolean;
+  showZoomReset?: boolean;
 };
 
 const dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 const pointer = new THREE.Vector2();
 const raycaster = new THREE.Raycaster();
 
-function SceneContent({ interactive }: { interactive: boolean }) {
+function SceneContent({
+  interactive,
+  controlsRef,
+}: {
+  interactive: boolean;
+  controlsRef: React.MutableRefObject<React.ElementRef<typeof DreiOrbitControls> | null>;
+}) {
   const { camera, gl } = useThree();
-  type DreiControlsType = React.ElementRef<typeof DreiOrbitControls>;
-  const orbitRef = useRef<DreiControlsType | null>(null);
+  const orbitRef = controlsRef;
   const [barPositions, setBarPositions] = useState(() => createInitialPositions());
   const [tilePositions, setTilePositions] = useState(() => createTilePositions());
   const [dragTarget, setDragTarget] = useState<{
@@ -321,12 +328,32 @@ function SceneContent({ interactive }: { interactive: boolean }) {
   );
 }
 
-export default function TeenBoardSceneSymbols({ className, interactive = true }: TeenBoardSceneProps) {
+export default function TeenBoardSceneSymbols({
+  className,
+  interactive = true,
+  showZoomReset,
+}: TeenBoardSceneProps) {
+  type OrbitControlsHandle = React.ElementRef<typeof DreiOrbitControls>;
+  const controlsRef = useRef<OrbitControlsHandle | null>(null);
+  const shouldShowZoomReset = showZoomReset ?? interactive;
+
+  const handleZoomReset = useCallback(() => {
+    const controls = controlsRef.current;
+    if (!controls) return;
+    const camera = controls.object as THREE.PerspectiveCamera;
+    camera.position.set(0, 0.35, 0.8);
+    camera.fov = 45;
+    camera.updateProjectionMatrix();
+    controls.target.set(0, 0, 0);
+    controls.update();
+  }, []);
+
   return (
-    <div className={className ?? "h-full w-full"}>
+    <div className={`relative ${className ?? "h-full w-full"}`}>
       <Canvas camera={{ position: [0, 0.35, 0.8], fov: 45 }}>
-        <SceneContent interactive={interactive} />
+        <SceneContent interactive={interactive} controlsRef={controlsRef} />
       </Canvas>
+      {shouldShowZoomReset ? <ZoomResetButton onClick={handleZoomReset} /> : null}
     </div>
   );
 }

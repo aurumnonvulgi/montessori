@@ -1,6 +1,6 @@
 "use client";
 
-import { useMicrophoneEnabled } from "../lib/microphonePreferences";
+import { confirmMicrophonePreferenceChange, useMicrophoneEnabled } from "../lib/microphonePreferences";
 
 type MicrophonePrivacyToggleProps = {
   compact?: boolean;
@@ -8,6 +8,13 @@ type MicrophonePrivacyToggleProps = {
 
 export default function MicrophonePrivacyToggle({ compact = false }: MicrophonePrivacyToggleProps) {
   const { microphoneEnabled, setMicrophoneEnabled } = useMicrophoneEnabled();
+  const handleToggle = () => {
+    const nextEnabled = !microphoneEnabled;
+    if (!confirmMicrophonePreferenceChange(nextEnabled)) {
+      return;
+    }
+    setMicrophoneEnabled(nextEnabled);
+  };
 
   return (
     <section className={`rounded-2xl border border-stone-200 bg-white/90 shadow-sm ${compact ? "p-3" : "p-4"}`}>
@@ -19,10 +26,15 @@ export default function MicrophonePrivacyToggle({ compact = false }: MicrophoneP
               ? "Microphone activities are enabled."
               : "Microphone requests are disabled across lessons."}
           </p>
+          <p className={`text-stone-500 ${compact ? "text-[11px]" : "text-xs"}`}>
+            {microphoneEnabled
+              ? "On: lessons can listen for spoken answers and use speech-based checks."
+              : "Off: lessons will not request microphone access site-wide."}
+          </p>
         </div>
         <button
           type="button"
-          onClick={() => setMicrophoneEnabled(!microphoneEnabled)}
+          onClick={handleToggle}
           aria-pressed={!microphoneEnabled}
           className={`rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition ${
             microphoneEnabled

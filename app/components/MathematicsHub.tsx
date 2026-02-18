@@ -7,13 +7,14 @@ import NumeralsAndCountersPreview from "./NumeralsAndCountersPreview";
 import ShortBeadWorkbench from "./ShortBeadWorkbench";
 import TeenBoardPreview from "./TeenBoardPreview";
 import SpindleBoxesPreview from "./SpindleBoxesPreview";
+import HundredBoardPreview from "./HundredBoardPreview";
 
 const LESSONS = [
   {
     key: "numberRods",
     label: "Number Rods",
     href: "/lessons/number-rods",
-    preview: <NumberRodsScene playing={false} voiceEnabled={false} className="h-full" />,
+    preview: <NumberRodsScene playing={false} voiceEnabled={false} className="h-full" showZoomReset={false} />,
     completionKey: "number-rods-complete",
   },
   {
@@ -62,7 +63,7 @@ const LESSONS = [
     key: "hundredBoard",
     label: "Hundred Board",
     href: "/lessons/hundred-board",
-    preview: <HundredBoardCardPreview />,
+    preview: <HundredBoardPreview className="h-full" />,
     completionKey: "hundred-board-complete",
   },
 ];
@@ -154,23 +155,6 @@ function SandpaperNumeralsCardPreview() {
             </div>
           ))}
         </div>
-      </div>
-    </div>
-  );
-}
-
-function HundredBoardCardPreview() {
-  return (
-    <div className="h-32 w-full overflow-hidden rounded-[24px] border border-stone-200 bg-[radial-gradient(circle_at_top,#f6efe4_0%,#efe3d3_55%,#e6d5bf_100%)] p-3 shadow-inner sm:h-36">
-      <div className="grid h-full grid-cols-5 gap-1.5">
-        {Array.from({ length: 25 }, (_, index) => index + 1).map((value) => (
-          <div
-            key={`hundred-preview-${value}`}
-            className="flex items-center justify-center rounded-md border border-amber-900/20 bg-amber-50/90 text-[10px] font-semibold text-amber-900"
-          >
-            {value}
-          </div>
-        ))}
       </div>
     </div>
   );

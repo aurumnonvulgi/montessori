@@ -7,6 +7,7 @@ import CompletionOverlay from "../../../../components/CompletionOverlay";
 import Link from "next/link";
 import { getPhonicsCompletionSteps } from "../../../../lib/phonicsProgression";
 import { trackLessonEvent } from "../../../../lib/lessonTelemetry";
+import { primeSpeechVoices, speakWithPreferredVoice } from "../../../../lib/speech";
 
 const BOARD_IMAGE = "/assets/language_arts/moveable_alphabet/moveable_alphabet_board.svg";
 const BOARD_WIDTH = 1366;
@@ -320,6 +321,10 @@ export default function MoveableAlphabet() {
   }, [activeVowel, pictureFiles]);
 
   useEffect(() => {
+    primeSpeechVoices();
+  }, []);
+
+  useEffect(() => {
     trackLessonEvent({
       lesson: "language-arts:moveable-alphabet",
       activity: `vowel-${activeVowel}`,
@@ -424,12 +429,13 @@ export default function MoveableAlphabet() {
   );
 
   const handleSpeak = useCallback((word: string, interrupt = true) => {
-    if (typeof window === "undefined") return;
-    const utterance = new SpeechSynthesisUtterance(word);
-    if (interrupt) {
-      window.speechSynthesis?.cancel();
-    }
-    window.speechSynthesis?.speak(utterance);
+    speakWithPreferredVoice(word, {
+      lang: "en-US",
+      rate: 0.9,
+      pitch: 0.95,
+      volume: 0.9,
+      interrupt,
+    });
   }, []);
 
   const rowStatuses = useMemo<RowStatus[]>(() => {

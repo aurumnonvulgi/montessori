@@ -6,6 +6,7 @@ import { OrbitControls as ThreeOrbitControls } from "three/examples/jsm/controls
 import type { OrbitControls as StdlibOrbitControls } from "three-stdlib/controls/OrbitControls";
 import { useMemo, useEffect, useCallback, useRef, type MutableRefObject } from "react";
 import * as THREE from "three";
+import ZoomResetButton from "./ZoomResetButton";
 
 const BEAD_DIAMETER = 0.01;
 const BEAD_RADIUS = BEAD_DIAMETER / 2;
@@ -63,6 +64,7 @@ type ShortBeadStairSceneProps = {
   focusSideOffset?: number;
   focusDepthOffset?: number;
   cameraReady?: boolean;
+  showZoomReset?: boolean;
 };
 
 const ShortBeadStairScene = ({
@@ -78,6 +80,7 @@ const ShortBeadStairScene = ({
   focusSideOffset = 0,
   focusDepthOffset = 0,
   cameraReady = false,
+  showZoomReset = true,
 }: ShortBeadStairSceneProps) => {
   const beadGeometry = useMemo(() => new THREE.SphereGeometry(BEAD_RADIUS, 32, 32), []);
   const wireGeometry = useMemo(() => new THREE.CylinderGeometry(1, 1, 1, 16), []);
@@ -163,6 +166,8 @@ const ShortBeadStairScene = ({
     () => focusTarget.clone().add(lateralOffset),
     [focusTarget, lateralOffset],
   );
+  const overviewPosition = cameraIntroConfig?.overviewPosition ?? DEFAULT_CAMERA_POSITION;
+  const overviewTarget = cameraIntroConfig?.overviewTarget ?? CAMERA_ORIGIN_TARGET;
 
   const applyFocusOffsets = useCallback(() => {
     const controls = controlsRef.current;
@@ -184,103 +189,115 @@ const ShortBeadStairScene = ({
     applyFocusOffsets();
   }, [applyFocusOffsets, cameraReadyKey]);
 
+  const handleZoomReset = useCallback(() => {
+    const controls = controlsRef.current;
+    if (!controls) return;
+    const camera = controls.object as THREE.PerspectiveCamera;
+    camera.position.copy(overviewPosition);
+    controls.target.copy(overviewTarget);
+    controls.update();
+  }, [overviewPosition, overviewTarget]);
+
   return (
-    <Canvas camera={{ position: cameraPosition, fov: 38 }}>
-      <color attach="background" args={["#f8f4ec"]} />
-      <ambientLight intensity={0.6} />
-      <directionalLight position={[0.6, 1.2, 0.4]} intensity={0.9} />
+    <div className="relative h-full w-full">
+      <Canvas camera={{ position: cameraPosition, fov: 38 }}>
+        <color attach="background" args={["#f8f4ec"]} />
+        <ambientLight intensity={0.6} />
+        <directionalLight position={[0.6, 1.2, 0.4]} intensity={0.9} />
 
-      {cameraIntroConfig && (
-      <CameraIntroController
-        controlsRef={controlsRef}
-        config={cameraIntroConfig}
-        trigger={cameraIntroTrigger}
-        focusPositionTarget={focusPositionWithOffsets}
-        focusTargetTarget={focusTargetWithOffsets}
-        focusSideOffset={focusSideOffset}
-        focusDepthOffset={focusDepthOffset}
-        onComplete={onCameraIntroComplete}
-      />
-      )}
+        {cameraIntroConfig && (
+          <CameraIntroController
+            controlsRef={controlsRef}
+            config={cameraIntroConfig}
+            trigger={cameraIntroTrigger}
+            focusPositionTarget={focusPositionWithOffsets}
+            focusTargetTarget={focusTargetWithOffsets}
+            focusSideOffset={focusSideOffset}
+            focusDepthOffset={focusDepthOffset}
+            onComplete={onCameraIntroComplete}
+          />
+        )}
 
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.03, 0]}>
-        <planeGeometry args={[1.8, 1.4]} />
-        <meshStandardMaterial color="#c8a67d" />
-      </mesh>
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.03, 0]}>
+          <planeGeometry args={[1.8, 1.4]} />
+          <meshStandardMaterial color="#c8a67d" />
+        </mesh>
 
-      {BAR_LAYOUT.map((bar) => {
-        const spacing = touchingBeads
-          ? BEAD_DIAMETER
-          : bar.id === 2
-          ? BEAD_DIAMETER - 0.0004
-          : BEAD_DIAMETER + BEAD_SPACING;
-        const length = (bar.beads - 1) * spacing + BEAD_DIAMETER;
-        const startX = -length / 2 + BEAD_RADIUS;
-        const loopOffset = length / 2 + WIRE_LOOP_RADIUS * 0.8;
-        const shift = barShifts[bar.id] ?? { x: 0, y: 0, z: 0 };
-        const wirePosition: [number, number, number] = [shift.x, BEAD_RADIUS + shift.y, bar.depth + shift.z];
+        {BAR_LAYOUT.map((bar) => {
+          const spacing = touchingBeads
+            ? BEAD_DIAMETER
+            : bar.id === 2
+              ? BEAD_DIAMETER - 0.0004
+              : BEAD_DIAMETER + BEAD_SPACING;
+          const length = (bar.beads - 1) * spacing + BEAD_DIAMETER;
+          const startX = -length / 2 + BEAD_RADIUS;
+          const loopOffset = length / 2 + WIRE_LOOP_RADIUS * 0.8;
+          const shift = barShifts[bar.id] ?? { x: 0, y: 0, z: 0 };
+          const wirePosition: [number, number, number] = [shift.x, BEAD_RADIUS + shift.y, bar.depth + shift.z];
 
-        return (
-          <group key={bar.id} onPointerDown={() => onBarClick?.(bar.id)}>
-            <mesh
-              geometry={wireGeometry}
-              rotation={[0, 0, Math.PI / 2]}
-              position={wirePosition}
-              scale={[WIRE_LOOP_RADIUS * 1.1, length + WIRE_LOOP_RADIUS * 2, WIRE_LOOP_RADIUS * 1.1]}
-            >
-              <meshStandardMaterial color="#b18b4b" metalness={0.85} roughness={0.25} />
-            </mesh>
+          return (
+            <group key={bar.id} onPointerDown={() => onBarClick?.(bar.id)}>
+              <mesh
+                geometry={wireGeometry}
+                rotation={[0, 0, Math.PI / 2]}
+                position={wirePosition}
+                scale={[WIRE_LOOP_RADIUS * 1.1, length + WIRE_LOOP_RADIUS * 2, WIRE_LOOP_RADIUS * 1.1]}
+              >
+                <meshStandardMaterial color="#b18b4b" metalness={0.85} roughness={0.25} />
+              </mesh>
 
-            {[...Array(bar.beads)].map((_, beadIndex) => {
-              const key = `${bar.id}-${beadIndex}`;
-              const scale = 1;
-              const x = startX + beadIndex * spacing + shift.x;
-              const y = BEAD_RADIUS + shift.y;
-              const z = bar.depth + shift.z;
-              const highlightIndex = barBeadHighlights?.[bar.id];
-              const isHighlightedBead = highlightIndex !== undefined && highlightIndex === beadIndex;
-              return (
-                <mesh
-                  key={key}
-                  geometry={beadGeometry}
-                  material={isHighlightedBead ? highlightMaterial : getMaterialForBar(bar.id)}
-                  position={[x, y, z] as [number, number, number]}
-                  scale={[scale, scale, scale]}
-                />
-              );
-            })}
+              {[...Array(bar.beads)].map((_, beadIndex) => {
+                const key = `${bar.id}-${beadIndex}`;
+                const scale = 1;
+                const x = startX + beadIndex * spacing + shift.x;
+                const y = BEAD_RADIUS + shift.y;
+                const z = bar.depth + shift.z;
+                const highlightIndex = barBeadHighlights?.[bar.id];
+                const isHighlightedBead = highlightIndex !== undefined && highlightIndex === beadIndex;
+                return (
+                  <mesh
+                    key={key}
+                    geometry={beadGeometry}
+                    material={isHighlightedBead ? highlightMaterial : getMaterialForBar(bar.id)}
+                    position={[x, y, z] as [number, number, number]}
+                    scale={[scale, scale, scale]}
+                  />
+                );
+              })}
 
-            {[-1, 1].map((direction) => {
-              const loopX = direction * loopOffset + shift.x;
-              const loopY = BEAD_RADIUS + shift.y;
-              const loopZ = bar.depth + shift.z;
-              return (
-                <mesh
-                  key={`loop-${bar.id}-${direction}`}
-                  geometry={loopGeometry}
-                  position={[loopX, loopY, loopZ] as [number, number, number]}
-                  rotation={[Math.PI / 2, 0, direction === -1 ? Math.PI : 0]}
-                >
-                  <meshStandardMaterial color="#b18b4b" metalness={0.8} roughness={0.3} />
-                </mesh>
-              );
-            })}
-          </group>
-        );
-      })}
+              {[-1, 1].map((direction) => {
+                const loopX = direction * loopOffset + shift.x;
+                const loopY = BEAD_RADIUS + shift.y;
+                const loopZ = bar.depth + shift.z;
+                return (
+                  <mesh
+                    key={`loop-${bar.id}-${direction}`}
+                    geometry={loopGeometry}
+                    position={[loopX, loopY, loopZ] as [number, number, number]}
+                    rotation={[Math.PI / 2, 0, direction === -1 ? Math.PI : 0]}
+                  >
+                    <meshStandardMaterial color="#b18b4b" metalness={0.8} roughness={0.3} />
+                  </mesh>
+                );
+              })}
+            </group>
+          );
+        })}
 
-      <DreiOrbitControls
-        ref={controlsRef}
-        enablePan={false}
-        enableZoom
-        maxPolarAngle={Math.PI / 2.4}
-        minPolarAngle={Math.PI / 3}
-        minAzimuthAngle={-Math.PI / 6}
-        maxAzimuthAngle={Math.PI / 6}
-        minDistance={0.3}
-        maxDistance={1}
-      />
-    </Canvas>
+        <DreiOrbitControls
+          ref={controlsRef}
+          enablePan={false}
+          enableZoom
+          maxPolarAngle={Math.PI / 2.4}
+          minPolarAngle={Math.PI / 3}
+          minAzimuthAngle={-Math.PI / 6}
+          maxAzimuthAngle={Math.PI / 6}
+          minDistance={0.3}
+          maxDistance={1}
+        />
+      </Canvas>
+      {showZoomReset ? <ZoomResetButton onClick={handleZoomReset} /> : null}
+    </div>
   );
 };
 

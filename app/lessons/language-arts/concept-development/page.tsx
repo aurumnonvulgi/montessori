@@ -39,9 +39,9 @@ const cards = [
     accent: "from-amber-100 via-yellow-50 to-amber-50",
     previewClassName: "bg-amber-50/70",
     images: [
-      "/assets/language_arts/concept_development/opposites/images/big___opposites.png",
-      "/assets/language_arts/concept_development/opposites/images/small___opposites.png",
-      "/assets/language_arts/concept_development/opposites/images/hot___opposites.png",
+      "/assets/language_arts/concept_development/opposites/opposites_images/open-closed____phonic_books.png",
+      "/assets/language_arts/concept_development/opposites/opposites_images/big-small____phonic_books.png",
+      "/assets/language_arts/concept_development/opposites/opposites_images/fast-slow____phonic_books.png",
     ],
   },
   {
@@ -51,9 +51,9 @@ const cards = [
     accent: "from-amber-100 via-yellow-50 to-amber-50",
     previewClassName: "bg-amber-50/70",
     images: [
-      "/assets/language_arts/concept_development/association/toothbrush___association.png",
-      "/assets/language_arts/concept_development/association/toothpaste___association.png",
-      "/assets/language_arts/concept_development/association/dental-floss___association.png",
+      "/assets/language_arts/concept_development/association/school-1____association.png",
+      "/assets/language_arts/concept_development/association/school-2____association.png",
+      "/assets/language_arts/concept_development/association/school-3____association.png",
     ],
   },
   {

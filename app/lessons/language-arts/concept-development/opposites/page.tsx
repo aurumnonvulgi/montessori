@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import HomeLink from "../../../../components/HomeLink";
+import { trackLessonEvent } from "../../../../lib/lessonTelemetry";
+import { primeSpeechVoices, speakWithPreferredVoice } from "../../../../lib/speech";
 
 const BOARD_IMAGE = "/assets/language_arts/concept_development/opposites/matching_board6x6.svg";
 const BOARD_WIDTH = 1366;
@@ -67,6 +69,7 @@ type OppositePair = {
 type CardState = {
   id: string;
   word: string;
+  opposite: string;
   x: number;
   y: number;
   homeX: number;
@@ -80,14 +83,20 @@ type RowStatus = {
   matched: boolean;
 };
 
-const toImage = (word: string) => `/assets/language_arts/concept_development/opposites/images/${word}___opposites.png`;
+const toPairImage = (first: string, second: string) =>
+  `/assets/language_arts/concept_development/opposites/opposites_images/${first}-${second}____phonic_books.png`;
+const toConfirmationAudio = (first: string, second: string) =>
+  `/assets/language_arts/concept_development/opposites/opposites_audios/${first}-${second}-confirmation____phonic_books.m4a`;
 
 export default function OppositesGame() {
   const boardRef = useRef<HTMLDivElement | null>(null);
+  const confirmationAudioRef = useRef<HTMLAudioElement | null>(null);
   const [stageIndex, setStageIndex] = useState(0);
   const [cards, setCards] = useState<CardState[]>([]);
   const [assignments, setAssignments] = useState<Record<string, string>>({});
   const [dragging, setDragging] = useState<{ id: string; offsetX: number; offsetY: number } | null>(null);
+  const completedStagesRef = useRef<Record<number, true>>({});
+  const lessonCompletedRef = useRef(false);
 
   const stagePairs = useMemo<OppositePair[]>(() => {
     const start = stageIndex * STAGE_SIZE;
@@ -97,6 +106,20 @@ export default function OppositesGame() {
   const stageCount = Math.ceil(OPPOSITE_PAIRS.length / STAGE_SIZE);
 
   useEffect(() => {
+    trackLessonEvent({
+      lesson: "language-arts:concept-development-opposites",
+      activity: `set-${stageIndex + 1}`,
+      event: "stage_viewed",
+      page: stageIndex + 1,
+      totalPages: stageCount,
+    });
+  }, [stageCount, stageIndex]);
+
+  useEffect(() => {
+    primeSpeechVoices();
+  }, []);
+
+  useEffect(() => {
     const nextCards = stagePairs.map((pair, index) => {
       const slot = STACK_SLOTS[index] ?? STACK_SLOTS[STACK_SLOTS.length - 1];
       const x = slot.x + SLOT_SIZE / 2;
@@ -104,6 +127,7 @@ export default function OppositesGame() {
       return {
         id: `card-${stageIndex}-${pair.right}`,
         word: pair.right,
+        opposite: pair.left,
         x,
         y,
         homeX: x,
@@ -158,12 +182,49 @@ export default function OppositesGame() {
     [getPointerClient]
   );
 
-  const handleSpeak = useCallback((text: string) => {
-    if (typeof window === "undefined") return;
-    const utterance = new SpeechSynthesisUtterance(text);
-    window.speechSynthesis?.cancel();
-    window.speechSynthesis?.speak(utterance);
+  const stopCurrentAudio = useCallback(() => {
+    if (!confirmationAudioRef.current) return;
+    confirmationAudioRef.current.pause();
+    confirmationAudioRef.current.currentTime = 0;
   }, []);
+
+  const playAudio = useCallback((src: string, onFail?: () => void) => {
+    if (typeof window === "undefined") return;
+    stopCurrentAudio();
+    const audio = new Audio(src);
+    audio.preload = "auto";
+    confirmationAudioRef.current = audio;
+    void audio.play().catch(() => {
+      onFail?.();
+    });
+  }, [stopCurrentAudio]);
+
+  const playConfirmationAudio = useCallback((first: string, second: string) => {
+    playAudio(
+      toConfirmationAudio(first, second),
+      () => {
+        speakWithPreferredVoice(`Correct. ${first} is the opposite of ${second}.`, {
+          rate: 0.9,
+          pitch: 0.95,
+          volume: 0.95,
+          lang: "en-US",
+        });
+      }
+    );
+  }, [playAudio]);
+
+  const handleSpeak = useCallback((text: string, opposite: string) => {
+    if (typeof window === "undefined") return;
+    stopCurrentAudio();
+    const synth = window.speechSynthesis;
+    speakWithPreferredVoice(text, { rate: 0.9, pitch: 0.95, volume: 0.95, lang: "en-US" });
+
+    window.setTimeout(() => {
+      if (!synth.speaking && !synth.pending) {
+        playConfirmationAudio(text, opposite);
+      }
+    }, 220);
+  }, [playConfirmationAudio, stopCurrentAudio]);
 
   const removeAssignment = useCallback((cardId: string) => {
     setAssignments((prev) => {
@@ -236,7 +297,7 @@ export default function OppositesGame() {
         );
 
         if (isCorrectMatch && pair) {
-          handleSpeak(`Correct, ${pair.left} is the opposite of ${pair.right}.`);
+          playConfirmationAudio(pair.left, pair.right);
         }
       } else {
         setCards((current) =>
@@ -254,7 +315,16 @@ export default function OppositesGame() {
       window.removeEventListener("pointerup", handleUp);
       window.removeEventListener("pointercancel", handleUp);
     };
-  }, [cards, convertPointerToBoard, dragging, handleSpeak, removeAssignment, stagePairs]);
+  }, [cards, convertPointerToBoard, dragging, playConfirmationAudio, removeAssignment, stagePairs]);
+
+  useEffect(() => {
+    return () => {
+      if (confirmationAudioRef.current) {
+        confirmationAudioRef.current.pause();
+        confirmationAudioRef.current = null;
+      }
+    };
+  }, []);
 
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>, card: CardState) => {
     event.preventDefault();
@@ -327,6 +397,35 @@ export default function OppositesGame() {
       .filter(Boolean) as { row: number; left: number; top: number; width: number; height: number }[];
   }, [rowStatuses]);
 
+  useEffect(() => {
+    if (!rowStatuses.length) return;
+    if (!rowStatuses.every((status) => status.matched)) return;
+    const stageNumber = stageIndex + 1;
+
+    if (!completedStagesRef.current[stageNumber]) {
+      completedStagesRef.current[stageNumber] = true;
+      trackLessonEvent({
+        lesson: "language-arts:concept-development-opposites",
+        activity: `set-${stageNumber}`,
+        event: "stage_completed",
+        success: true,
+        page: stageNumber,
+        totalPages: stageCount,
+      });
+    }
+
+    if (stageNumber === stageCount && !lessonCompletedRef.current) {
+      lessonCompletedRef.current = true;
+      trackLessonEvent({
+        lesson: "language-arts:concept-development-opposites",
+        event: "lesson_completed",
+        success: true,
+        page: stageNumber,
+        totalPages: stageCount,
+      });
+    }
+  }, [rowStatuses, stageCount, stageIndex]);
+
   const advanceRef = useRef<number | null>(null);
   useEffect(() => {
     if (!rowStatuses.length) return;
@@ -371,10 +470,20 @@ export default function OppositesGame() {
                   className="absolute"
                   style={{ left: slot.left, top: slot.top, width: slot.width, height: slot.height }}
                 >
-                  <img src={toImage(pair.left)} alt={pair.left} className="h-full w-full object-contain" />
+                  <img
+                    src={toPairImage(pair.left, pair.right)}
+                    alt={`${pair.left} and ${pair.right}`}
+                    className="h-full w-full object-contain"
+                  />
                   <button
                     type="button"
-                    onClick={() => handleSpeak(pair.left)}
+                    onPointerDown={(event) => {
+                      event.stopPropagation();
+                    }}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleSpeak(pair.left, pair.right);
+                    }}
                     aria-label={`Say ${pair.left}`}
                     className="absolute right-1.5 bottom-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-xs text-stone-600 shadow shadow-stone-400 transition hover:bg-white sm:right-2 sm:bottom-2 sm:h-8 sm:w-8 sm:text-base"
                   >
@@ -405,13 +514,19 @@ export default function OppositesGame() {
                   touchAction: "none",
                 }}
               >
-                <img src={toImage(card.word)} alt={card.word} className="h-full w-full object-contain" />
+                <img
+                  src={toPairImage(card.word, card.opposite)}
+                  alt={`${card.word} and ${card.opposite}`}
+                  className="h-full w-full object-contain"
+                />
                 <button
                   type="button"
-                  onPointerDown={(event) => event.stopPropagation()}
+                  onPointerDown={(event) => {
+                    event.stopPropagation();
+                  }}
                   onClick={(event) => {
                     event.stopPropagation();
-                    handleSpeak(card.word);
+                    handleSpeak(card.word, card.opposite);
                   }}
                   aria-label={`Say ${card.word}`}
                   className="absolute right-1.5 bottom-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-xs text-stone-600 shadow shadow-stone-400 transition hover:bg-white sm:right-2 sm:bottom-2 sm:h-8 sm:w-8 sm:text-base"

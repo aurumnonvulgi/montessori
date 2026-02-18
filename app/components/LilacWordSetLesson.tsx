@@ -6,6 +6,7 @@ import HomeLink from "./HomeLink";
 import CompletionOverlay from "./CompletionOverlay";
 import { trackLessonEvent } from "../lib/lessonTelemetry";
 import { useMicrophoneEnabled } from "../lib/microphonePreferences";
+import { primeSpeechVoices, speakWithPreferredVoice } from "../lib/speech";
 
 type LilacWordSetLessonProps = {
   label: string;
@@ -101,12 +102,16 @@ export default function LilacWordSetLesson({
   }, []);
 
   const speakWord = useCallback((word: string) => {
-    if (typeof window === "undefined") return;
-    const utterance = new SpeechSynthesisUtterance(word);
-    utterance.lang = "en-US";
-    utterance.rate = 0.85;
-    window.speechSynthesis?.cancel();
-    window.speechSynthesis?.speak(utterance);
+    speakWithPreferredVoice(word, {
+      lang: "en-US",
+      rate: 0.85,
+      pitch: 0.95,
+      volume: 0.9,
+    });
+  }, []);
+
+  useEffect(() => {
+    primeSpeechVoices();
   }, []);
 
   const stopListening = useCallback(() => {
@@ -204,6 +209,7 @@ export default function LilacWordSetLesson({
           if (matched && activeWordRef.current) {
             const correctWord = activeWordRef.current;
             setCompletedWords((prev) => ({ ...prev, [correctWord]: true }));
+            speakWord(correctWord);
             trackLessonEvent({
               lesson: "language-arts:lilac-word-lists",
               activity: `set-${label}`,
@@ -277,13 +283,14 @@ export default function LilacWordSetLesson({
         }, 120);
       }
     },
-    [clearFeedbackTimer, clearFlashTimer, completedWords, label, microphoneEnabled, pages.length]
+    [clearFeedbackTimer, clearFlashTimer, completedWords, label, microphoneEnabled, pages.length, speakWord]
   );
 
   const markWordComplete = useCallback(
     (word: string) => {
       if (completedWords[word]) return;
       setCompletedWords((prev) => ({ ...prev, [word]: true }));
+      speakWord(word);
       trackLessonEvent({
         lesson: "language-arts:lilac-word-lists",
         activity: `set-${label}`,
@@ -304,7 +311,7 @@ export default function LilacWordSetLesson({
       setListeningWord(null);
       activeWordRef.current = "";
     },
-    [clearFeedbackTimer, completedWords, label, pages.length]
+    [clearFeedbackTimer, completedWords, label, pages.length, speakWord]
   );
 
   useEffect(() => {

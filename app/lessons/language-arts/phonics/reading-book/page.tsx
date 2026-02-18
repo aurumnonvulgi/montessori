@@ -5,7 +5,10 @@ import { useRouter } from "next/navigation";
 import HomeLink from "../../../../components/HomeLink";
 import CompletionOverlay from "../../../../components/CompletionOverlay";
 import { getPhonicsCompletionSteps } from "../../../../lib/phonicsProgression";
-import { useMicrophoneEnabled } from "../../../../lib/microphonePreferences";
+import {
+  confirmMicrophonePreferenceChange,
+  useMicrophoneEnabled,
+} from "../../../../lib/microphonePreferences";
 import { trackLessonEvent } from "../../../../lib/lessonTelemetry";
 
 const BOOK_PAGES = [
@@ -908,7 +911,13 @@ export default function PhonicsReadingBook() {
                     </p>
                     <button
                       type="button"
-                      onClick={() => setMicrophoneEnabled(!microphoneEnabled)}
+                      onClick={() => {
+                        const nextEnabled = !microphoneEnabled;
+                        if (!confirmMicrophonePreferenceChange(nextEnabled)) {
+                          return;
+                        }
+                        setMicrophoneEnabled(nextEnabled);
+                      }}
                       className={`mt-1 flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm transition ${
                         microphoneEnabled ? "bg-emerald-100 text-emerald-800" : "bg-stone-100 text-stone-700"
                       }`}
@@ -916,6 +925,11 @@ export default function PhonicsReadingBook() {
                       <span>{microphoneEnabled ? "Enabled" : "Disabled"}</span>
                       <span className="font-semibold">{microphoneEnabled ? "On" : "Off"}</span>
                     </button>
+                    <p className="mt-1 px-2 text-[11px] text-stone-500">
+                      {microphoneEnabled
+                        ? "On: uses spoken-answer checks."
+                        : "Off: no microphone prompts."}
+                    </p>
                   </div>
                 </div>
               ) : null}

@@ -28,6 +28,30 @@ export const setMicrophoneEnabled = (enabled: boolean) => {
   window.dispatchEvent(new CustomEvent(MICROPHONE_ENABLED_EVENT, { detail: enabled }));
 };
 
+const getEnableConfirmationMessage = () =>
+  [
+    "Turn microphone ON?",
+    "",
+    "This will allow lessons to request microphone access for speech checks.",
+    "Activities can listen for spoken answers and mark speech-based tasks complete.",
+  ].join("\n");
+
+const getDisableConfirmationMessage = () =>
+  [
+    "Turn microphone OFF?",
+    "",
+    "This will disable microphone requests across lessons.",
+    "Speech-listening interactions will be skipped or use non-mic fallback behavior when available.",
+  ].join("\n");
+
+export const confirmMicrophonePreferenceChange = (enabled: boolean) => {
+  if (typeof window === "undefined") {
+    return true;
+  }
+  const message = enabled ? getEnableConfirmationMessage() : getDisableConfirmationMessage();
+  return window.confirm(message);
+};
+
 const subscribeToMicrophoneEnabled = (listener: (enabled: boolean) => void) => {
   if (typeof window === "undefined") {
     return () => undefined;

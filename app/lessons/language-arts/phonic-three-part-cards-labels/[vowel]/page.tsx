@@ -6,6 +6,7 @@ import HomeLink from "../../../../components/HomeLink";
 import CompletionOverlay from "../../../../components/CompletionOverlay";
 import { getPhonicsCompletionSteps } from "../../../../lib/phonicsProgression";
 import { trackLessonEvent } from "../../../../lib/lessonTelemetry";
+import { primeSpeechVoices, speakWithPreferredVoice } from "../../../../lib/speech";
 
 const BOARD_IMAGE = "/assets/language_arts/moveable_alphabet/tcp-pic-label.svg";
 const BOARD_WIDTH = 1366;
@@ -146,6 +147,10 @@ export default function PhonicThreePartCardsLabelsLesson() {
   useEffect(() => {
     setShowCompletion(false);
   }, [vowel]);
+
+  useEffect(() => {
+    primeSpeechVoices();
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -345,10 +350,7 @@ export default function PhonicThreePartCardsLabelsLesson() {
   }, []);
 
   const handleSpeak = useCallback((label: string) => {
-    if (typeof window === "undefined") return;
-    const utterance = new SpeechSynthesisUtterance(label);
-    window.speechSynthesis?.cancel();
-    window.speechSynthesis?.speak(utterance);
+    speakWithPreferredVoice(label, { rate: 0.9, pitch: 0.95, volume: 0.9, lang: "en-US" });
   }, []);
 
   useEffect(() => {

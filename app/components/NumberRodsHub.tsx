@@ -94,6 +94,7 @@ export default function NumberRodsHub() {
             playing={false}
             voiceEnabled={false}
             className="h-full"
+            showZoomReset={false}
           />
         </div>
 

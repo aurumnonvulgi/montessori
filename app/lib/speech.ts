@@ -3,6 +3,7 @@ type SpeechOptions = {
   pitch?: number;
   volume?: number;
   lang?: string;
+  interrupt?: boolean;
 };
 
 const NATURAL_VOICE_PATTERNS = [
@@ -73,14 +74,59 @@ export const speakWithPreferredVoice = (text: string, options: SpeechOptions = {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) {
     return;
   }
-  const utterance = new SpeechSynthesisUtterance(text);
-  const voice = getPreferredVoice(options.lang);
-  if (voice) {
-    utterance.voice = voice;
+  const phrase = text.trim();
+  if (!phrase) {
+    return;
   }
-  utterance.rate = options.rate ?? 0.9;
-  utterance.pitch = options.pitch ?? 0.95;
-  utterance.volume = options.volume ?? 0.85;
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(utterance);
+  primeSpeechVoices();
+  const synth = window.speechSynthesis;
+  if (typeof synth.resume === "function") {
+    try {
+      synth.resume();
+    } catch {
+      // Some browsers can throw if resume is called in unsupported states.
+    }
+  }
+
+  const buildUtterance = (withPreferredVoice: boolean) => {
+    const utterance = new SpeechSynthesisUtterance(phrase);
+    if (withPreferredVoice) {
+      const voice = getPreferredVoice(options.lang);
+      if (voice) {
+        utterance.voice = voice;
+        utterance.lang = voice.lang || options.lang || "en-US";
+      } else if (options.lang) {
+        utterance.lang = options.lang;
+      }
+    } else if (options.lang) {
+      utterance.lang = options.lang;
+    }
+    utterance.rate = options.rate ?? 0.9;
+    utterance.pitch = options.pitch ?? 0.95;
+    utterance.volume = options.volume ?? 0.85;
+    return utterance;
+  };
+
+  if ((options.interrupt ?? true) && (synth.speaking || synth.pending)) {
+    synth.cancel();
+  }
+  try {
+    synth.speak(buildUtterance(true));
+  } catch {
+    try {
+      synth.speak(buildUtterance(false));
+    } catch {
+      return;
+    }
+  }
+
+  window.setTimeout(() => {
+    if (!synth.speaking && !synth.pending) {
+      try {
+        synth.speak(buildUtterance(false));
+      } catch {
+        // Best effort: no further fallback available.
+      }
+    }
+  }, 160);
 };

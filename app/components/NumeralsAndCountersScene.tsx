@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { primeSpeechVoices, speakWithPreferredVoice } from "../lib/speech";
 import { playChime } from "../lib/sounds";
+import ZoomResetButton from "./ZoomResetButton";
 
 // ============================================================================
 // TYPES
@@ -19,6 +20,7 @@ type NumeralsAndCountersSceneProps = {
   onComplete?: () => void;
   onStageComplete?: () => void;
   className?: string;
+  showZoomReset?: boolean;
 };
 
 type Step = {
@@ -38,6 +40,7 @@ type VoiceCue = {
 };
 
 type QuizPhase = "click" | "name" | null;
+type OrbitControlsHandle = React.ElementRef<typeof OrbitControls>;
 
 // ============================================================================
 // CONSTANTS
@@ -172,6 +175,7 @@ type NumeralsAndCountersContentProps = {
   stageKey: number;
   onComplete?: () => void;
   onStageComplete?: () => void;
+  controlsRef: React.MutableRefObject<OrbitControlsHandle | null>;
 };
 
 function NumeralsAndCountersContent({
@@ -181,6 +185,7 @@ function NumeralsAndCountersContent({
   numerals,
   stageKey,
   onStageComplete,
+  controlsRef,
 }: NumeralsAndCountersContentProps) {
   const startTimeRef = useRef<number | null>(null);
   const completedRef = useRef(false);
@@ -784,6 +789,7 @@ function NumeralsAndCountersContent({
       })}
 
       <OrbitControls
+        ref={controlsRef}
         enableZoom
         enablePan={false}
         minPolarAngle={Math.PI / 4}
@@ -810,15 +816,28 @@ export default function NumeralsAndCountersScene({
   onComplete,
   onStageComplete,
   className = "",
+  showZoomReset = true,
 }: NumeralsAndCountersSceneProps) {
   const numerals = NUMERALS_AND_COUNTERS_STAGES[stageIndex] || [1, 2, 3];
+  const controlsRef = useRef<OrbitControlsHandle | null>(null);
 
   useEffect(() => {
     primeSpeechVoices();
   }, []);
 
+  const handleZoomReset = useCallback(() => {
+    const controls = controlsRef.current;
+    if (!controls) return;
+    const camera = controls.object as THREE.PerspectiveCamera;
+    camera.position.set(0, 3.2, 4.5);
+    camera.fov = 35;
+    camera.updateProjectionMatrix();
+    controls.target.set(0, 0, 0.3);
+    controls.update();
+  }, []);
+
   return (
-    <div className={`w-full overflow-hidden rounded-[28px] bg-[#fdfbf8] ${className}`}>
+    <div className={`relative w-full overflow-hidden rounded-[28px] bg-[#fdfbf8] ${className}`}>
       <Canvas
         shadows={false}
         camera={{ position: [0, 3.2, 4.5], fov: 35 }}
@@ -832,8 +851,10 @@ export default function NumeralsAndCountersScene({
           stageKey={stageIndex}
           onComplete={onComplete}
           onStageComplete={onStageComplete}
+          controlsRef={controlsRef}
         />
       </Canvas>
+      {showZoomReset ? <ZoomResetButton onClick={handleZoomReset} /> : null}
     </div>
   );
 }

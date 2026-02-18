@@ -35,7 +35,7 @@ export default function HomeLink({ className, onBackClick, onHomeClick, onClick 
 
   return (
     <div
-      className={`fixed left-4 top-4 z-[999] flex items-center gap-2 rounded-full border border-stone-200/80 bg-white/90 p-2 shadow-[0_14px_30px_rgba(15,23,42,0.25)] backdrop-blur-sm ${className ?? ""}`}
+      className={`absolute left-4 top-4 z-30 flex items-center gap-2 rounded-full border border-stone-200/80 bg-white/90 p-2 shadow-[0_14px_30px_rgba(15,23,42,0.25)] backdrop-blur-sm ${className ?? ""}`}
     >
       <button
         type="button"

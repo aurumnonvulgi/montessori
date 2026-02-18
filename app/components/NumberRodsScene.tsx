@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { playChime } from "../lib/sounds";
 import { primeSpeechVoices, speakWithPreferredVoice } from "../lib/speech";
+import ZoomResetButton from "./ZoomResetButton";
 type NumberRodsSceneProps = {
   playing: boolean;
   voiceEnabled: boolean;
@@ -14,6 +15,7 @@ type NumberRodsSceneProps = {
   onComplete?: () => void;
   onStageComplete?: () => void;
   className?: string;
+  showZoomReset?: boolean;
 };
 
 type Step = {
@@ -542,6 +544,7 @@ export default function NumberRodsScene({
   onComplete,
   onStageComplete,
   className,
+  showZoomReset = true,
 }: NumberRodsSceneProps) {
   useEffect(() => {
     primeSpeechVoices();
@@ -583,6 +586,8 @@ export default function NumberRodsScene({
   const timeoutRef = useRef<number | null>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const awaitingAnswerRef = useRef(false);
+  type OrbitControlsHandle = React.ElementRef<typeof OrbitControls>;
+  const controlsRef = useRef<OrbitControlsHandle | null>(null);
 
   const currentTarget =
     quizIndex !== null && quizPhase === "click"
@@ -818,9 +823,20 @@ export default function NumberRodsScene({
     };
   }, []);
 
+  const handleZoomReset = useCallback(() => {
+    const controls = controlsRef.current;
+    if (!controls) return;
+    const camera = controls.object as THREE.PerspectiveCamera;
+    camera.position.set(...cameraPosition);
+    camera.fov = 33;
+    camera.updateProjectionMatrix();
+    controls.target.set(targetX, 0.03, 0);
+    controls.update();
+  }, [cameraPosition, targetX]);
+
   return (
     <div
-      className={`w-full overflow-hidden rounded-[28px] bg-[#f7efe4] ${className ?? "h-[420px]"}`}
+      className={`relative w-full overflow-hidden rounded-[28px] bg-[#f7efe4] ${className ?? "h-[420px]"}`}
     >
       <Canvas shadows camera={{ position: cameraPosition, fov: 33 }}>
         <color attach="background" args={["#f7efe4"]} />
@@ -837,6 +853,7 @@ export default function NumberRodsScene({
           onRodSelect={handleRodSelect}
         />
         <OrbitControls
+          ref={controlsRef}
           enablePan={false}
           enableZoom
           maxPolarAngle={Math.PI / 2.1}
@@ -847,6 +864,7 @@ export default function NumberRodsScene({
           maxDistance={2.2}
         />
       </Canvas>
+      {showZoomReset ? <ZoomResetButton onClick={handleZoomReset} /> : null}
     </div>
   );
 }

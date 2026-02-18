@@ -17,8 +17,30 @@ import {
 const VOWELS = ["a", "e", "i", "o", "u"] as const;
 const WORDS_PER_LILAC_PAGE = 10;
 
-const MATH_LESSONS = [
-  { key: "hundred-board-complete", label: "Hundred Board", href: "/lessons/hundred-board" },
+type MathLesson = {
+  key: string;
+  label: string;
+  href: string;
+  telemetry?: {
+    lesson: string;
+    completionEvent: string;
+    completionSignalEvent: string;
+    totalUnits?: number;
+  };
+};
+
+const MATH_LESSONS: MathLesson[] = [
+  {
+    key: "hundred-board-complete",
+    label: "Hundred Board",
+    href: "/lessons/hundred-board",
+    telemetry: {
+      lesson: "mathematics:hundred-board",
+      completionEvent: "batch_completed",
+      completionSignalEvent: "lesson_completed",
+      totalUnits: 10,
+    },
+  },
   { key: "number-rods-complete", label: "Number Rods", href: "/lessons/number-rods" },
   { key: "sandpaper-numerals-complete", label: "Sandpaper Numerals", href: "/lessons/sandpaper-numerals" },
   { key: "spindle-boxes-complete", label: "Spindle Boxes", href: "/lessons/spindle-boxes" },
@@ -26,7 +48,7 @@ const MATH_LESSONS = [
   { key: "short-bead-stair-complete", label: "Short Bead Stair", href: "/lessons/short-bead-stair" },
   { key: "teen-board-quantities-complete", label: "Teen Board Quantities", href: "/lessons/teen-board" },
   { key: "teen-board-symbols-complete", label: "Teen Board Symbols", href: "/lessons/teen-board-symbols" },
-] as const;
+];
 
 type ProgressItem = {
   key: string;
@@ -42,6 +64,7 @@ type ActivityProgress = ProgressItem & {
 };
 
 const clampPercent = (value: number) => Math.max(0, Math.min(100, Math.round(value)));
+const isComplete = (percent: number) => percent >= 100;
 
 const toStatus = (percent: number) => {
   if (percent >= 100) return "100% done";
@@ -151,19 +174,27 @@ const buildActivityProgress = ({
 };
 
 function Pie({ percent, color }: { percent: number; color: string }) {
+  const complete = isComplete(percent);
+  const fillColor = complete ? "#16a34a" : color;
   return (
     <div
       className="relative h-16 w-16 rounded-full"
-      style={{ background: `conic-gradient(${color} ${percent}%, #e5e7eb ${percent}% 100%)` }}
+      style={{ background: `conic-gradient(${fillColor} ${percent}%, #e5e7eb ${percent}% 100%)` }}
     >
-      <div className="absolute inset-2 flex items-center justify-center rounded-full bg-white text-xs font-semibold text-stone-800">
+      <div className={`absolute inset-2 flex items-center justify-center rounded-full bg-white text-xs font-semibold ${complete ? "text-emerald-700" : "text-stone-800"}`}>
         {percent}%
       </div>
+      {complete ? (
+        <span className="absolute -right-1 -top-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-bold text-white">
+          ✓
+        </span>
+      ) : null}
     </div>
   );
 }
 
 function ProgressBar({ percent, color }: { percent: number; color: string }) {
+  const complete = isComplete(percent);
   return (
     <div className="w-full">
       <div className="h-3 w-full overflow-hidden rounded-full bg-stone-200">
@@ -171,11 +202,13 @@ function ProgressBar({ percent, color }: { percent: number; color: string }) {
           className="h-full rounded-full transition-all"
           style={{
             width: `${percent}%`,
-            backgroundColor: color,
+            backgroundColor: complete ? "#16a34a" : color,
           }}
         />
       </div>
-      <p className="mt-1 text-right text-xs font-semibold text-stone-700">{percent}%</p>
+      <p className={`mt-1 text-right text-xs font-semibold ${complete ? "text-emerald-700" : "text-stone-700"}`}>
+        {percent}% {complete ? "✓" : ""}
+      </p>
     </div>
   );
 }
@@ -199,15 +232,18 @@ function OpenCard({
   topLayer?: boolean;
   children: React.ReactNode;
 }) {
+  const complete = isComplete(percent);
   return (
-    <section className="rounded-3xl border border-stone-200 bg-white/90 p-4 shadow-sm">
+    <section className={`rounded-3xl border bg-white/90 p-4 shadow-sm ${complete ? "border-emerald-300" : "border-stone-200"}`}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <button type="button" onClick={onToggle} className="min-w-[260px] flex-1 text-left">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               {topLayer ? null : <Pie percent={percent} color={color} />}
               <div>
-                <p className="text-lg font-semibold text-stone-900">{title}</p>
+                <p className={`text-lg font-semibold ${complete ? "text-emerald-800" : "text-stone-900"}`}>
+                  {title} {complete ? "✓" : ""}
+                </p>
                 <p className="text-xs uppercase tracking-[0.25em] text-stone-500">{subtitle}</p>
               </div>
             </div>
@@ -228,14 +264,17 @@ function OpenCard({
 }
 
 function ActivityCard({ item, color }: { item: ActivityProgress; color: string }) {
+  const complete = isComplete(item.percent);
   return (
-    <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
+    <div className={`rounded-2xl border bg-white p-4 shadow-sm ${complete ? "border-emerald-300 bg-emerald-50/40" : "border-stone-200"}`}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Pie percent={item.percent} color={color} />
           <div>
-            <p className="font-semibold text-stone-900">{item.label}</p>
-            <p className="text-sm text-stone-600">{item.status}</p>
+            <p className={`font-semibold ${complete ? "text-emerald-800" : "text-stone-900"}`}>
+              {item.label} {complete ? "✓" : ""}
+            </p>
+            <p className={`text-sm ${complete ? "text-emerald-700" : "text-stone-600"}`}>{item.status}</p>
             <p className="text-xs text-stone-500">{item.detail}</p>
           </div>
         </div>
@@ -254,16 +293,24 @@ function ActivityCard({ item, color }: { item: ActivityProgress; color: string }
             <Link
               key={vowelItem.key}
               href={vowelItem.href}
-              className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-[11px] font-semibold text-indigo-700 transition hover:bg-indigo-100"
+              className={`rounded-full border px-3 py-1 text-[11px] font-semibold transition ${
+                vowelItem.percent >= 100
+                  ? "border-emerald-300 bg-emerald-100 text-emerald-800 hover:bg-emerald-200"
+                  : "border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100"
+              }`}
             >
-              {vowelItem.label} {vowelItem.status}
+              {vowelItem.label} {vowelItem.status} {vowelItem.percent >= 100 ? "✓" : ""}
             </Link>
           ) : (
             <span
               key={vowelItem.key}
-              className="rounded-full border border-stone-300 bg-stone-50 px-3 py-1 text-[11px] font-semibold text-stone-600"
+              className={`rounded-full border px-3 py-1 text-[11px] font-semibold ${
+                vowelItem.percent >= 100
+                  ? "border-emerald-300 bg-emerald-100 text-emerald-800"
+                  : "border-stone-300 bg-stone-50 text-stone-600"
+              }`}
             >
-              {vowelItem.label} {vowelItem.status}
+              {vowelItem.label} {vowelItem.status} {vowelItem.percent >= 100 ? "✓" : ""}
             </span>
           )
         ))}
@@ -454,24 +501,92 @@ export default function LanguageArtsDashboardPage() {
     });
   }, [events]);
 
+  const conceptDevelopmentItems = useMemo(() => {
+    const activities = [
+      {
+        key: "concept-opposites",
+        label: "Opposites",
+        href: "/lessons/language-arts/concept-development/opposites",
+        lesson: "language-arts:concept-development-opposites",
+      },
+      {
+        key: "concept-associations",
+        label: "Associations",
+        href: "/lessons/language-arts/concept-development/associations",
+        lesson: "language-arts:concept-development-associations",
+      },
+      {
+        key: "concept-transportation",
+        label: "Transportation",
+        href: "/lessons/language-arts/concept-development/transportation",
+        lesson: "language-arts:concept-development-transportation",
+      },
+    ] as const;
+
+    return activities.map((activity) => {
+      const conceptEvents = events.filter((event) => event.lesson === activity.lesson);
+      return buildProgressItem({
+        key: activity.key,
+        label: activity.label,
+        events: conceptEvents,
+        completionEvent: "stage_completed",
+        completionSignalEvent: "lesson_completed",
+        href: activity.href,
+      });
+    });
+  }, [events]);
+
   const initialSoundPercent = averagePercent(initialSoundGroupItems);
+  const conceptDevelopmentPercent = averagePercent(conceptDevelopmentItems);
   const languagePercent = averagePercent([
     { key: "lang-phonics", label: "Phonics", percent: phonicsPercent, status: "", detail: "" },
     { key: "lang-lilac", label: "Lilac", percent: lilacPercent, status: "", detail: "" },
     { key: "lang-initial", label: "Initial Sound", percent: initialSoundPercent, status: "", detail: "" },
+    { key: "lang-concept", label: "Concept Development", percent: conceptDevelopmentPercent, status: "", detail: "" },
   ]);
 
-  const mathItems = MATH_LESSONS.map((lesson) => {
-    const percent = completionFlagSet.has(lesson.key) ? 100 : 0;
-    return {
-      key: lesson.key,
-      label: lesson.label,
-      percent,
-      status: toStatus(percent),
-      detail: percent >= 100 ? "Complete" : "Not Started",
-      href: lesson.href,
-    };
-  });
+  const mathItems = useMemo(
+    () =>
+      MATH_LESSONS.map((lesson) => {
+        const completedByFlag = completionFlagSet.has(lesson.key);
+        const telemetry = lesson.telemetry;
+
+        if (!telemetry) {
+          const percent = completedByFlag ? 100 : 0;
+          return {
+            key: lesson.key,
+            label: lesson.label,
+            percent,
+            status: toStatus(percent),
+            detail: percent >= 100 ? "Complete" : "Not Started",
+            href: lesson.href,
+          };
+        }
+
+        const lessonEvents = events.filter((event) => event.lesson === telemetry.lesson);
+        const trackedItem = buildProgressItem({
+          key: lesson.key,
+          label: lesson.label,
+          events: lessonEvents,
+          completionEvent: telemetry.completionEvent,
+          completionSignalEvent: telemetry.completionSignalEvent,
+          totalUnits: telemetry.totalUnits,
+          href: lesson.href,
+        });
+
+        if (!completedByFlag) {
+          return trackedItem;
+        }
+
+        return {
+          ...trackedItem,
+          percent: 100,
+          status: toStatus(100),
+          detail: "Complete",
+        };
+      }),
+    [completionFlagSet, events]
+  );
   const mathPercent = averagePercent(mathItems);
 
   const culturalPercent = 0;
@@ -548,7 +663,7 @@ export default function LanguageArtsDashboardPage() {
             </div>
           </OpenCard>
 
-          <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             <section className="rounded-2xl border border-fuchsia-200 bg-gradient-to-br from-fuchsia-50 to-rose-50 p-4">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
@@ -569,10 +684,16 @@ export default function LanguageArtsDashboardPage() {
                 {initialSoundGroupItems.map((item) => (
                   <div
                     key={item.key}
-                    className="flex items-center justify-between rounded-xl border border-fuchsia-200 bg-white/80 px-3 py-2 text-sm"
+                    className={`flex items-center justify-between rounded-xl border bg-white/80 px-3 py-2 text-sm ${
+                      item.percent >= 100 ? "border-emerald-300" : "border-fuchsia-200"
+                    }`}
                   >
-                    <span className="font-semibold text-stone-700">{item.label}</span>
-                    <span className="text-stone-600">{item.status}</span>
+                    <span className={`font-semibold ${item.percent >= 100 ? "text-emerald-800" : "text-stone-700"}`}>
+                      {item.label}
+                    </span>
+                    <span className={item.percent >= 100 ? "text-emerald-700" : "text-stone-600"}>
+                      {item.status} {item.percent >= 100 ? "✓" : ""}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -596,9 +717,63 @@ export default function LanguageArtsDashboardPage() {
               </div>
               <div className="space-y-2">
                 {lilacSetItems.map((item) => (
-                  <div key={item.key} className="flex items-center justify-between rounded-xl border border-violet-200 bg-white/80 px-3 py-2 text-sm">
-                    <span className="font-semibold text-stone-700">{item.label}</span>
-                    <span className="text-stone-600">{item.status}</span>
+                  <div
+                    key={item.key}
+                    className={`flex items-center justify-between rounded-xl border bg-white/80 px-3 py-2 text-sm ${
+                      item.percent >= 100 ? "border-emerald-300" : "border-violet-200"
+                    }`}
+                  >
+                    <span className={`font-semibold ${item.percent >= 100 ? "text-emerald-800" : "text-stone-700"}`}>
+                      {item.label}
+                    </span>
+                    <span className={item.percent >= 100 ? "text-emerald-700" : "text-stone-600"}>
+                      {item.status} {item.percent >= 100 ? "✓" : ""}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 p-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <Pie percent={conceptDevelopmentPercent} color="#d97706" />
+                  <div>
+                    <p className="font-semibold text-stone-900">Concept Development</p>
+                    <p className="text-sm text-stone-600">{toStatus(conceptDevelopmentPercent)}</p>
+                  </div>
+                </div>
+                <Link
+                  href="/lessons/language-arts/concept-development"
+                  className="rounded-full border border-sky-200 bg-sky-50 px-3 py-2 text-[11px] uppercase tracking-[0.2em] text-sky-700"
+                >
+                  Work on This Activity
+                </Link>
+              </div>
+              <div className="space-y-2">
+                {conceptDevelopmentItems.map((item) => (
+                  <div
+                    key={item.key}
+                    className={`flex items-center justify-between gap-2 rounded-xl border bg-white/80 px-3 py-2 text-sm ${
+                      item.percent >= 100 ? "border-emerald-300" : "border-amber-200"
+                    }`}
+                  >
+                    <span className={`font-semibold ${item.percent >= 100 ? "text-emerald-800" : "text-stone-700"}`}>
+                      {item.label}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className={item.percent >= 100 ? "text-emerald-700" : "text-stone-600"}>
+                        {item.status} {item.percent >= 100 ? "✓" : ""}
+                      </span>
+                      {item.href ? (
+                        <Link
+                          href={item.href}
+                          className="rounded-full border border-amber-300 bg-amber-100 px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-amber-800"
+                        >
+                          Open
+                        </Link>
+                      ) : null}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -617,17 +792,29 @@ export default function LanguageArtsDashboardPage() {
         >
           <div className="grid gap-2 md:grid-cols-2">
             {mathItems.map((item) => (
-              <div key={item.key} className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50/50 px-3 py-2">
+              <div
+                key={item.key}
+                className={`flex items-center justify-between rounded-xl border px-3 py-2 ${
+                  item.percent >= 100 ? "border-emerald-300 bg-emerald-100/70" : "border-emerald-200 bg-emerald-50/50"
+                }`}
+              >
                 <div>
-                  <p className="font-semibold text-stone-800">{item.label}</p>
-                  <p className="text-xs text-stone-500">{item.status}</p>
+                  <p className={`font-semibold ${item.percent >= 100 ? "text-emerald-800" : "text-stone-800"}`}>
+                    {item.label} {item.percent >= 100 ? "✓" : ""}
+                  </p>
+                  <p className={`text-xs ${item.percent >= 100 ? "text-emerald-700" : "text-stone-500"}`}>
+                    {item.status}
+                  </p>
+                  <p className="text-[11px] text-stone-500">{item.detail}</p>
                 </div>
-                <Link
-                  href={item.href}
-                  className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[10px] uppercase tracking-[0.18em] text-sky-700"
-                >
-                  Work on This Activity
-                </Link>
+                {item.href ? (
+                  <Link
+                    href={item.href}
+                    className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[10px] uppercase tracking-[0.18em] text-sky-700"
+                  >
+                    Work on This Activity
+                  </Link>
+                ) : null}
               </div>
             ))}
           </div>

@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import HomeLink from "../../../../components/HomeLink";
+import { trackLessonEvent } from "../../../../lib/lessonTelemetry";
+import { primeSpeechVoices, speakWithPreferredVoice } from "../../../../lib/speech";
 
 type Category = "air" | "land" | "water";
 
@@ -111,6 +113,17 @@ export default function TransportationGame() {
   const [assignments, setAssignments] = useState<Record<string, string>>({});
   const [dragging, setDragging] = useState<{ id: string; offsetX: number; offsetY: number } | null>(null);
   const [availableFiles, setAvailableFiles] = useState<string[]>([]);
+  const completedStagesRef = useRef<Record<number, true>>({});
+  const lessonCompletedRef = useRef(false);
+  const matchedColumnsRef = useRef<Record<Category, boolean>>({
+    air: false,
+    land: false,
+    water: false,
+  });
+
+  useEffect(() => {
+    primeSpeechVoices();
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -167,6 +180,16 @@ export default function TransportationGame() {
   const stageCount = Math.max(1, rounds.length);
   const stage = rounds[stageIndex];
 
+  useEffect(() => {
+    trackLessonEvent({
+      lesson: "language-arts:concept-development-transportation",
+      activity: `set-${stageIndex + 1}`,
+      event: "stage_viewed",
+      page: stageIndex + 1,
+      totalPages: stageCount,
+    });
+  }, [stageCount, stageIndex]);
+
   const sampleItems = useMemo(() => {
     if (!stage) return [] as TransportItem[];
     return [stage.air[0], stage.land[0], stage.water[0]].filter(Boolean) as TransportItem[];
@@ -204,6 +227,10 @@ export default function TransportationGame() {
     setAssignments({});
     setDragging(null);
   }, [draggableItems, stageIndex, stage]);
+
+  useEffect(() => {
+    matchedColumnsRef.current = { air: false, land: false, water: false };
+  }, [stageIndex]);
 
   const boardRectRef = useRef<DOMRect | null>(null);
   useEffect(() => {
@@ -250,9 +277,7 @@ export default function TransportationGame() {
 
   const handleSpeak = useCallback((label: string) => {
     if (typeof window === "undefined") return;
-    const utterance = new SpeechSynthesisUtterance(label);
-    window.speechSynthesis?.cancel();
-    window.speechSynthesis?.speak(utterance);
+    speakWithPreferredVoice(label, { rate: 0.9, pitch: 0.95, volume: 0.9, lang: "en-US" });
   }, []);
 
   const dropSlots: Slot[] = useMemo(
@@ -383,6 +408,28 @@ export default function TransportationGame() {
     });
   }, [assignments, dropSlots]);
 
+  useEffect(() => {
+    const nextMatched: Record<Category, boolean> = {
+      air: false,
+      land: false,
+      water: false,
+    };
+    columnStatuses.forEach((status) => {
+      nextMatched[status.category] = status.matched;
+      if (!status.matched) return;
+      if (matchedColumnsRef.current[status.category]) return;
+      const phrase = `Correct. ${status.category} transportation complete.`;
+      speakWithPreferredVoice(phrase, {
+        rate: 0.9,
+        pitch: 0.95,
+        volume: 0.9,
+        lang: "en-US",
+        interrupt: false,
+      });
+    });
+    matchedColumnsRef.current = nextMatched;
+  }, [columnStatuses]);
+
   const columnOverlays = useMemo(() => {
     const topRow = ROWS.find((row) => row.row === 1);
     const bottomRow = ROWS.find((row) => row.row === 3);
@@ -400,6 +447,35 @@ export default function TransportationGame() {
       })
       .filter(Boolean) as { category: Category; left: number; top: number; width: number; height: number }[];
   }, [columnStatuses]);
+
+  useEffect(() => {
+    if (!columnStatuses.length) return;
+    if (!columnStatuses.every((status) => status.matched)) return;
+    const stageNumber = stageIndex + 1;
+
+    if (!completedStagesRef.current[stageNumber]) {
+      completedStagesRef.current[stageNumber] = true;
+      trackLessonEvent({
+        lesson: "language-arts:concept-development-transportation",
+        activity: `set-${stageNumber}`,
+        event: "stage_completed",
+        success: true,
+        page: stageNumber,
+        totalPages: stageCount,
+      });
+    }
+
+    if (stageNumber === stageCount && !lessonCompletedRef.current) {
+      lessonCompletedRef.current = true;
+      trackLessonEvent({
+        lesson: "language-arts:concept-development-transportation",
+        event: "lesson_completed",
+        success: true,
+        page: stageNumber,
+        totalPages: stageCount,
+      });
+    }
+  }, [columnStatuses, stageCount, stageIndex]);
 
   const advanceRef = useRef<number | null>(null);
   useEffect(() => {
@@ -469,7 +545,13 @@ export default function TransportationGame() {
                   <img src={toImage(item.file)} alt={item.label} className="h-full w-full object-contain" />
                   <button
                     type="button"
-                    onClick={() => handleSpeak(item.label)}
+                    onPointerDown={(event) => {
+                      event.stopPropagation();
+                    }}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleSpeak(item.label);
+                    }}
                     aria-label={`Say ${item.label}`}
                     className="absolute right-1.5 bottom-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-xs text-stone-600 shadow shadow-stone-400 transition hover:bg-white sm:right-2 sm:bottom-2 sm:h-8 sm:w-8 sm:text-base"
                   >

@@ -4,6 +4,7 @@ import { Canvas, ThreeEvent, useThree, useFrame } from "@react-three/fiber";
 import { OrbitControls as DreiOrbitControls } from "@react-three/drei";
 import { useRef, useState, useEffect, useCallback } from "react";
 import * as THREE from "three";
+import ZoomResetButton from "./ZoomResetButton";
 
 const BEAD_RADIUS = 0.01;
 const BEAD_SPACING = BEAD_RADIUS * 1.05;
@@ -54,6 +55,7 @@ type TeenBoardSceneProps = {
   startAnimationKey?: number;
   onStartComplete?: () => void;
   onCameraChange?: (settings: { x: number; y: number; z: number; fov: number }) => void;
+  showZoomReset?: boolean;
 };
 
 const dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
@@ -75,6 +77,7 @@ function SceneContent({
   onStartComplete,
   cameraSettings,
   onCameraChange,
+  controlsRef,
 }: {
   interactive: boolean;
   onPositionsChange?: (positions: Record<string, [number, number, number]>) => void;
@@ -82,10 +85,10 @@ function SceneContent({
   onStartComplete?: () => void;
   cameraSettings?: { x: number; y: number; z: number; fov: number };
   onCameraChange?: (settings: { x: number; y: number; z: number; fov: number }) => void;
+  controlsRef: React.MutableRefObject<React.ElementRef<typeof DreiOrbitControls> | null>;
 }) {
   const { camera, gl } = useThree();
-  type DreiControlsType = React.ElementRef<typeof DreiOrbitControls>;
-  const orbitRef = useRef<DreiControlsType | null>(null);
+  const orbitRef = controlsRef;
   const [barPositions, setBarPositions] = useState(() => createInitialPositions());
   const [dragTarget, setDragTarget] = useState<{ id: string; offset: THREE.Vector3 } | null>(null);
 
@@ -307,9 +310,33 @@ function SceneContent({
   );
 }
 
-export default function TeenBoardScene({ className, interactive = true, onPositionsChange, startAnimationKey, onStartComplete, cameraSettings }: TeenBoardSceneProps) {
+export default function TeenBoardScene({
+  className,
+  interactive = true,
+  onPositionsChange,
+  startAnimationKey,
+  onStartComplete,
+  cameraSettings,
+  onCameraChange,
+  showZoomReset,
+}: TeenBoardSceneProps) {
+  type OrbitControlsHandle = React.ElementRef<typeof DreiOrbitControls>;
+  const controlsRef = useRef<OrbitControlsHandle | null>(null);
+  const shouldShowZoomReset = showZoomReset ?? interactive;
+
+  const handleZoomReset = useCallback(() => {
+    const controls = controlsRef.current;
+    if (!controls) return;
+    const camera = controls.object as THREE.PerspectiveCamera;
+    camera.position.set(0, 0.35, 0.8);
+    camera.fov = 45;
+    camera.updateProjectionMatrix();
+    controls.target.set(0, 0, 0);
+    controls.update();
+  }, []);
+
   return (
-    <div className={className ?? "h-full w-full"}>
+    <div className={`relative ${className ?? "h-full w-full"}`}>
       <Canvas>
         <SceneContent
           interactive={interactive}
@@ -317,8 +344,11 @@ export default function TeenBoardScene({ className, interactive = true, onPositi
           startAnimationKey={startAnimationKey}
           onStartComplete={onStartComplete}
           cameraSettings={cameraSettings}
+          onCameraChange={onCameraChange}
+          controlsRef={controlsRef}
         />
       </Canvas>
+      {shouldShowZoomReset ? <ZoomResetButton onClick={handleZoomReset} /> : null}
     </div>
   );
 }

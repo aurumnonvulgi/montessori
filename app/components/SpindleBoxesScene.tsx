@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { playChime } from "../lib/sounds";
 import { primeSpeechVoices, speakWithPreferredVoice } from "../lib/speech";
+import ZoomResetButton from "./ZoomResetButton";
 
 type SpindleBoxesSceneProps = {
   playing: boolean;
@@ -14,6 +15,7 @@ type SpindleBoxesSceneProps = {
   onLessonComplete?: () => void;
   isMobile?: boolean;
   stageIndex?: number; // 0 = numerals 0-4, 1 = numerals 5-9, undefined = all
+  showZoomReset?: boolean;
 };
 
 type LessonPhase = "idle" | "naming" | "counting" | "zero" | "complete";
@@ -435,7 +437,15 @@ function SpindleBoxesContent({
 }
 
 
-export default function SpindleBoxesScene({ playing, voiceEnabled, className, onLessonComplete, isMobile = false, stageIndex }: SpindleBoxesSceneProps) {
+export default function SpindleBoxesScene({
+  playing,
+  voiceEnabled,
+  className,
+  onLessonComplete,
+  isMobile = false,
+  stageIndex,
+  showZoomReset = true,
+}: SpindleBoxesSceneProps) {
   useEffect(() => { primeSpeechVoices(); }, []);
 
   // For single-box stages, adjust camera to center on the relevant box
@@ -473,9 +483,22 @@ export default function SpindleBoxesScene({ playing, voiceEnabled, className, on
     if (stageIndex === 1) return isMobile ? 50 : 42;
     return isMobile ? 50 : 40;
   }, [isMobile, stageIndex]);
+  type OrbitControlsHandle = React.ElementRef<typeof OrbitControls>;
+  const controlsRef = useRef<OrbitControlsHandle | null>(null);
+
+  const handleZoomReset = useCallback(() => {
+    const controls = controlsRef.current;
+    if (!controls) return;
+    const camera = controls.object as THREE.PerspectiveCamera;
+    camera.position.set(...cameraPosition);
+    camera.fov = cameraFov;
+    camera.updateProjectionMatrix();
+    controls.target.set(...cameraTarget);
+    controls.update();
+  }, [cameraFov, cameraPosition, cameraTarget]);
 
   return (
-    <div className={`w-full overflow-hidden ${isMobile ? "" : "rounded-[28px]"} bg-[#f7efe4] ${className ?? "h-[420px]"}`}>
+    <div className={`relative w-full overflow-hidden ${isMobile ? "" : "rounded-[28px]"} bg-[#f7efe4] ${className ?? "h-[420px]"}`}>
       <Canvas shadows camera={{ position: cameraPosition, fov: cameraFov }}>
         <color attach="background" args={["#f7efe4"]} />
         <SpindleBoxesContent
@@ -487,6 +510,7 @@ export default function SpindleBoxesScene({ playing, voiceEnabled, className, on
           rubberBandPosition={rubberBandPosition}
         />
         <OrbitControls
+          ref={controlsRef}
           enablePan={false}
           enableZoom
           maxPolarAngle={Math.PI / 2.1}
@@ -497,6 +521,7 @@ export default function SpindleBoxesScene({ playing, voiceEnabled, className, on
           target={cameraTarget}
         />
       </Canvas>
+      {showZoomReset ? <ZoomResetButton onClick={handleZoomReset} /> : null}
     </div>
   );
 }

@@ -6,6 +6,7 @@ import HomeLink from "../../../../components/HomeLink";
 import CompletionOverlay from "../../../../components/CompletionOverlay";
 import { getPhonicsCompletionSteps } from "../../../../lib/phonicsProgression";
 import { trackLessonEvent } from "../../../../lib/lessonTelemetry";
+import { primeSpeechVoices, speakWithPreferredVoice } from "../../../../lib/speech";
 
 const BOARD_IMAGE = "/assets/language_arts/moveable_alphabet/6pictures-6labels.svg";
 const BOARD_WIDTH = 1366;
@@ -116,6 +117,10 @@ export default function PhonicLabelsLesson() {
   useEffect(() => {
     setShowCompletion(false);
   }, [vowel]);
+
+  useEffect(() => {
+    primeSpeechVoices();
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -285,10 +290,7 @@ export default function PhonicLabelsLesson() {
   }, []);
 
   const handleSpeak = useCallback((label: string) => {
-    if (typeof window === "undefined") return;
-    const utterance = new SpeechSynthesisUtterance(label);
-    window.speechSynthesis?.cancel();
-    window.speechSynthesis?.speak(utterance);
+    speakWithPreferredVoice(label, { rate: 0.9, pitch: 0.95, volume: 0.9, lang: "en-US" });
   }, []);
 
   useEffect(() => {
@@ -526,7 +528,13 @@ export default function PhonicLabelsLesson() {
                   <img src={toPictureImage(pair.pictureFile)} alt={pair.wordLabel} className="h-full w-full object-contain" />
                   <button
                     type="button"
-                    onClick={() => handleSpeak(pair.wordLabel)}
+                    onPointerDown={(event) => {
+                      event.stopPropagation();
+                    }}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleSpeak(pair.wordLabel);
+                    }}
                     aria-label={`Say ${pair.wordLabel}`}
                     className="absolute right-1 bottom-1 flex h-5 w-5 items-center justify-center rounded-full bg-white/90 text-[10px] text-stone-600 shadow shadow-stone-400 transition hover:bg-white sm:right-1.5 sm:bottom-1.5 sm:h-6 sm:w-6 sm:text-xs"
                   >
@@ -575,7 +583,9 @@ export default function PhonicLabelsLesson() {
                         />
                         <button
                           type="button"
-                          onPointerDown={(event) => event.stopPropagation()}
+                          onPointerDown={(event) => {
+                            event.stopPropagation();
+                          }}
                           onClick={(event) => {
                             event.stopPropagation();
                             handleSpeak(pair.wordLabel);

@@ -10,6 +10,32 @@ const CARD_STYLE =
 
 export default function MontessoriHome() {
   const subjectHighlights = useMemo(() => ["Counting", "Geometry", "Sequencing"], []);
+  const dashboardPreview = useMemo(
+    () => [
+      {
+        label: "Language Arts",
+        percent: 62,
+        fill: "#ef4444",
+        rest: "#fecaca",
+        note: "Phonics + concept games",
+      },
+      {
+        label: "Mathematics",
+        percent: 38,
+        fill: "#2563eb",
+        rest: "#bfdbfe",
+        note: "Rods, counters, boards",
+      },
+      {
+        label: "Overall Progress",
+        percent: 50,
+        fill: "#10b981",
+        rest: "#bbf7d0",
+        note: "Across all materials",
+      },
+    ],
+    []
+  );
 
   return (
     <div className="min-h-screen select-none bg-[radial-gradient(circle_at_top,#f5efe6_0%,#fdfbf8_45%,#f7efe4_100%)]">
@@ -19,7 +45,7 @@ export default function MontessoriHome() {
           <h1 className="font-display text-4xl font-semibold text-stone-900 md:text-5xl">Montessori Studio</h1>
           <a
             href="/dashboard"
-            className="inline-flex items-center justify-center rounded-full border border-sky-200 bg-sky-50 px-4 py-2 text-xs uppercase tracking-[0.3em] text-sky-700"
+            className="inline-flex min-w-[320px] items-center justify-center rounded-full border border-sky-200 bg-sky-50 px-8 py-3 text-sm uppercase tracking-[0.25em] text-sky-700 shadow-sm transition hover:bg-sky-100"
           >
             Activity Dashboard
           </a>
@@ -72,8 +98,52 @@ export default function MontessoriHome() {
           </a>
         </div>
 
-        <div className="mt-6 w-full max-w-3xl">
-          <MicrophonePrivacyToggle compact />
+        <div className="mt-6 w-full max-w-5xl">
+          <section className="rounded-[32px] border border-cyan-200/70 bg-gradient-to-br from-cyan-100 via-sky-50 to-emerald-100 p-5 shadow-[0_24px_70px_-50px_rgba(14,116,144,0.6)] sm:p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.35em] text-cyan-700">Progress Preview</p>
+                <h2 className="font-display text-2xl font-semibold text-stone-900">Activity Dashboard</h2>
+                <p className="text-sm text-stone-600">Track progress, attempts, and completion by material.</p>
+              </div>
+              <a
+                href="/dashboard"
+                className="inline-flex min-w-[300px] items-center justify-center rounded-full border border-cyan-300 bg-cyan-500 px-8 py-3 text-sm font-semibold uppercase tracking-[0.23em] text-white shadow-md transition hover:bg-cyan-600"
+              >
+                Open Activity Dashboard
+              </a>
+            </div>
+
+            <div className="mt-5 grid gap-3 md:grid-cols-3">
+              {dashboardPreview.map((preview) => (
+                <div
+                  key={preview.label}
+                  className="rounded-2xl border border-white/70 bg-white/85 p-3 shadow-sm"
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="relative h-16 w-16 rounded-full border-4 border-white shadow-inner"
+                      style={{
+                        background: `conic-gradient(${preview.fill} ${preview.percent * 3.6}deg, ${preview.rest} 0deg)`,
+                      }}
+                    >
+                      <div className="absolute inset-[8px] flex items-center justify-center rounded-full bg-white text-xs font-bold text-stone-700">
+                        {preview.percent}%
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-stone-900">{preview.label}</p>
+                      <p className="text-xs text-stone-500">{preview.note}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-5 rounded-2xl border border-white/70 bg-white/70 p-2">
+              <MicrophonePrivacyToggle compact />
+            </div>
+          </section>
         </div>
       </main>
     </div>

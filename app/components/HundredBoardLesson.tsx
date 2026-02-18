@@ -1,11 +1,12 @@
 "use client";
 
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Canvas, type ThreeEvent, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, Text } from "@react-three/drei";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import HomeLink from "./HomeLink";
 import { trackLessonEvent } from "../lib/lessonTelemetry";
+import ZoomResetButton from "./ZoomResetButton";
 
 const GRID_SIZE = 10;
 const SLOT_SIZE = 0.42;
@@ -131,21 +132,30 @@ type NumberTileProps = {
   position: [number, number, number];
   ghost?: boolean;
   tone?: "default" | "placed" | "rack";
-  onClick?: () => void;
+  onPointerDown?: (point: PointerPoint) => void;
 };
 
-function NumberTile({ number, position, ghost = false, tone = "default", onClick }: NumberTileProps) {
-  const color = ghost ? "#f8fafc" : "#ffffff";
-  const textColor = tone === "rack" ? "#111827" : ghost ? "#374151" : "#1f2937";
+function NumberTile({ number, position, ghost = false, tone = "default", onPointerDown }: NumberTileProps) {
+  const color = ghost ? "#ffffff" : "#ffffff";
+  const textColor = tone === "rack" ? "#111111" : ghost ? "#111111" : "#111111";
 
   return (
-    <group position={position} onClick={onClick}>
+    <group
+      position={position}
+      onPointerDown={(event: ThreeEvent<PointerEvent>) => {
+        if (!onPointerDown) return;
+        event.stopPropagation();
+        onPointerDown({ x: event.point.x, z: event.point.z });
+      }}
+    >
       <mesh castShadow receiveShadow>
         <boxGeometry args={[TILE_SIZE, TILE_HEIGHT, TILE_SIZE]} />
         <meshStandardMaterial
           color={color}
-          roughness={0.32}
+          roughness={0.2}
           metalness={0.02}
+          emissive="#ffffff"
+          emissiveIntensity={ghost ? 0.08 : 0.04}
           transparent={ghost}
           opacity={ghost ? 0.8 : 1}
         />
@@ -169,10 +179,10 @@ type RackTileProps = {
   number: number;
   position: [number, number, number];
   shaking: boolean;
-  onSelect: (number: number) => void;
+  onGrab: (number: number, point: PointerPoint) => void;
 };
 
-function RackTile({ number, position, shaking, onSelect }: RackTileProps) {
+function RackTile({ number, position, shaking, onGrab }: RackTileProps) {
   const ref = useRef<THREE.Group | null>(null);
 
   useFrame(({ clock }) => {
@@ -184,7 +194,12 @@ function RackTile({ number, position, shaking, onSelect }: RackTileProps) {
 
   return (
     <group ref={ref}>
-      <NumberTile number={number} position={position} tone="rack" onClick={() => onSelect(number)} />
+      <NumberTile
+        number={number}
+        position={position}
+        tone="rack"
+        onPointerDown={(point) => onGrab(number, point)}
+      />
     </group>
   );
 }
@@ -199,7 +214,7 @@ type HundredBoardSceneProps = {
   shakingTile: number | null;
   correctFlashSlot: number | null;
   wrongFlashSlot: number | null;
-  onTileSelect: (number: number) => void;
+  onTileGrab: (number: number, point: PointerPoint) => void;
   onHoverChange: (slot: number | null, point: PointerPoint | null) => void;
   onDropAtSlot: (slot: number | null) => void;
 };
@@ -214,7 +229,7 @@ function HundredBoardScene({
   shakingTile,
   correctFlashSlot,
   wrongFlashSlot,
-  onTileSelect,
+  onTileGrab,
   onHoverChange,
   onDropAtSlot,
 }: HundredBoardSceneProps) {
@@ -308,7 +323,7 @@ function HundredBoardScene({
 
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[PLAYMAT_CENTER_X, -0.02, PLAYMAT_CENTER_Z]} receiveShadow>
         <planeGeometry args={[PLAYMAT_WIDTH, PLAYMAT_DEPTH]} />
-        <meshStandardMaterial color="#e8dfd4" roughness={0.9} metalness={0} />
+        <meshStandardMaterial color="#e2d6bf" roughness={0.9} metalness={0} />
       </mesh>
 
       <mesh position={[BOARD_CENTER_X, BOARD_TOP_Y - BASE_THICKNESS / 2, BOARD_CENTER_Z]} castShadow>
@@ -318,7 +333,7 @@ function HundredBoardScene({
 
       <mesh position={[BOARD_CENTER_X, BOARD_TOP_Y + 0.003, BOARD_CENTER_Z]}>
         <boxGeometry args={[BOARD_SPAN + 0.02, 0.004, BOARD_SPAN + 0.02]} />
-        <meshStandardMaterial color="#f6f1e8" roughness={0.94} metalness={0} />
+        <meshStandardMaterial color="#d8bd8f" roughness={0.86} metalness={0} />
       </mesh>
 
       <mesh position={[BOARD_CENTER_X, BOARD_TOP_Y + FRAME_HEIGHT / 2, BOARD_CENTER_Z - (BOARD_SPAN + FRAME_WIDTH) / 2]}>
@@ -392,7 +407,7 @@ function HundredBoardScene({
             number={number}
             position={rackPositionForIndex(index)}
             shaking={shakingTile === number}
-            onSelect={onTileSelect}
+            onGrab={onTileGrab}
           />
         );
       })}
@@ -419,6 +434,8 @@ export default function HundredBoardLesson() {
   const autoAdvanceTimerRef = useRef<number | null>(null);
   const completedBatchesRef = useRef<Record<number, true>>({});
   const completionLoggedRef = useRef(false);
+  type OrbitControlsHandle = React.ElementRef<typeof OrbitControls>;
+  const controlsRef = useRef<OrbitControlsHandle | null>(null);
 
   const batchNumbers = useMemo(
     () => Array.from({ length: 10 }, (_, index) => currentBatchStart + index),
@@ -620,9 +637,10 @@ export default function HundredBoardLesson() {
     };
   }, [clearAutoAdvanceTimer, clearFlashTimer, clearShakeTimer]);
 
-  const handleTileSelect = (number: number) => {
+  const handleTileGrab = (number: number, point: PointerPoint) => {
     if (slotAssignments[number]) return;
     setActiveTile(number);
+    setPointerPoint(point);
     setShakingTile(null);
     trackLessonEvent({
       lesson: "mathematics:hundred-board",
@@ -668,6 +686,17 @@ export default function HundredBoardLesson() {
     });
   };
 
+  const handleZoomReset = useCallback(() => {
+    const controls = controlsRef.current;
+    if (!controls) return;
+    const camera = controls.object as THREE.PerspectiveCamera;
+    camera.position.set(0.95, 1.8, 6.05);
+    camera.fov = 48;
+    camera.updateProjectionMatrix();
+    controls.target.set(0.75, 0.02, 0.48);
+    controls.update();
+  }, []);
+
   return (
     <div className="relative min-h-screen bg-[radial-gradient(circle_at_top,#f5efe6_0%,#fdfbf8_45%,#f7efe4_100%)]">
       <HomeLink />
@@ -679,12 +708,12 @@ export default function HundredBoardLesson() {
         </header>
 
         <section className="rounded-[36px] border border-stone-200 bg-white/90 p-3 shadow-[0_45px_90px_-55px_rgba(15,23,42,0.7)] sm:p-5">
-          <div className="h-[720px] overflow-hidden rounded-[30px] border border-stone-200 bg-[#efe6d8]">
+          <div className="relative h-[720px] overflow-hidden rounded-[30px] border border-stone-200 bg-[#efe6d8]">
             <Canvas
               shadows
-              camera={{ position: [0.95, 2.25, 5.8], fov: 48 }}
+              camera={{ position: [0.95, 1.8, 6.05], fov: 48 }}
               onCreated={({ camera }) => {
-                camera.lookAt(0.75, 0, 0.05);
+                camera.lookAt(0.75, 0.02, 0.48);
               }}
             >
               <HundredBoardScene
@@ -697,20 +726,22 @@ export default function HundredBoardLesson() {
                 shakingTile={shakingTile}
                 correctFlashSlot={correctFlashSlot}
                 wrongFlashSlot={wrongFlashSlot}
-                onTileSelect={handleTileSelect}
+                onTileGrab={handleTileGrab}
                 onHoverChange={handleHoverChange}
                 onDropAtSlot={handleDropAtSlot}
               />
               <OrbitControls
+                ref={controlsRef}
                 enablePan
                 enableZoom
+                enableRotate={activeTile === null}
                 minPolarAngle={Math.PI / 4.2}
                 maxPolarAngle={Math.PI / 2.05}
                 minAzimuthAngle={-Math.PI / 2.4}
-                maxAzimuthAngle={Math.PI / 2.8}
+                maxAzimuthAngle={Math.PI / 2.2}
                 minDistance={4.7}
                 maxDistance={8.8}
-                target={[0.75, 0, 0.05]}
+                target={[0.75, 0.02, 0.48]}
                 mouseButtons={{
                   LEFT: THREE.MOUSE.ROTATE,
                   MIDDLE: THREE.MOUSE.DOLLY,
@@ -718,10 +749,11 @@ export default function HundredBoardLesson() {
                 }}
                 touches={{
                   ONE: THREE.TOUCH.ROTATE,
-                  TWO: THREE.TOUCH.PAN,
+                  TWO: THREE.TOUCH.DOLLY_PAN,
                 }}
               />
             </Canvas>
+            <ZoomResetButton onClick={handleZoomReset} />
           </div>
 
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-stone-200 bg-white/90 px-4 py-3">

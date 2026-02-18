@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import HomeLink from "../../../../components/HomeLink";
+import { trackLessonEvent } from "../../../../lib/lessonTelemetry";
+import { primeSpeechVoices, speakWithPreferredVoice } from "../../../../lib/speech";
 
 const BOARD_IMAGE = "/assets/language_arts/concept_development/association/Images/9matchingwith6deck.svg";
 const BOARD_WIDTH = 1366;
@@ -9,26 +11,29 @@ const BOARD_HEIGHT = 768;
 const SLOT_SIZE = 169.3;
 const DROP_THRESHOLD = 90;
 
-const ASSOCIATION_SETS: [string, string, string][] = [
-  ["glass of water", "pitcher", "cup"],
-  ["toothpaste", "toothbrush", "dental floss"],
-  ["pencil", "notebook", "eraser"],
-  ["fork", "spoon", "plate"],
-  ["soap", "towel", "shampoo"],
-  ["shoes", "socks", "shoelaces"],
-  ["phone", "charger", "headphones"],
-  ["key", "lock", "door"],
-  ["paintbrush", "paint", "canvas"],
-  ["broom", "dustpan", "trash bin"],
-  ["hammer", "nail", "wood"],
-  ["screwdriver", "screw", "toolbox"],
-  ["refrigerator", "milk", "eggs"],
-  ["stove", "pot", "spatula"],
-  ["bed", "pillow", "blanket"],
-  ["umbrella", "raincoat", "boots"],
-  ["book", "bookmark", "library card"],
-  ["ball", "goal", "whistle"],
+const ASSOCIATION_FALLBACK_GROUPS = [
+  "art",
+  "bath",
+  "bed",
+  "build",
+  "clean",
+  "dental",
+  "door",
+  "eating",
+  "fridge",
+  "kitchen",
+  "library",
+  "rain",
+  "school",
+  "shoes",
+  "soccer",
+  "tech",
+  "tools",
+  "water",
 ];
+const ASSOCIATION_FALLBACK_FILES = ASSOCIATION_FALLBACK_GROUPS.flatMap((group) =>
+  [1, 2, 3].map((index) => `${group}-${index}____association.png`)
+);
 
 const STACK_SLOTS = [
   { id: "stack-1", x: 54.12, y: 100.04 },
@@ -51,18 +56,61 @@ const LINE_SLOTS = [
   { id: "line3-box3", x: 1130.53, y: 482.94, line: 3, box: 3 },
 ];
 
-const slugify = (word: string) =>
-  word
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+const toImage = (file: string) =>
+  `/assets/language_arts/concept_development/association/${file}`;
 
-const toImage = (word: string) =>
-  `/assets/language_arts/concept_development/association/${slugify(word)}___association.png`;
+type AssociationItem = {
+  id: string;
+  group: string;
+  index: number;
+  file: string;
+  speechLabel: string;
+};
+
+type AssociationSet = {
+  id: string;
+  group: string;
+  items: [AssociationItem, AssociationItem, AssociationItem];
+};
+
+const parseAssociationFile = (file: string): AssociationItem | null => {
+  const match = file.match(/^(.+)-([1-3])____association\.png$/i);
+  if (!match) return null;
+  const group = match[1].toLowerCase();
+  const index = Number(match[2]);
+  const speechLabel = `${group.replace(/-/g, " ")} ${index}`;
+  return {
+    id: `${group}-${index}`,
+    group,
+    index,
+    file,
+    speechLabel,
+  };
+};
+
+const buildAssociationSets = (files: string[]): AssociationSet[] => {
+  const grouped = new Map<string, AssociationItem[]>();
+  files.forEach((file) => {
+    const parsed = parseAssociationFile(file);
+    if (!parsed) return;
+    const bucket = grouped.get(parsed.group) ?? [];
+    bucket.push(parsed);
+    grouped.set(parsed.group, bucket);
+  });
+
+  return Array.from(grouped.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .flatMap(([group, items]) => {
+      const sorted = [...items].sort((a, b) => a.index - b.index);
+      if (sorted.length < 3) return [];
+      if (sorted[0]?.index !== 1 || sorted[1]?.index !== 2 || sorted[2]?.index !== 3) return [];
+      return [{ id: group, group, items: [sorted[0], sorted[1], sorted[2]] as [AssociationItem, AssociationItem, AssociationItem] }];
+    });
+};
 
 type CardState = {
   id: string;
-  word: string;
+  item: AssociationItem;
   x: number;
   y: number;
   homeX: number;
@@ -80,6 +128,7 @@ type Slot = {
 type RowStatus = {
   line: number;
   targets: string[];
+  targetLabels: string[];
   placed: string[];
   matched: boolean;
 };
@@ -92,7 +141,14 @@ export default function AssociationsGame() {
   const [cards, setCards] = useState<CardState[]>([]);
   const [assignments, setAssignments] = useState<Record<string, string>>({});
   const [dragging, setDragging] = useState<{ id: string; offsetX: number; offsetY: number } | null>(null);
-  const [availableFiles, setAvailableFiles] = useState<string[]>([]);
+  const [availableFiles, setAvailableFiles] = useState<string[]>(ASSOCIATION_FALLBACK_FILES);
+  const completedStagesRef = useRef<Record<number, true>>({});
+  const lessonCompletedRef = useRef(false);
+  const matchedRowsRef = useRef<Record<number, boolean>>({});
+
+  useEffect(() => {
+    primeSpeechVoices();
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -104,7 +160,12 @@ export default function AssociationsGame() {
         const files = Array.isArray(data?.files) ? data.files : Array.isArray(data) ? data : null;
         if (!files || !files.length) return;
         if (!active) return;
-        setAvailableFiles(files.filter((file: unknown): file is string => typeof file === "string"));
+        setAvailableFiles(
+          files.filter(
+            (file: unknown): file is string =>
+              typeof file === "string" && file.endsWith("____association.png")
+          )
+        );
       } catch {
         // ignore manifest load failures
       }
@@ -115,13 +176,7 @@ export default function AssociationsGame() {
     };
   }, []);
 
-  const availableSets = useMemo(() => {
-    if (!availableFiles.length) return ASSOCIATION_SETS;
-    const fileSet = new Set(availableFiles);
-    return ASSOCIATION_SETS.filter((set) =>
-      set.every((word) => fileSet.has(`${slugify(word)}___association.png`))
-    );
-  }, [availableFiles]);
+  const availableSets = useMemo(() => buildAssociationSets(availableFiles), [availableFiles]);
 
   const stageSets = useMemo(() => {
     const start = stageIndex * STAGE_SIZE;
@@ -131,15 +186,25 @@ export default function AssociationsGame() {
   const stageCount = Math.max(1, Math.ceil(availableSets.length / STAGE_SIZE));
 
   useEffect(() => {
-    const restWords = stageSets.flatMap((set) => set.slice(1));
-    const shuffled = [...restWords].sort(() => Math.random() - 0.5);
-    const nextCards = shuffled.map((word, index) => {
+    trackLessonEvent({
+      lesson: "language-arts:concept-development-associations",
+      activity: `set-${stageIndex + 1}`,
+      event: "stage_viewed",
+      page: stageIndex + 1,
+      totalPages: stageCount,
+    });
+  }, [stageCount, stageIndex]);
+
+  useEffect(() => {
+    const restItems = stageSets.flatMap((set) => set.items.slice(1));
+    const shuffled = [...restItems].sort(() => Math.random() - 0.5);
+    const nextCards = shuffled.map((item, index) => {
       const slot = STACK_SLOTS[index] ?? STACK_SLOTS[STACK_SLOTS.length - 1];
       const x = slot.x + SLOT_SIZE / 2;
       const y = slot.y + SLOT_SIZE / 2;
       return {
-        id: `card-${stageIndex}-${word}`,
-        word,
+        id: `card-${stageIndex}-${item.id}`,
+        item,
         x,
         y,
         homeX: x,
@@ -150,6 +215,10 @@ export default function AssociationsGame() {
     setAssignments({});
     setDragging(null);
   }, [stageSets, stageIndex]);
+
+  useEffect(() => {
+    matchedRowsRef.current = {};
+  }, [stageIndex]);
 
   const boardRectRef = useRef<DOMRect | null>(null);
   useEffect(() => {
@@ -193,13 +262,6 @@ export default function AssociationsGame() {
     },
     [getPointerClient]
   );
-
-  const handleSpeak = useCallback((word: string) => {
-    if (typeof window === "undefined") return;
-    const utterance = new SpeechSynthesisUtterance(word);
-    window.speechSynthesis?.cancel();
-    window.speechSynthesis?.speak(utterance);
-  }, []);
 
   const removeAssignment = useCallback((cardId: string) => {
     setAssignments((prev) => {
@@ -316,22 +378,41 @@ export default function AssociationsGame() {
   const rowStatuses = useMemo<RowStatus[]>(() => {
     return stageSets.map((set, index) => {
       const line = index + 1;
-      const targets = set.slice(1);
+      const targets = set.items.slice(1).map((item) => item.id);
+      const targetLabels = set.items.slice(1).map((item) => item.speechLabel);
       const slotIds = [`line${line}-box2`, `line${line}-box3`];
       const placed = slotIds
         .map((slotId) => {
           const cardId = assignments[slotId];
           const card = cards.find((item) => item.id === cardId);
-          return card?.word;
+          return card?.item.id;
         })
         .filter((word): word is string => Boolean(word));
       const matched =
         placed.length === 2 &&
         targets.every((target) => placed.includes(target)) &&
         placed.every((item) => targets.includes(item));
-      return { line, targets, placed, matched };
+      return { line, targets, targetLabels, placed, matched };
     });
   }, [assignments, cards, stageSets]);
+
+  useEffect(() => {
+    const nextMatched: Record<number, boolean> = {};
+    rowStatuses.forEach((status) => {
+      nextMatched[status.line] = status.matched;
+      if (!status.matched) return;
+      if (matchedRowsRef.current[status.line]) return;
+      const phrase = `Correct match. ${status.targetLabels.join(" and ")}.`;
+      speakWithPreferredVoice(phrase, {
+        rate: 0.9,
+        pitch: 0.95,
+        volume: 0.9,
+        lang: "en-US",
+        interrupt: false,
+      });
+    });
+    matchedRowsRef.current = nextMatched;
+  }, [rowStatuses]);
 
   const rowOverlays = useMemo(() => {
     return rowStatuses
@@ -349,6 +430,35 @@ export default function AssociationsGame() {
       })
       .filter(Boolean) as { line: number; left: number; top: number; width: number; height: number }[];
   }, [rowStatuses]);
+
+  useEffect(() => {
+    if (!rowStatuses.length) return;
+    if (!rowStatuses.every((status) => status.matched)) return;
+    const stageNumber = stageIndex + 1;
+
+    if (!completedStagesRef.current[stageNumber]) {
+      completedStagesRef.current[stageNumber] = true;
+      trackLessonEvent({
+        lesson: "language-arts:concept-development-associations",
+        activity: `set-${stageNumber}`,
+        event: "stage_completed",
+        success: true,
+        page: stageNumber,
+        totalPages: stageCount,
+      });
+    }
+
+    if (stageNumber === stageCount && !lessonCompletedRef.current) {
+      lessonCompletedRef.current = true;
+      trackLessonEvent({
+        lesson: "language-arts:concept-development-associations",
+        event: "lesson_completed",
+        success: true,
+        page: stageNumber,
+        totalPages: stageCount,
+      });
+    }
+  }, [rowStatuses, stageCount, stageIndex]);
 
   const advanceRef = useRef<number | null>(null);
   useEffect(() => {
@@ -388,22 +498,14 @@ export default function AssociationsGame() {
             {stageSets.map((set, index) => {
               const slot = renderSlots.find((item) => item.line === index + 1 && item.box === 1);
               if (!slot) return null;
-              const word = set[0];
+              const fixedItem = set.items[0];
               return (
                 <div
-                  key={`${word}-${slot.id}`}
+                  key={`${fixedItem.id}-${slot.id}`}
                   className="absolute"
                   style={{ left: slot.left, top: slot.top, width: slot.width, height: slot.height }}
                 >
-                  <img src={toImage(word)} alt={word} className="h-full w-full object-contain" />
-                  <button
-                    type="button"
-                    onClick={() => handleSpeak(word)}
-                    aria-label={`Say ${word}`}
-                    className="absolute right-1.5 bottom-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-xs text-stone-600 shadow shadow-stone-400 transition hover:bg-white sm:right-2 sm:bottom-2 sm:h-8 sm:w-8 sm:text-base"
-                  >
-                    🔊
-                  </button>
+                  <img src={toImage(fixedItem.file)} alt={fixedItem.speechLabel} className="h-full w-full object-contain" />
                 </div>
               );
             })}
@@ -429,19 +531,7 @@ export default function AssociationsGame() {
                   touchAction: "none",
                 }}
               >
-                <img src={toImage(card.word)} alt={card.word} className="h-full w-full object-contain" />
-                <button
-                  type="button"
-                  onPointerDown={(event) => event.stopPropagation()}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    handleSpeak(card.word);
-                  }}
-                  aria-label={`Say ${card.word}`}
-                  className="absolute right-1.5 bottom-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-xs text-stone-600 shadow shadow-stone-400 transition hover:bg-white sm:right-2 sm:bottom-2 sm:h-8 sm:w-8 sm:text-base"
-                >
-                  🔊
-                </button>
+                <img src={toImage(card.item.file)} alt={card.item.speechLabel} className="h-full w-full object-contain" />
               </div>
             ))}
 
