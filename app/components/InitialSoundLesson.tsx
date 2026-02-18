@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import HomeLink from "./HomeLink";
+import InitialSoundDevBanner from "./InitialSoundDevBanner";
+import { trackLessonEvent } from "../lib/lessonTelemetry";
 
 export type InitialSoundSlide = {
   word: string;
@@ -21,10 +23,12 @@ export const DEFAULT_SLIDES: InitialSoundSlide[] = [
 type InitialSoundLessonProps = {
   slides?: InitialSoundSlide[];
   groupLabel?: string;
+  groupSlug?: string;
 };
 
-export default function InitialSoundLesson({ slides: slidesProp, groupLabel }: InitialSoundLessonProps) {
+export default function InitialSoundLesson({ slides: slidesProp, groupLabel, groupSlug }: InitialSoundLessonProps) {
   const slides = useMemo(() => (slidesProp && slidesProp.length ? slidesProp : DEFAULT_SLIDES), [slidesProp]);
+  const activityKey = groupSlug ? `group-${groupSlug}` : "group-default";
   const [scaled, setScaled] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [voiceIndex, setVoiceIndex] = useState(0);
@@ -54,6 +58,14 @@ export default function InitialSoundLesson({ slides: slidesProp, groupLabel }: I
     );
   };
   const playSlide = (index: number) => {
+    trackLessonEvent({
+      lesson: "language-arts:initial-sound-cards",
+      activity: activityKey,
+      event: "slide_viewed",
+      page: index + 1,
+      totalPages: slides.length,
+      value: slides[index].word,
+    });
     setScaled(true);
     const letterName = (slides[index].letter ?? slides[index].word.charAt(0)).toLowerCase();
     speakText(letterName);
@@ -62,6 +74,15 @@ export default function InitialSoundLesson({ slides: slidesProp, groupLabel }: I
       window.setTimeout(() => {
         setScaled(false);
         if (index >= slides.length - 1) {
+          trackLessonEvent({
+            lesson: "language-arts:initial-sound-cards",
+            activity: activityKey,
+            event: "lesson_completed",
+            success: true,
+            page: slides.length,
+            totalPages: slides.length,
+            value: slides[index].word,
+          });
           setIsPlaying(false);
         } else {
           const nextIndex = index + 1;
@@ -75,6 +96,18 @@ export default function InitialSoundLesson({ slides: slidesProp, groupLabel }: I
       }, 4000)
     );
   };
+
+  useEffect(() => {
+    trackLessonEvent({
+      lesson: "language-arts:initial-sound-cards",
+      activity: activityKey,
+      event: "lesson_opened",
+      totalPages: slides.length,
+      details: {
+        groupLabel,
+      },
+    });
+  }, [activityKey, groupLabel, slides.length]);
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
@@ -107,6 +140,13 @@ export default function InitialSoundLesson({ slides: slidesProp, groupLabel }: I
     window.speechSynthesis?.cancel();
     clearSequence();
     if (!isPlaying) {
+      trackLessonEvent({
+        lesson: "language-arts:initial-sound-cards",
+        activity: activityKey,
+        event: "lesson_started",
+        page: activeIndex + 1,
+        totalPages: slides.length,
+      });
       setIsPlaying(true);
       playSlide(activeIndex);
     }
@@ -123,6 +163,7 @@ export default function InitialSoundLesson({ slides: slidesProp, groupLabel }: I
           </h1>
           <p className="text-sm text-stone-600">Say “ah” while the letter paints itself bigger.</p>
         </div>
+        <InitialSoundDevBanner />
         <section className="rounded-[36px] border border-stone-100 bg-white/90 p-6 shadow-[0_30px_70px_-45px_rgba(15,23,42,0.7)]">
           <div className="flex flex-col gap-4 lg:flex-row">
             <div className="flex flex-col justify-between rounded-[24px] border border-stone-200 bg-stone-50 p-4 text-center shadow-inner overflow-hidden">

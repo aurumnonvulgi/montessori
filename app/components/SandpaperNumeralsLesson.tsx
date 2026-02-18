@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import SandpaperNumeralsScene from "./SandpaperNumeralsScene";
 import HomeLink from "./HomeLink";
+import { useMicrophoneEnabled } from "../lib/microphonePreferences";
 
 const SANDPAPER_LEVEL_IDS = [1, 2, 3];
 
@@ -19,6 +20,7 @@ export default function SandpaperNumeralsLesson({
   numbers,
 }: SandpaperNumeralsLessonProps) {
   const router = useRouter();
+  const { microphoneEnabled } = useMicrophoneEnabled();
   const [lessonStarted, setLessonStarted] = useState(false);
   const [resetKey, setResetKey] = useState(0);
 
@@ -76,6 +78,7 @@ export default function SandpaperNumeralsLesson({
           key={resetKey}
           playing={lessonStarted}
           voiceEnabled={lessonStarted}
+          micEnabled={microphoneEnabled}
           numbers={numbers}
           onLessonComplete={handleLessonComplete}
           className="h-[68vh] min-h-[500px]"

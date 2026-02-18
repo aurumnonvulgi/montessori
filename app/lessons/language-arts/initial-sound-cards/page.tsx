@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import HomeLink from "../../../components/HomeLink";
+import InitialSoundDevBanner from "../../../components/InitialSoundDevBanner";
 import { initialSoundGroups } from "./data";
 
 export default function InitialSoundCardsPage() {
@@ -14,6 +15,7 @@ export default function InitialSoundCardsPage() {
           <h1 className="font-display text-4xl font-semibold text-stone-900">Initial Sound Cards</h1>
           <p className="text-sm text-stone-600">Choose a letter group to continue tracing sounds.</p>
         </div>
+        <InitialSoundDevBanner />
         <div className="grid gap-6 grid-cols-1 sm:grid-cols-2">
           {initialSoundGroups.map((group) => (
             <Link

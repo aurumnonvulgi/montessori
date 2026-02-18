@@ -13,6 +13,10 @@ export default async function InitialSoundGroupPage({ params }: PageProps) {
     notFound();
   }
   return (
-    <InitialSoundGroupLesson slides={group.slides} groupLabel={group.letters.join(" · ")} />
+    <InitialSoundGroupLesson
+      slides={group.slides}
+      groupLabel={group.letters.join(" · ")}
+      groupSlug={group.slug}
+    />
   );
 }

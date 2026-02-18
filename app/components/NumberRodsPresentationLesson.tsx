@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import NumberRodsPresentationCanvas from "./NumberRodsPresentationCanvas";
+import { useMicrophoneEnabled } from "../lib/microphonePreferences";
 
 const CompletionCheck = () => (
   <div className="flex h-full items-center justify-center">
@@ -23,6 +24,7 @@ const CompletionCheck = () => (
 
 export default function NumberRodsPresentationLesson() {
   const router = useRouter();
+  const { microphoneEnabled } = useMicrophoneEnabled();
   const [lessonStarted, setLessonStarted] = useState(false);
   const [resetKey, setResetKey] = useState(0);
   const [confettiVisible, setConfettiVisible] = useState(false);
@@ -90,6 +92,7 @@ export default function NumberRodsPresentationLesson() {
           key={resetKey}
           playing={lessonStarted}
           voiceEnabled={lessonStarted}
+          micEnabled={microphoneEnabled}
           onComplete={handleLessonComplete}
           className="h-[68vh] min-h-[500px]"
         />

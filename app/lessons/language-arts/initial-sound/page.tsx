@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import HomeLink from "../../../components/HomeLink";
+import InitialSoundDevBanner from "../../../components/InitialSoundDevBanner";
 
 type PreviewImage = {
   src: string;
@@ -56,6 +57,7 @@ export default function InitialSoundHub() {
           <h1 className="font-display text-4xl font-semibold text-stone-900">Initial Sound</h1>
           <p className="text-sm text-stone-600">Choose a material to explore initial sounds.</p>
         </header>
+        <InitialSoundDevBanner />
         <div className="grid gap-6">
           <Link
             href="/lessons/language-arts/initial-sound-cards"

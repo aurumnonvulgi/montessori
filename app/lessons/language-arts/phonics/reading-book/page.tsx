@@ -3,6 +3,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import HomeLink from "../../../../components/HomeLink";
+import CompletionOverlay from "../../../../components/CompletionOverlay";
+import { getPhonicsCompletionSteps } from "../../../../lib/phonicsProgression";
+import { useMicrophoneEnabled } from "../../../../lib/microphonePreferences";
+import { trackLessonEvent } from "../../../../lib/lessonTelemetry";
 
 const BOOK_PAGES = [
   { word: "cat", sentence: "Can the cat nap on the mat?" },
@@ -151,6 +155,7 @@ const renderSentence = (sentence: string, word: string) => {
 
 export default function PhonicsReadingBook() {
   const router = useRouter();
+  const { microphoneEnabled, setMicrophoneEnabled } = useMicrophoneEnabled();
   const [selectedVowel, setSelectedVowel] = useState<VowelGroup | null>(null);
   const [started, setStarted] = useState(false);
   const [pageIndex, setPageIndex] = useState(0);
@@ -164,11 +169,37 @@ export default function PhonicsReadingBook() {
   const [typedText, setTypedText] = useState("");
   const typingTimerRef = useRef<number | null>(null);
   const [isTyping, setIsTyping] = useState(false);
-  const [holdLargeAfterTyping, setHoldLargeAfterTyping] = useState(false);
   const [playbackRate, setPlaybackRate] = useState<number>(0.9);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [showCompletion, setShowCompletion] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const settingsRef = useRef<HTMLDivElement | null>(null);
+  const pageIndexRef = useRef(0);
+  const totalPagesRef = useRef(0);
+  const selectedVowelRef = useRef<VowelGroup | null>(null);
+  const currentWordRef = useRef("");
+  const attemptCountsRef = useRef<Record<string, number>>({});
+  const completedLessonsRef = useRef<Record<string, true>>({});
+  const [requestedVowel, setRequestedVowel] = useState<VowelGroup | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const queryVowel = new URLSearchParams(window.location.search).get("vowel")?.toLowerCase();
+    if (!queryVowel) return;
+    if (!VOWEL_GROUPS.includes(queryVowel as VowelGroup)) return;
+    setRequestedVowel(queryVowel as VowelGroup);
+  }, []);
+
+  useEffect(() => {
+    if (!requestedVowel) return;
+    setSelectedVowel((current) => current ?? requestedVowel);
+  }, [requestedVowel]);
+
+  useEffect(() => {
+    setShowCompletion(false);
+    const key = selectedVowel ? `vowel-${selectedVowel}` : "vowel-none";
+    delete completedLessonsRef.current[key];
+  }, [selectedVowel]);
 
   const pagesForVowel = useMemo(() => {
     if (!selectedVowel) return [];
@@ -177,8 +208,40 @@ export default function PhonicsReadingBook() {
 
   const page = pagesForVowel[pageIndex];
   const coverPage = pagesForVowel[0];
+  const completionSteps = useMemo(
+    () => (selectedVowel ? getPhonicsCompletionSteps("reading-book", selectedVowel) : null),
+    [selectedVowel]
+  );
+  const nextVowelInSeries = useMemo(() => {
+    if (!selectedVowel) return null;
+    const index = VOWEL_GROUPS.indexOf(selectedVowel);
+    return VOWEL_GROUPS[index + 1] ?? null;
+  }, [selectedVowel]);
 
   const totalPages = pagesForVowel.length;
+
+  useEffect(() => {
+    pageIndexRef.current = pageIndex;
+  }, [pageIndex]);
+
+  useEffect(() => {
+    totalPagesRef.current = totalPages;
+  }, [totalPages]);
+
+  useEffect(() => {
+    selectedVowelRef.current = selectedVowel;
+  }, [selectedVowel]);
+
+  useEffect(() => {
+    currentWordRef.current = page?.word ?? "";
+  }, [page]);
+
+  useEffect(() => {
+    trackLessonEvent({
+      lesson: "language-arts:phonics-reading-book",
+      event: "lesson_opened",
+    });
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -219,6 +282,14 @@ export default function PhonicsReadingBook() {
 
   const playBookletAudio = useCallback((word: string, fallbackText: string) => {
     if (typeof window === "undefined") return;
+    trackLessonEvent({
+      lesson: "language-arts:phonics-reading-book",
+      activity: selectedVowelRef.current ? `vowel-${selectedVowelRef.current}` : undefined,
+      event: "audio_played",
+      value: word,
+      page: pageIndexRef.current + 1,
+      totalPages: totalPagesRef.current,
+    });
     stopBookletAudio();
     window.speechSynthesis?.cancel();
 
@@ -262,6 +333,23 @@ export default function PhonicsReadingBook() {
     tryPlay();
   }, [playbackRate, stopBookletAudio]);
 
+  const markLessonComplete = useCallback(() => {
+    const activeVowel = selectedVowelRef.current;
+    const lessonKey = activeVowel ? `vowel-${activeVowel}` : "vowel-none";
+    if (!completedLessonsRef.current[lessonKey]) {
+      completedLessonsRef.current[lessonKey] = true;
+      trackLessonEvent({
+        lesson: "language-arts:phonics-reading-book",
+        activity: activeVowel ? `vowel-${activeVowel}` : undefined,
+        event: "lesson_completed",
+        success: true,
+        page: totalPagesRef.current,
+        totalPages: totalPagesRef.current,
+      });
+    }
+    setShowCompletion(true);
+  }, []);
+
   const normalizeText = useCallback((value: string) => {
     return value
       .toLowerCase()
@@ -295,6 +383,7 @@ export default function PhonicsReadingBook() {
   );
 
   const setupRecognition = useCallback(() => {
+    if (!microphoneEnabled) return null;
     if (typeof window === "undefined") return null;
     const SpeechRecognitionImpl =
       (window as unknown as { SpeechRecognition?: typeof SpeechRecognition }).SpeechRecognition ||
@@ -308,14 +397,43 @@ export default function PhonicsReadingBook() {
       const result = event.results[0];
       if (result && result[0]) {
         const spoken = result[0].transcript;
+        const activeWord = currentWordRef.current;
+        const attemptKey = `${selectedVowelRef.current ?? "none"}:${activeWord}`;
+        const attempt = attemptCountsRef.current[attemptKey] ?? 0;
+        const matched = isTranscriptCorrect(spoken, sentenceRef.current);
         setTranscript(spoken);
-        if (isTranscriptCorrect(spoken, sentenceRef.current)) {
+        trackLessonEvent({
+          lesson: "language-arts:phonics-reading-book",
+          activity: selectedVowelRef.current ? `vowel-${selectedVowelRef.current}` : undefined,
+          event: "attempt_result",
+          value: activeWord,
+          attempt,
+          success: matched,
+          page: pageIndexRef.current + 1,
+          totalPages: totalPagesRef.current,
+          details: {
+            spoken,
+          },
+        });
+        if (matched) {
           setSuccess(true);
-          if (pageIndex < totalPages - 1) {
+          trackLessonEvent({
+            lesson: "language-arts:phonics-reading-book",
+            activity: selectedVowelRef.current ? `vowel-${selectedVowelRef.current}` : undefined,
+            event: "page_completed",
+            value: activeWord,
+            success: true,
+            attempt,
+            page: pageIndexRef.current + 1,
+            totalPages: totalPagesRef.current,
+          });
+          if (pageIndexRef.current < totalPagesRef.current - 1) {
             window.setTimeout(() => {
               setSuccess(false);
-              setPageIndex((prev) => Math.min(prev + 1, totalPages - 1));
+              setPageIndex((prev) => Math.min(prev + 1, totalPagesRef.current - 1));
             }, 900);
+          } else {
+            markLessonComplete();
           }
         }
       }
@@ -323,9 +441,10 @@ export default function PhonicsReadingBook() {
     recognition.onend = () => setListening(false);
     recognition.onerror = () => setListening(false);
     return recognition;
-  }, [isTranscriptCorrect, pageIndex, totalPages]);
+  }, [isTranscriptCorrect, markLessonComplete, microphoneEnabled]);
 
   const handleMic = useCallback(() => {
+    if (!microphoneEnabled) return;
     if (listening) {
       recognitionRef.current?.stop();
       return;
@@ -335,15 +454,50 @@ export default function PhonicsReadingBook() {
       recognitionRef.current = setupRecognition();
     }
     if (!recognitionRef.current) return;
+    const attemptKey = `${selectedVowel ?? "none"}:${page.word}`;
+    const nextAttempt = (attemptCountsRef.current[attemptKey] ?? 0) + 1;
+    attemptCountsRef.current[attemptKey] = nextAttempt;
+    trackLessonEvent({
+      lesson: "language-arts:phonics-reading-book",
+      activity: selectedVowel ? `vowel-${selectedVowel}` : undefined,
+      event: "attempt_started",
+      value: page.word,
+      attempt: nextAttempt,
+      page: pageIndex + 1,
+      totalPages,
+    });
     setSuccess(false);
     setTranscript("");
     setListening(true);
     recognitionRef.current.start();
-  }, [listening, page, setupRecognition]);
+  }, [listening, microphoneEnabled, page, pageIndex, selectedVowel, setupRecognition, totalPages]);
+
+  useEffect(() => {
+    if (microphoneEnabled) return;
+    try {
+      recognitionRef.current?.stop();
+    } catch {
+      // Ignore browser recognition stop errors.
+    }
+    setListening(false);
+    setTranscript("");
+  }, [microphoneEnabled]);
 
   useEffect(() => {
     sentenceRef.current = page?.sentence ?? "";
   }, [page]);
+
+  useEffect(() => {
+    if (!started || !selectedVowel || !page) return;
+    trackLessonEvent({
+      lesson: "language-arts:phonics-reading-book",
+      activity: `vowel-${selectedVowel}`,
+      event: "page_viewed",
+      page: pageIndex + 1,
+      totalPages,
+      value: page.word,
+    });
+  }, [page, pageIndex, selectedVowel, started, totalPages]);
 
   useEffect(() => {
     return () => {
@@ -372,15 +526,10 @@ export default function PhonicsReadingBook() {
         typingTimerRef.current = window.setTimeout(tick, 90);
       } else {
         setIsTyping(false);
-        setHoldLargeAfterTyping(true);
-        typingTimerRef.current = window.setTimeout(() => {
-          setHoldLargeAfterTyping(false);
-        }, 1500);
       }
     };
     setTypedText("");
     setIsTyping(true);
-    setHoldLargeAfterTyping(false);
     typingTimerRef.current = window.setTimeout(tick, 400);
     return () => {
       if (typingTimerRef.current !== null) {
@@ -388,14 +537,16 @@ export default function PhonicsReadingBook() {
         typingTimerRef.current = null;
       }
       setIsTyping(false);
-      setHoldLargeAfterTyping(false);
     };
   }, [page, started]);
 
   const goToPage = useCallback(
     (direction: "next" | "prev") => {
       if (isFlipping) return;
-      if (direction === "next" && pageIndex >= totalPages - 1) return;
+      if (direction === "next" && pageIndex >= totalPages - 1) {
+        markLessonComplete();
+        return;
+      }
       if (direction === "prev" && pageIndex <= 0) return;
       setFlipDirection(direction);
       setIsFlipping(true);
@@ -405,14 +556,13 @@ export default function PhonicsReadingBook() {
         setIsFlipping(false);
       }, 600);
     },
-    [isFlipping, pageIndex, totalPages]
+    [isFlipping, markLessonComplete, pageIndex, totalPages]
   );
 
   const rightPageTransform = useMemo(() => {
     if (!isFlipping) return "rotateY(0deg)";
     return flipDirection === "next" ? "rotateY(-180deg)" : "rotateY(180deg)";
   }, [isFlipping, flipDirection]);
-  const isLargeTypedText = isTyping || holdLargeAfterTyping;
 
   const handleBookHome = useCallback(() => {
     const hasActiveBookState = Boolean(
@@ -423,6 +573,14 @@ export default function PhonicsReadingBook() {
       router.replace("/lessons/language-arts/phonics");
       return;
     }
+
+    trackLessonEvent({
+      lesson: "language-arts:phonics-reading-book",
+      activity: selectedVowel ? `vowel-${selectedVowel}` : undefined,
+      event: "lesson_reset",
+      page: pageIndex + 1,
+      totalPages,
+    });
 
     try {
       recognitionRef.current?.stop();
@@ -436,10 +594,21 @@ export default function PhonicsReadingBook() {
     setListening(false);
     setTranscript("");
     setSuccess(false);
+    setShowCompletion(false);
     setStarted(false);
     setPageIndex(0);
     setSelectedVowel(null);
-  }, [listening, pageIndex, router, selectedVowel, started, stopBookletAudio, success, transcript]);
+  }, [
+    listening,
+    pageIndex,
+    router,
+    selectedVowel,
+    started,
+    stopBookletAudio,
+    success,
+    totalPages,
+    transcript,
+  ]);
 
   return (
     <div className="relative min-h-screen bg-[radial-gradient(circle_at_top,#f5efe6,#fdfbf8_55%,#f7efe4)]">
@@ -458,6 +627,12 @@ export default function PhonicsReadingBook() {
                 key={vowel}
                 type="button"
                 onClick={() => {
+                  trackLessonEvent({
+                    lesson: "language-arts:phonics-reading-book",
+                    activity: `vowel-${vowel}`,
+                    event: "vowel_selected",
+                    value: vowel,
+                  });
                   setSelectedVowel(vowel);
                   setStarted(false);
                   setPageIndex(0);
@@ -501,7 +676,15 @@ export default function PhonicsReadingBook() {
                     )}
                     <button
                       type="button"
-                      onClick={() => setStarted(true)}
+                      onClick={() => {
+                        trackLessonEvent({
+                          lesson: "language-arts:phonics-reading-book",
+                          activity: `vowel-${selectedVowel}`,
+                          event: "lesson_started",
+                          value: selectedVowel,
+                        });
+                        setStarted(true);
+                      }}
                       className="inline-flex items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 px-10 py-4 text-sm uppercase tracking-[0.35em] text-emerald-700 shadow-sm transition hover:bg-emerald-100"
                     >
                       Start
@@ -524,17 +707,9 @@ export default function PhonicsReadingBook() {
                               className="h-56 w-56 object-contain"
                             />
                             <p
-                              className={`font-semibold text-stone-800 text-center ${
-                                isLargeTypedText ? "text-3xl" : "text-2xl"
-                              }`}
+                              className="w-full max-w-full whitespace-normal break-words px-1 text-center text-4xl font-semibold leading-tight text-stone-800"
                             >
-                              <span
-                                className={`inline-block transition-transform duration-300 ${
-                                  isLargeTypedText ? "scale-[1.4]" : "scale-100"
-                                }`}
-                              >
-                                {renderSentence(isTyping ? typedText : page.sentence, page.word)}
-                              </span>
+                              {renderSentence(isTyping ? typedText : page.sentence, page.word)}
                             </p>
                           </>
                         ) : null}
@@ -546,19 +721,25 @@ export default function PhonicsReadingBook() {
                           >
                             🔊 Read To Me
                           </button>
-                          <button
-                            type="button"
-                            onClick={handleMic}
-                            className={`inline-flex items-center justify-center rounded-full border px-5 py-3 text-xs uppercase tracking-[0.35em] shadow-sm ${
-                              listening
-                                ? "border-rose-300 bg-rose-100 text-rose-700"
-                                : "border-sky-200 bg-sky-50 text-sky-700"
-                            }`}
-                          >
-                            🎤 {listening ? "Listening" : "Let Me Speak!"}
-                          </button>
+                          {microphoneEnabled ? (
+                            <button
+                              type="button"
+                              onClick={handleMic}
+                              className={`inline-flex items-center justify-center rounded-full border px-5 py-3 text-xs uppercase tracking-[0.35em] shadow-sm ${
+                                listening
+                                  ? "border-rose-300 bg-rose-100 text-rose-700"
+                                  : "border-sky-200 bg-sky-50 text-sky-700"
+                              }`}
+                            >
+                              🎤 {listening ? "Listening" : "Let Me Speak!"}
+                            </button>
+                          ) : (
+                            <div className="inline-flex items-center justify-center rounded-full border border-stone-300 bg-stone-100 px-5 py-3 text-xs uppercase tracking-[0.35em] text-stone-600 shadow-sm">
+                              Mic Off
+                            </div>
+                          )}
                         </div>
-                        {transcript ? (
+                        {microphoneEnabled && transcript ? (
                           <div className="rounded-2xl border border-stone-200 bg-stone-50 p-3 text-sm text-stone-600">
                             You said: <span className="font-semibold text-stone-800">{transcript}</span>
                           </div>
@@ -606,17 +787,9 @@ export default function PhonicsReadingBook() {
                           <div className="relative flex h-full w-full flex-col rounded-3xl bg-white/95 p-6 shadow-inner">
                             <div className="flex flex-1 items-center justify-center text-center">
                               <p
-                              className={`font-semibold text-stone-800 ${
-                                isLargeTypedText ? "text-3xl" : "text-2xl"
-                              }`}
+                              className="w-full max-w-full whitespace-normal break-words px-2 text-center text-4xl font-semibold leading-tight text-stone-800"
                               >
-                                <span
-                                  className={`inline-block transition-transform duration-300 ${
-                                    isLargeTypedText ? "scale-[1.4]" : "scale-100"
-                                  }`}
-                                >
-                                  {page ? renderSentence(isTyping ? typedText : page.sentence, page.word) : null}
-                                </span>
+                                {page ? renderSentence(isTyping ? typedText : page.sentence, page.word) : null}
                               </p>
                             </div>
                             <div className="flex items-center justify-center gap-3 pb-8">
@@ -627,19 +800,25 @@ export default function PhonicsReadingBook() {
                               >
                                 🔊 Read To Me
                               </button>
-                              <button
-                                type="button"
-                                onClick={handleMic}
-                                className={`inline-flex items-center justify-center rounded-full border px-5 py-2 text-xs uppercase tracking-[0.35em] shadow-sm transition ${
-                                  listening
-                                    ? "border-rose-300 bg-rose-100 text-rose-700"
-                                    : "border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100"
-                                }`}
-                              >
-                                🎤 {listening ? "Listening" : "Let Me Speak!"}
-                              </button>
+                              {microphoneEnabled ? (
+                                <button
+                                  type="button"
+                                  onClick={handleMic}
+                                  className={`inline-flex items-center justify-center rounded-full border px-5 py-2 text-xs uppercase tracking-[0.35em] shadow-sm transition ${
+                                    listening
+                                      ? "border-rose-300 bg-rose-100 text-rose-700"
+                                      : "border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100"
+                                  }`}
+                                >
+                                  🎤 {listening ? "Listening" : "Let Me Speak!"}
+                                </button>
+                              ) : (
+                                <div className="inline-flex items-center justify-center rounded-full border border-stone-300 bg-stone-100 px-5 py-2 text-xs uppercase tracking-[0.35em] text-stone-600 shadow-sm">
+                                  Mic Off
+                                </div>
+                              )}
                             </div>
-                            {transcript ? (
+                            {microphoneEnabled && transcript ? (
                               <div className="rounded-2xl border border-stone-200 bg-stone-50 p-3 text-sm text-stone-600">
                                 You said: <span className="font-semibold text-stone-800">{transcript}</span>
                               </div>
@@ -687,7 +866,7 @@ export default function PhonicsReadingBook() {
               </button>
 
               {settingsOpen ? (
-                <div className="absolute right-0 bottom-12 w-52 rounded-2xl border border-stone-200 bg-white/95 p-2 shadow-xl backdrop-blur-sm">
+                <div className="absolute right-0 bottom-12 w-60 rounded-2xl border border-stone-200 bg-white/95 p-2 shadow-xl backdrop-blur-sm">
                   <p className="px-2 py-1 text-[10px] uppercase tracking-[0.25em] text-stone-500">
                     Reading Speed
                   </p>
@@ -699,6 +878,15 @@ export default function PhonicsReadingBook() {
                           key={option.value}
                           type="button"
                           onClick={() => {
+                            trackLessonEvent({
+                              lesson: "language-arts:phonics-reading-book",
+                              activity: selectedVowel ? `vowel-${selectedVowel}` : undefined,
+                              event: "speed_changed",
+                              value: option.label,
+                              details: {
+                                speed: option.value,
+                              },
+                            });
                             setPlaybackRate(option.value);
                             setSettingsOpen(false);
                           }}
@@ -713,6 +901,21 @@ export default function PhonicsReadingBook() {
                         </button>
                       );
                     })}
+                  </div>
+                  <div className="mt-2 border-t border-stone-200 pt-2">
+                    <p className="px-2 py-1 text-[10px] uppercase tracking-[0.25em] text-stone-500">
+                      Microphone
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setMicrophoneEnabled(!microphoneEnabled)}
+                      className={`mt-1 flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm transition ${
+                        microphoneEnabled ? "bg-emerald-100 text-emerald-800" : "bg-stone-100 text-stone-700"
+                      }`}
+                    >
+                      <span>{microphoneEnabled ? "Enabled" : "Disabled"}</span>
+                      <span className="font-semibold">{microphoneEnabled ? "On" : "Off"}</span>
+                    </button>
                   </div>
                 </div>
               ) : null}
@@ -741,6 +944,41 @@ export default function PhonicsReadingBook() {
           </div>
         ) : null}
       </main>
+      <CompletionOverlay
+        open={showCompletion}
+        title={completionSteps?.isEndOfSeries ? "Series Complete" : "Lesson Complete"}
+        message={
+          completionSteps?.isEndOfSeries
+            ? `You completed vowel ${selectedVowel?.toUpperCase() ?? ""} in this material.`
+            : `Great work on vowel ${selectedVowel?.toUpperCase() ?? ""}.`
+        }
+        primaryAction={
+          completionSteps?.nextInSeries && nextVowelInSeries
+            ? {
+                label: completionSteps.nextInSeries.label,
+                onClick: () => {
+                  try {
+                    recognitionRef.current?.stop();
+                  } catch {
+                    // Ignore browser recognition stop errors.
+                  }
+                  stopBookletAudio();
+                  if (typeof window !== "undefined") {
+                    window.speechSynthesis?.cancel();
+                  }
+                  setListening(false);
+                  setTranscript("");
+                  setSuccess(false);
+                  setShowCompletion(false);
+                  setStarted(false);
+                  setPageIndex(0);
+                  setSelectedVowel(nextVowelInSeries);
+                },
+              }
+            : completionSteps?.nextMaterial
+        }
+        secondaryAction={{ href: "/lessons/language-arts/phonics", label: "Back to Phonics" }}
+      />
     </div>
   );
 }

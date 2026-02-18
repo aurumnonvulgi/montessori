@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import NumberRodsScene from "./NumberRodsScene";
 import { primeSounds } from "../lib/sounds";
 import HomeLink from "./HomeLink";
+import { useMicrophoneEnabled } from "../lib/microphonePreferences";
 
 type NumberRodsStageProps = {
   stageIndex: number;
@@ -61,6 +62,7 @@ export default function NumberRodsStageLesson({
   stageIndex,
 }: NumberRodsStageProps) {
   const router = useRouter();
+  const { microphoneEnabled } = useMicrophoneEnabled();
   const [lessonStarted, setLessonStarted] = useState(false);
   const [resetKey, setResetKey] = useState(0);
   const [isPortraitMobile, setIsPortraitMobile] = useState(false);
@@ -242,6 +244,7 @@ export default function NumberRodsStageLesson({
             key={resetKey}
             playing={lessonStarted}
             voiceEnabled={lessonStarted}
+            micEnabled={microphoneEnabled}
             stageIndex={stageIndex}
             onStageComplete={handleStageComplete}
             className="h-full w-full"

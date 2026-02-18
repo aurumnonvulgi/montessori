@@ -15,6 +15,7 @@ import { getPreferredVoice, primeSpeechVoices } from "../lib/speech";
 type NumberRodsPresentationCanvasProps = {
   playing: boolean;
   voiceEnabled: boolean;
+  micEnabled?: boolean;
   className?: string;
   onComplete?: () => void;
 };
@@ -132,6 +133,7 @@ const MicOverlay = ({ state }: { state: "listening" | "success" }) => {
 export default function NumberRodsPresentationCanvas({
   playing,
   voiceEnabled,
+  micEnabled = true,
   className,
   onComplete,
 }: NumberRodsPresentationCanvasProps) {
@@ -437,6 +439,23 @@ export default function NumberRodsPresentationCanvas({
     };
   }, [clearTimers]);
 
+  useEffect(() => {
+    if (micEnabled) {
+      return;
+    }
+    retryRecognitionRef.current = false;
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch {
+        // ignore
+      }
+      recognitionRef.current = null;
+    }
+    setMicError("");
+    setMicOverlayState("idle");
+  }, [micEnabled]);
+
   const playBeep = useCallback(() => {
     if (typeof window === "undefined") {
       return;
@@ -464,6 +483,11 @@ export default function NumberRodsPresentationCanvas({
   }, []);
 
   const startRecognition = useCallback(() => {
+    if (!micEnabled) {
+      setMicError("");
+      setMicOverlayState("idle");
+      return;
+    }
     if (!playing || phase !== "intro") {
       return;
     }
@@ -538,7 +562,7 @@ export default function NumberRodsPresentationCanvas({
     recognitionRef.current = recognition;
     setMicOverlayState("listening");
     recognition.start();
-  }, [phase, playing]);
+  }, [micEnabled, phase, playing]);
 
   useEffect(() => {
     startRecognitionRef.current = startRecognition;
@@ -579,17 +603,25 @@ export default function NumberRodsPresentationCanvas({
       });
 
     const run = async () => {
-      await speakLine("Please repeat after me.");
-      await pause(900);
+      if (micEnabled) {
+        await speakLine("Please repeat after me.");
+        await pause(900);
+      }
       await speakLine(INTRO_SENTENCE, 0.75);
-      playBeep();
+      if (micEnabled) {
+        playBeep();
+        window.setTimeout(() => {
+          startRecognition();
+        }, 250);
+        return;
+      }
       window.setTimeout(() => {
-        startRecognition();
-      }, 250);
+        setPhase("rod1-demo");
+      }, 450);
     };
 
     run().catch(() => undefined);
-  }, [phase, playBeep, playing, startRecognition, voiceEnabled]);
+  }, [micEnabled, phase, playBeep, playing, startRecognition, voiceEnabled]);
 
   const handleRodDrag = useCallback(
     (rodId: RodId, data: { x: number; y: number }) => {
@@ -662,7 +694,7 @@ export default function NumberRodsPresentationCanvas({
         ) : null}
       </div>
 
-      {phase === "intro" && micError ? (
+      {phase === "intro" && micEnabled && micError ? (
         <div className="absolute left-1/2 top-24 w-[86%] max-w-[520px] -translate-x-1/2 text-center text-xs font-medium text-red-600">
           {micError}
         </div>
@@ -744,7 +776,7 @@ export default function NumberRodsPresentationCanvas({
         })}
       </div>
 
-      {micOverlayState !== "idle" ? (
+      {micEnabled && micOverlayState !== "idle" ? (
         <MicOverlay state={micOverlayState === "success" ? "success" : "listening"} />
       ) : null}
 

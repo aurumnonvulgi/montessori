@@ -10,6 +10,7 @@ import { primeSpeechVoices, speakWithPreferredVoice } from "../lib/speech";
 type SandpaperNumeralsSceneProps = {
   playing: boolean;
   voiceEnabled: boolean;
+  micEnabled?: boolean;
   isMobile?: boolean;
   numbers?: number[];
   className?: string;
@@ -409,6 +410,7 @@ function SandpaperNumeralsContent({
 export default function SandpaperNumeralsScene({
   playing,
   voiceEnabled,
+  micEnabled = true,
   isMobile = false,
   numbers,
   className,
@@ -479,6 +481,9 @@ export default function SandpaperNumeralsScene({
   }, []);
 
   const startRecognition = useCallback((onFinished: () => void) => {
+    if (!micEnabled) {
+      return false;
+    }
     if (typeof window === "undefined") {
       return false;
     }
@@ -524,7 +529,7 @@ export default function SandpaperNumeralsScene({
     recognitionRef.current = recognition;
     recognition.start();
     return true;
-  }, []);
+  }, [micEnabled]);
 
   const handleCardSelect = useCallback(
     (index: number) => {
@@ -593,7 +598,7 @@ export default function SandpaperNumeralsScene({
   }, [playing]);
 
   useEffect(() => {
-    if (currentTarget === null || !voiceEnabled || quizPhase === null) {
+    if (currentTarget === null || quizPhase === null) {
       if (recognitionRef.current) {
         try {
           recognitionRef.current.stop();
@@ -611,14 +616,18 @@ export default function SandpaperNumeralsScene({
     promptRef.current[promptKey] = true;
 
     if (quizPhase === "click") {
-      speakText(`Can you click on ${numeralWords[currentTarget]}?`);
+      if (voiceEnabled) {
+        speakText(`Can you click on ${numeralWords[currentTarget]}?`);
+      }
       return;
     }
 
     if (quizPhase === "name") {
       awaitingAnswerRef.current = true;
       setQuizLiftIndex(currentTarget);
-      speakText("What is this?");
+      if (voiceEnabled) {
+        speakText(micEnabled ? "What is this?" : `This is ${numeralWords[currentTarget]}.`);
+      }
       const advance = () => {
         awaitingAnswerRef.current = false;
         setQuizLiftIndex(null);
@@ -651,13 +660,14 @@ export default function SandpaperNumeralsScene({
         timeoutRef.current = window.setTimeout(advance, wait);
       };
 
-      const startedRecognition = startRecognition(finishAfterDelay);
+      const startedRecognition = micEnabled ? startRecognition(finishAfterDelay) : false;
       if (!startedRecognition) {
         finishAfterDelay();
       }
     }
   }, [
     currentTarget,
+    micEnabled,
     quizPhase,
     startRecognition,
     voiceEnabled,

@@ -63,6 +63,14 @@ export default function LanguageArtsHub() {
           <p className="text-xs uppercase tracking-[0.35em] text-stone-400">Language Arts</p>
           <h1 className="font-display text-4xl font-semibold text-stone-900">Language Arts Materials</h1>
           <p className="text-sm text-stone-600">Choose a material to explore letter and phonics experiences.</p>
+          <div>
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center justify-center rounded-full border border-sky-200 bg-sky-50 px-4 py-2 text-xs uppercase tracking-[0.3em] text-sky-700"
+            >
+              Activity Dashboard
+            </Link>
+          </div>
         </div>
         <div className="grid gap-6 md:grid-cols-2">
           <Link

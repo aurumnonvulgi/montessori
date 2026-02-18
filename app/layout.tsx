@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Fraunces, Manrope } from "next/font/google";
 import "./globals.css";
 import IOSHideMenuBridge from "./components/IOSHideMenuBridge";
+import ActivityTelemetryBridge from "./components/ActivityTelemetryBridge";
 
 const fraunces = Fraunces({
   variable: "--font-fraunces",
@@ -44,6 +45,7 @@ export default function RootLayout({
       </head>
       <body className={`${fraunces.variable} ${manrope.variable} antialiased`}>
         <IOSHideMenuBridge />
+        <ActivityTelemetryBridge />
         {children}
       </body>
     </html>

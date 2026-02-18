@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import NumeralsAndCountersScene from "./NumeralsAndCountersScene";
 import { primeSounds } from "../lib/sounds";
 import HomeLink from "./HomeLink";
+import { useMicrophoneEnabled } from "../lib/microphonePreferences";
 
 type NumeralsAndCountersStageProps = {
   stageIndex: number;
@@ -78,6 +79,7 @@ export default function NumeralsAndCountersStageLesson({
   stageIndex,
 }: NumeralsAndCountersStageProps) {
   const router = useRouter();
+  const { microphoneEnabled } = useMicrophoneEnabled();
   const [lessonStarted, setLessonStarted] = useState(false);
   const [resetKey, setResetKey] = useState(0);
   const [confettiVisible, setConfettiVisible] = useState(false);
@@ -301,6 +303,7 @@ export default function NumeralsAndCountersStageLesson({
             key={resetKey}
             playing={lessonStarted}
             voiceEnabled={lessonStarted}
+            micEnabled={microphoneEnabled}
             stageIndex={stageIndex}
             onStageComplete={handleStageComplete}
             className="h-full w-full"

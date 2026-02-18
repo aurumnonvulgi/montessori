@@ -6,9 +6,11 @@ import NumeralsAndCountersScene, {
   NUMERALS_AND_COUNTERS_STAGES,
 } from "./NumeralsAndCountersScene";
 import { CompletionCheck } from "./NumeralsAndCountersStagelesson";
+import { useMicrophoneEnabled } from "../lib/microphonePreferences";
 
 export default function NumeralsAndCountersLesson() {
   const router = useRouter();
+  const { microphoneEnabled } = useMicrophoneEnabled();
   const [lessonStarted, setLessonStarted] = useState(false);
   const [resetKey, setResetKey] = useState(0);
   const [stageIndex, setStageIndex] = useState(0);
@@ -94,6 +96,7 @@ export default function NumeralsAndCountersLesson() {
           key={`${resetKey}-${stageIndex}`}
           playing={lessonStarted}
           voiceEnabled={lessonStarted}
+          micEnabled={microphoneEnabled}
           stageIndex={stageIndex}
           onStageComplete={handleStageComplete}
           className="h-[68vh] min-h-[500px]"

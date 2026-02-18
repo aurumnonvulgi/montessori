@@ -3,6 +3,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import HomeLink from "../../../../components/HomeLink";
+import CompletionOverlay from "../../../../components/CompletionOverlay";
+import { getPhonicsCompletionSteps } from "../../../../lib/phonicsProgression";
+import { trackLessonEvent } from "../../../../lib/lessonTelemetry";
 
 const BOARD_IMAGE = "/assets/language_arts/moveable_alphabet/tcp-pic-pic.svg";
 const BOARD_WIDTH = 1366;
@@ -68,6 +71,15 @@ const buildPictureFile = (letter: string, wordSlug: string) =>
 
 const STAGE_SIZE = 3;
 
+const shuffleArray = <T,>(values: T[]) => {
+  const next = [...values];
+  for (let index = next.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [next[index], next[swapIndex]] = [next[swapIndex], next[index]];
+  }
+  return next;
+};
+
 export default function PhonicThreePartCardsLesson() {
   const params = useParams();
   const vowelParam = Array.isArray(params?.vowel) ? params?.vowel[0] : params?.vowel;
@@ -79,11 +91,24 @@ export default function PhonicThreePartCardsLesson() {
   const boardRef = useRef<HTMLDivElement | null>(null);
   const [pairs, setPairs] = useState<ThreePartPair[]>([]);
   const [stageIndex, setStageIndex] = useState(0);
+  const [stagePairs, setStagePairs] = useState<ThreePartPair[]>([]);
   const [cards, setCards] = useState<CardState[]>([]);
   const [assignments, setAssignments] = useState<Record<string, string>>({});
   const [dragging, setDragging] = useState<{ id: string; offsetX: number; offsetY: number } | null>(null);
   const [cardFiles, setCardFiles] = useState<string[]>([]);
   const [pictureFiles, setPictureFiles] = useState<string[]>([]);
+  const [showCompletion, setShowCompletion] = useState(false);
+  const attemptCountRef = useRef(0);
+  const completedStagesRef = useRef<Record<string, true>>({});
+  const completedLessonsRef = useRef<Record<string, true>>({});
+  const completionSteps = useMemo(
+    () => getPhonicsCompletionSteps("phonic-three-part-cards", vowel),
+    [vowel]
+  );
+
+  useEffect(() => {
+    setShowCompletion(false);
+  }, [vowel]);
 
   useEffect(() => {
     let active = true;
@@ -144,7 +169,7 @@ export default function PhonicThreePartCardsLesson() {
     setStageIndex(0);
   }, [cardFiles, pictureFiles, vowel]);
 
-  const stagePairs = useMemo(() => {
+  const stageBasePairs = useMemo(() => {
     const start = stageIndex * STAGE_SIZE;
     return pairs.slice(start, start + STAGE_SIZE);
   }, [pairs, stageIndex]);
@@ -152,7 +177,22 @@ export default function PhonicThreePartCardsLesson() {
   const stageCount = Math.max(1, Math.ceil(pairs.length / STAGE_SIZE));
 
   useEffect(() => {
-    const shuffled = [...stagePairs].sort(() => Math.random() - 0.5);
+    setStagePairs(shuffleArray(stageBasePairs));
+  }, [stageBasePairs]);
+
+  useEffect(() => {
+    trackLessonEvent({
+      lesson: "language-arts:phonic-three-part-cards",
+      activity: `vowel-${vowel}`,
+      event: "lesson_opened",
+      details: {
+        stageCount,
+      },
+    });
+  }, [stageCount, vowel]);
+
+  useEffect(() => {
+    const shuffled = shuffleArray(stagePairs);
     const nextCards = shuffled.map((pair, index) => {
       const slot = STACK_SLOTS[index] ?? STACK_SLOTS[STACK_SLOTS.length - 1];
       const x = slot.x + slot.width / 2;
@@ -170,6 +210,16 @@ export default function PhonicThreePartCardsLesson() {
     setAssignments({});
     setDragging(null);
   }, [stagePairs, stageIndex]);
+
+  useEffect(() => {
+    trackLessonEvent({
+      lesson: "language-arts:phonic-three-part-cards",
+      activity: `vowel-${vowel}`,
+      event: "stage_viewed",
+      page: stageIndex + 1,
+      totalPages: stageCount,
+    });
+  }, [stageCount, stageIndex, vowel]);
 
   const boardRectRef = useRef<DOMRect | null>(null);
   useEffect(() => {
@@ -266,6 +316,23 @@ export default function PhonicThreePartCardsLesson() {
 
       if (candidates.length && candidates[0].dist <= DROP_THRESHOLD) {
         const target = candidates[0].slot;
+        const targetIndex = ANSWER_SLOTS.findIndex((slot) => slot.id === target.id);
+        const expectedPair = targetIndex >= 0 ? stagePairs[targetIndex] : undefined;
+        const attempt = attemptCountRef.current + 1;
+        attemptCountRef.current = attempt;
+        trackLessonEvent({
+          lesson: "language-arts:phonic-three-part-cards",
+          activity: `vowel-${vowel}`,
+          event: "attempt_result",
+          success: Boolean(expectedPair && expectedPair.id === card.pairId),
+          attempt,
+          value: expectedPair?.wordLabel ?? card.pairId,
+          page: stageIndex + 1,
+          totalPages: stageCount,
+          details: {
+            slot: target.id,
+          },
+        });
         setCards((current) =>
           current.map((item) =>
             item.id === card.id
@@ -277,6 +344,18 @@ export default function PhonicThreePartCardsLesson() {
         return;
       }
 
+      const attempt = attemptCountRef.current + 1;
+      attemptCountRef.current = attempt;
+      trackLessonEvent({
+        lesson: "language-arts:phonic-three-part-cards",
+        activity: `vowel-${vowel}`,
+        event: "attempt_result",
+        success: false,
+        attempt,
+        value: card.pairId,
+        page: stageIndex + 1,
+        totalPages: stageCount,
+      });
       setCards((current) =>
         current.map((item) => (item.id === card.id ? { ...item, x: item.homeX, y: item.homeY } : item))
       );
@@ -288,7 +367,7 @@ export default function PhonicThreePartCardsLesson() {
       window.removeEventListener("pointermove", handleMove);
       window.removeEventListener("pointerup", handleUp);
     };
-  }, [cards, convertPointerToBoard, dragging, assignments]);
+  }, [assignments, cards, convertPointerToBoard, dragging, stageCount, stageIndex, stagePairs, vowel]);
 
   const handlePointerDown = useCallback(
     (event: React.PointerEvent<HTMLDivElement>, card: CardState) => {
@@ -339,13 +418,49 @@ export default function PhonicThreePartCardsLesson() {
       const key = item.pair.id;
       if (spokenMatchesRef.current.has(key)) return;
       spokenMatchesRef.current.add(key);
+      trackLessonEvent({
+        lesson: "language-arts:phonic-three-part-cards",
+        activity: `vowel-${vowel}`,
+        event: "word_completed",
+        success: true,
+        value: item.pair.wordLabel,
+        page: stageIndex + 1,
+        totalPages: stageCount,
+      });
       handleSpeak(item.pair.wordLabel);
     });
-  }, [assignedMatches, handleSpeak]);
+  }, [assignedMatches, handleSpeak, stageCount, stageIndex, vowel]);
 
   const advanceRef = useRef<number | null>(null);
   useEffect(() => {
     if (!allMatched) return;
+    const stageKey = `${vowel}-${stageIndex}`;
+    if (!completedStagesRef.current[stageKey]) {
+      completedStagesRef.current[stageKey] = true;
+      trackLessonEvent({
+        lesson: "language-arts:phonic-three-part-cards",
+        activity: `vowel-${vowel}`,
+        event: "stage_completed",
+        success: true,
+        page: stageIndex + 1,
+        totalPages: stageCount,
+      });
+    }
+    if (stageIndex >= stageCount - 1) {
+      const lessonKey = `vowel-${vowel}`;
+      if (!completedLessonsRef.current[lessonKey]) {
+        completedLessonsRef.current[lessonKey] = true;
+        trackLessonEvent({
+          lesson: "language-arts:phonic-three-part-cards",
+          activity: lessonKey,
+          event: "lesson_completed",
+          success: true,
+          page: stageCount,
+          totalPages: stageCount,
+        });
+      }
+      setShowCompletion(true);
+    }
     if (stageIndex >= stageCount - 1) return;
     if (advanceRef.current !== null) return;
     advanceRef.current = window.setTimeout(() => {
@@ -358,7 +473,7 @@ export default function PhonicThreePartCardsLesson() {
         advanceRef.current = null;
       }
     };
-  }, [allMatched, stageIndex, stageCount]);
+  }, [allMatched, stageCount, stageIndex, vowel]);
 
   return (
     <div className="relative min-h-screen bg-[radial-gradient(circle_at_top,#f5efe6,#fdfbf8_55%,#f7efe4)]">
@@ -515,6 +630,17 @@ export default function PhonicThreePartCardsLesson() {
           </div>
         </div>
       </main>
+      <CompletionOverlay
+        open={showCompletion}
+        title={completionSteps.isEndOfSeries ? "Series Complete" : "Lesson Complete"}
+        message={
+          completionSteps.isEndOfSeries
+            ? `You completed vowel ${vowel.toUpperCase()} in this material.`
+            : `Great work on vowel ${vowel.toUpperCase()}.`
+        }
+        primaryAction={completionSteps.nextInSeries ?? completionSteps.nextMaterial}
+        secondaryAction={{ href: "/lessons/language-arts/phonics", label: "Back to Phonics" }}
+      />
     </div>
   );
 }

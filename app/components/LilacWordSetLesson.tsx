@@ -3,6 +3,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import HomeLink from "./HomeLink";
+import CompletionOverlay from "./CompletionOverlay";
+import { trackLessonEvent } from "../lib/lessonTelemetry";
+import { useMicrophoneEnabled } from "../lib/microphonePreferences";
 
 type LilacWordSetLessonProps = {
   label: string;
@@ -48,6 +51,7 @@ export default function LilacWordSetLesson({
   words,
   nextSetHref,
 }: LilacWordSetLessonProps) {
+  const { microphoneEnabled } = useMicrophoneEnabled();
   const pages = useMemo(() => {
     const nextPages: string[][] = [];
     for (let index = 0; index < words.length; index += WORDS_PER_PAGE) {
@@ -62,17 +66,25 @@ export default function LilacWordSetLesson({
   const [feedbackWord, setFeedbackWord] = useState<string | null>(null);
   const [flashWord, setFlashWord] = useState<string | null>(null);
   const [speechAvailable, setSpeechAvailable] = useState(true);
+  const [showCompletion, setShowCompletion] = useState(false);
 
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const activeWordRef = useRef<string>("");
+  const pageIndexRef = useRef(0);
+  const attemptCountsRef = useRef<Record<string, number>>({});
+  const completedPagesRef = useRef<Record<number, boolean>>({});
+  const setCompletionLoggedRef = useRef(false);
   const feedbackTimerRef = useRef<number | null>(null);
   const flashTimerRef = useRef<number | null>(null);
 
-  const currentPageWords = pages[pageIndex] ?? [];
+  const currentPageWords = useMemo(() => pages[pageIndex] ?? [], [pageIndex, pages]);
   const isCurrentPageComplete =
     currentPageWords.length > 0 &&
     currentPageWords.every((word) => completedWords[word]);
   const isSetComplete = words.every((word) => completedWords[word]);
+  const completionPrimaryAction = nextSetHref
+    ? { href: nextSetHref, label: "Next Lesson: Lilac" }
+    : { href: "/lessons/language-arts/concept-development", label: "Next Material: Concept Development" };
 
   const clearFeedbackTimer = useCallback(() => {
     if (feedbackTimerRef.current !== null) {
@@ -107,8 +119,39 @@ export default function LilacWordSetLesson({
     }
   }, []);
 
+  useEffect(() => {
+    pageIndexRef.current = pageIndex;
+  }, [pageIndex]);
+
+  useEffect(() => {
+    trackLessonEvent({
+      lesson: "language-arts:lilac-word-lists",
+      activity: `set-${label}`,
+      event: "lesson_opened",
+      details: {
+        wordCount: words.length,
+      },
+    });
+  }, [label, words.length]);
+
+  useEffect(() => {
+    if (!currentPageWords.length) return;
+    trackLessonEvent({
+      lesson: "language-arts:lilac-word-lists",
+      activity: `set-${label}`,
+      event: "page_viewed",
+      page: pageIndex + 1,
+      totalPages: pages.length,
+      details: {
+        firstWord: currentPageWords[0],
+        lastWord: currentPageWords[currentPageWords.length - 1],
+      },
+    });
+  }, [currentPageWords, label, pageIndex, pages.length]);
+
   const startListening = useCallback(
     (word: string) => {
+      if (!microphoneEnabled) return;
       if (completedWords[word]) return;
       if (typeof window === "undefined") return;
       setFlashWord(word);
@@ -139,10 +182,38 @@ export default function LilacWordSetLesson({
             normalizeWord(result[index]?.transcript ?? "")
           );
           const matched = heard.some((value) => value === expected);
+          const activeWord = activeWordRef.current;
+          const attempt = attemptCountsRef.current[activeWord] ?? 0;
+
+          if (activeWord) {
+            trackLessonEvent({
+              lesson: "language-arts:lilac-word-lists",
+              activity: `set-${label}`,
+              event: "attempt_result",
+              value: activeWord,
+              attempt,
+              success: matched,
+              page: pageIndexRef.current + 1,
+              totalPages: pages.length,
+              details: {
+                heard: heard.join(" | "),
+              },
+            });
+          }
 
           if (matched && activeWordRef.current) {
             const correctWord = activeWordRef.current;
             setCompletedWords((prev) => ({ ...prev, [correctWord]: true }));
+            trackLessonEvent({
+              lesson: "language-arts:lilac-word-lists",
+              activity: `set-${label}`,
+              event: "word_completed",
+              value: correctWord,
+              attempt,
+              success: true,
+              page: pageIndexRef.current + 1,
+              totalPages: pages.length,
+            });
             setFeedbackWord(correctWord);
             clearFeedbackTimer();
             feedbackTimerRef.current = window.setTimeout(() => {
@@ -172,6 +243,18 @@ export default function LilacWordSetLesson({
       const recognition = recognitionRef.current;
       if (!recognition) return;
 
+      const nextAttempt = (attemptCountsRef.current[word] ?? 0) + 1;
+      attemptCountsRef.current[word] = nextAttempt;
+      trackLessonEvent({
+        lesson: "language-arts:lilac-word-lists",
+        activity: `set-${label}`,
+        event: "attempt_started",
+        value: word,
+        attempt: nextAttempt,
+        page: pageIndexRef.current + 1,
+        totalPages: pages.length,
+      });
+
       activeWordRef.current = word;
       setListeningWord(word);
       clearFeedbackTimer();
@@ -194,8 +277,71 @@ export default function LilacWordSetLesson({
         }, 120);
       }
     },
-    [clearFeedbackTimer, clearFlashTimer, completedWords]
+    [clearFeedbackTimer, clearFlashTimer, completedWords, label, microphoneEnabled, pages.length]
   );
+
+  const markWordComplete = useCallback(
+    (word: string) => {
+      if (completedWords[word]) return;
+      setCompletedWords((prev) => ({ ...prev, [word]: true }));
+      trackLessonEvent({
+        lesson: "language-arts:lilac-word-lists",
+        activity: `set-${label}`,
+        event: "word_completed",
+        value: word,
+        success: true,
+        page: pageIndexRef.current + 1,
+        totalPages: pages.length,
+        details: {
+          source: "privacy-mic-off",
+        },
+      });
+      setFeedbackWord(word);
+      clearFeedbackTimer();
+      feedbackTimerRef.current = window.setTimeout(() => {
+        setFeedbackWord(null);
+      }, 900);
+      setListeningWord(null);
+      activeWordRef.current = "";
+    },
+    [clearFeedbackTimer, completedWords, label, pages.length]
+  );
+
+  useEffect(() => {
+    if (!isCurrentPageComplete) return;
+    const pageNumber = pageIndex + 1;
+    if (completedPagesRef.current[pageNumber]) return;
+    completedPagesRef.current[pageNumber] = true;
+    trackLessonEvent({
+      lesson: "language-arts:lilac-word-lists",
+      activity: `set-${label}`,
+      event: "page_completed",
+      success: true,
+      page: pageNumber,
+      totalPages: pages.length,
+    });
+  }, [isCurrentPageComplete, label, pageIndex, pages.length]);
+
+  useEffect(() => {
+    if (!isSetComplete || setCompletionLoggedRef.current) return;
+    setCompletionLoggedRef.current = true;
+    trackLessonEvent({
+      lesson: "language-arts:lilac-word-lists",
+      activity: `set-${label}`,
+      event: "set_completed",
+      success: true,
+      page: pages.length,
+      totalPages: pages.length,
+      details: {
+        completedWords: words.length,
+      },
+    });
+    setShowCompletion(true);
+  }, [isSetComplete, label, pages.length, words.length]);
+
+  useEffect(() => {
+    setShowCompletion(false);
+  }, [label]);
 
   useEffect(() => {
     if (!isCurrentPageComplete) return;
@@ -207,6 +353,13 @@ export default function LilacWordSetLesson({
       window.clearTimeout(timer);
     };
   }, [isCurrentPageComplete, pageIndex, pages.length]);
+
+  useEffect(() => {
+    if (microphoneEnabled) return;
+    stopListening();
+    setListeningWord(null);
+    activeWordRef.current = "";
+  }, [microphoneEnabled, stopListening]);
 
   useEffect(() => {
     return () => {
@@ -231,7 +384,7 @@ export default function LilacWordSetLesson({
           </p>
         </header>
 
-        {!speechAvailable ? (
+        {microphoneEnabled && !speechAvailable ? (
           <div className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
             Speech recognition is not available in this browser. Try Chrome or Safari on device.
           </div>
@@ -258,12 +411,22 @@ export default function LilacWordSetLesson({
                 >
                   <button
                     type="button"
-                    onClick={() => speakWord(word)}
-                  className={`inline-flex w-14 items-center justify-center border-r transition ${
-                    complete
-                      ? "border-emerald-300 bg-emerald-500 text-white hover:bg-emerald-600"
-                      : "border-blue-200 bg-blue-400 text-white hover:bg-blue-500"
-                  }`}
+                    onClick={() => {
+                      trackLessonEvent({
+                        lesson: "language-arts:lilac-word-lists",
+                        activity: `set-${label}`,
+                        event: "audio_played",
+                        value: word,
+                        page: pageIndex + 1,
+                        totalPages: pages.length,
+                      });
+                      speakWord(word);
+                    }}
+                    className={`inline-flex w-14 items-center justify-center border-r transition ${
+                      complete
+                        ? "border-emerald-300 bg-emerald-500 text-white hover:bg-emerald-600"
+                        : "border-blue-200 bg-blue-400 text-white hover:bg-blue-500"
+                    }`}
                     aria-label={`Speak ${word}`}
                   >
                     <SpeakerIcon />
@@ -273,21 +436,37 @@ export default function LilacWordSetLesson({
                     {word}
                   </p>
 
-                  <button
-                    type="button"
-                    onClick={() => startListening(word)}
-                    disabled={complete}
-                  className={`inline-flex w-14 items-center justify-center border-l transition ${
-                    complete
-                      ? "cursor-default border-emerald-300 bg-emerald-500 text-white"
-                      : listening
-                        ? "border-rose-200 bg-rose-500 text-white"
-                        : "border-rose-200 bg-rose-400 text-white hover:bg-rose-500"
-                  }`}
-                    aria-label={`Record ${word}`}
-                  >
-                    {complete ? <CheckIcon /> : <MicIcon />}
-                  </button>
+                  {microphoneEnabled ? (
+                    <button
+                      type="button"
+                      onClick={() => startListening(word)}
+                      disabled={complete}
+                      className={`inline-flex w-14 items-center justify-center border-l transition ${
+                        complete
+                          ? "cursor-default border-emerald-300 bg-emerald-500 text-white"
+                          : listening
+                            ? "border-rose-200 bg-rose-500 text-white"
+                            : "border-rose-200 bg-rose-400 text-white hover:bg-rose-500"
+                      }`}
+                      aria-label={`Record ${word}`}
+                    >
+                      {complete ? <CheckIcon /> : <MicIcon />}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => markWordComplete(word)}
+                      disabled={complete}
+                      className={`inline-flex w-14 items-center justify-center border-l transition ${
+                        complete
+                          ? "cursor-default border-emerald-300 bg-emerald-500 text-white"
+                          : "border-emerald-200 bg-emerald-400 text-white hover:bg-emerald-500"
+                      }`}
+                      aria-label={`Mark ${word} complete`}
+                    >
+                      <CheckIcon />
+                    </button>
+                  )}
 
                   {justChecked ? (
                     <span className="absolute -right-2 -top-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-white shadow-lg">
@@ -346,6 +525,17 @@ export default function LilacWordSetLesson({
           </div>
         ) : null}
       </main>
+      <CompletionOverlay
+        open={showCompletion}
+        title={nextSetHref ? "Lesson Complete" : "Series Complete"}
+        message={
+          nextSetHref
+            ? `You completed set ${label}.`
+            : `You completed set ${label} and finished the Lilac series.`
+        }
+        primaryAction={completionPrimaryAction}
+        secondaryAction={{ href: "/lessons/language-arts/lilac-word-lists", label: "Back to Sets" }}
+      />
     </div>
   );
 }

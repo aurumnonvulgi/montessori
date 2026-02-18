@@ -3,9 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import NumberRodsScene, { NUMBER_ROD_STAGES } from "./NumberRodsScene";
+import { useMicrophoneEnabled } from "../lib/microphonePreferences";
 
 export default function NumberRodsLesson() {
   const router = useRouter();
+  const { microphoneEnabled } = useMicrophoneEnabled();
   const [lessonStarted, setLessonStarted] = useState(false);
   const [resetKey, setResetKey] = useState(0);
   const [stageIndex, setStageIndex] = useState(0);
@@ -93,6 +95,7 @@ export default function NumberRodsLesson() {
           key={`${resetKey}-${stageIndex}`}
           playing={lessonStarted}
           voiceEnabled={lessonStarted}
+          micEnabled={microphoneEnabled}
           stageIndex={stageIndex}
           onStageComplete={handleStageComplete}
           className="h-[68vh] min-h-[500px]"

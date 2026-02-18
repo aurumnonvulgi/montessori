@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useMemo } from "react";
 import LanguageArtsPreview from "./LanguageArtsPreview";
+import MicrophonePrivacyToggle from "./MicrophonePrivacyToggle";
 
 const CARD_STYLE =
   "group select-none rounded-[36px] border border-stone-200 bg-white/90 p-6 shadow-[0_30px_80px_-50px_rgba(60,40,20,0.6)] transition hover:-translate-y-1 hover:shadow-[0_40px_90px_-50px_rgba(60,40,20,0.7)]";
@@ -16,6 +17,12 @@ export default function MontessoriHome() {
         <div className="space-y-6 text-center">
           <p className="text-xs uppercase tracking-[0.4em] text-stone-400">Montessori Studio</p>
           <h1 className="font-display text-4xl font-semibold text-stone-900 md:text-5xl">Montessori Studio</h1>
+          <a
+            href="/dashboard"
+            className="inline-flex items-center justify-center rounded-full border border-sky-200 bg-sky-50 px-4 py-2 text-xs uppercase tracking-[0.3em] text-sky-700"
+          >
+            Activity Dashboard
+          </a>
         </div>
 
         <div className="mt-10 grid w-full gap-6 lg:grid-cols-2">
@@ -63,6 +70,10 @@ export default function MontessoriHome() {
               </p>
             </div>
           </a>
+        </div>
+
+        <div className="mt-6 w-full max-w-3xl">
+          <MicrophonePrivacyToggle compact />
         </div>
       </main>
     </div>

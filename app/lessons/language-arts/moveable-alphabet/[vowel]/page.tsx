@@ -3,7 +3,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import HomeLink from "../../../../components/HomeLink";
+import CompletionOverlay from "../../../../components/CompletionOverlay";
 import Link from "next/link";
+import { getPhonicsCompletionSteps } from "../../../../lib/phonicsProgression";
+import { trackLessonEvent } from "../../../../lib/lessonTelemetry";
 
 const BOARD_IMAGE = "/assets/language_arts/moveable_alphabet/moveable_alphabet_board.svg";
 const BOARD_WIDTH = 1366;
@@ -236,10 +239,20 @@ export default function MoveableAlphabet() {
   const [statusMessage, setStatusMessage] = useState<string>("");
   const [stageIndex, setStageIndex] = useState(0);
   const [pictureFiles, setPictureFiles] = useState<string[]>(() => PICTURE_FILES_FALLBACK);
+  const [showCompletion, setShowCompletion] = useState(false);
+  const matchedRowsRef = useRef<Record<number, string>>({});
+  const attemptCountRef = useRef(0);
+  const completedRowsRef = useRef<Record<string, true>>({});
+  const completedStagesRef = useRef<Record<string, true>>({});
+  const completedSetsRef = useRef<Record<string, true>>({});
 
   const params = useParams<{ vowel?: string }>();
   const rawVowel = typeof params?.vowel === "string" ? params.vowel.toLowerCase() : "a";
   const activeVowel = VOWELS.has(rawVowel) ? rawVowel : "a";
+  const completionSteps = useMemo(
+    () => getPhonicsCompletionSteps("moveable-alphabet", activeVowel),
+    [activeVowel]
+  );
   const pictureItems = useMemo(
     () => pictureFiles.map(parsePictureFile).filter((item): item is PictureItem => Boolean(item)),
     [pictureFiles]
@@ -303,7 +316,19 @@ export default function MoveableAlphabet() {
 
   useEffect(() => {
     setStageIndex(0);
+    setShowCompletion(false);
   }, [activeVowel, pictureFiles]);
+
+  useEffect(() => {
+    trackLessonEvent({
+      lesson: "language-arts:moveable-alphabet",
+      activity: `vowel-${activeVowel}`,
+      event: "lesson_opened",
+      details: {
+        stageCount: vowelStages.length,
+      },
+    });
+  }, [activeVowel, vowelStages.length]);
 
   useEffect(() => {
     setAssignments({});
@@ -311,6 +336,16 @@ export default function MoveableAlphabet() {
     setDragging(null);
     setStatusMessage("");
   }, [stageIndex]);
+
+  useEffect(() => {
+    trackLessonEvent({
+      lesson: "language-arts:moveable-alphabet",
+      activity: `vowel-${activeVowel}`,
+      event: "stage_viewed",
+      page: stageIndex + 1,
+      totalPages: vowelStages.length,
+    });
+  }, [activeVowel, stageIndex, vowelStages.length]);
 
   const [layoutCapture, setLayoutCapture] = useState<{ letter: string; x: number; y: number }[]>([]);
   const [layoutExport, setLayoutExport] = useState<string>("");
@@ -388,10 +423,12 @@ export default function MoveableAlphabet() {
     [getLastSlotForRow]
   );
 
-  const handleSpeak = useCallback((word: string) => {
+  const handleSpeak = useCallback((word: string, interrupt = true) => {
     if (typeof window === "undefined") return;
     const utterance = new SpeechSynthesisUtterance(word);
-    window.speechSynthesis?.cancel();
+    if (interrupt) {
+      window.speechSynthesis?.cancel();
+    }
     window.speechSynthesis?.speak(utterance);
   }, []);
 
@@ -415,11 +452,72 @@ export default function MoveableAlphabet() {
     return PICTURE_LAYOUT.map((slot) => statusMap[slot.row]).filter((entry): entry is RowStatus => Boolean(entry));
   }, [assignments, letters, pictureSlots]);
 
+  useEffect(() => {
+    const currentMatched: Record<number, string> = {};
+
+    rowStatuses.forEach((status) => {
+      if (!status.matched) return;
+      currentMatched[status.row] = status.word;
+      const previousWord = matchedRowsRef.current[status.row];
+      if (previousWord !== status.word) {
+        const completedRowKey = `${activeVowel}-${stageIndex}-${status.row}-${status.word}`;
+        if (!completedRowsRef.current[completedRowKey]) {
+          completedRowsRef.current[completedRowKey] = true;
+          trackLessonEvent({
+            lesson: "language-arts:moveable-alphabet",
+            activity: `vowel-${activeVowel}`,
+            event: "word_completed",
+            success: true,
+            value: status.word,
+            page: stageIndex + 1,
+            totalPages: vowelStages.length,
+            details: {
+              row: status.row,
+            },
+          });
+        }
+        handleSpeak(status.word, false);
+      }
+    });
+
+    matchedRowsRef.current = currentMatched;
+  }, [activeVowel, handleSpeak, rowStatuses, stageIndex, vowelStages.length]);
+
   const advanceTimeoutRef = useRef<number | null>(null);
   useEffect(() => {
     if (!rowStatuses.length) return;
     const allMatched = rowStatuses.every((status) => status.matched);
     if (!allMatched) return;
+
+    const stageKey = `${activeVowel}-${stageIndex}`;
+    if (!completedStagesRef.current[stageKey]) {
+      completedStagesRef.current[stageKey] = true;
+      trackLessonEvent({
+        lesson: "language-arts:moveable-alphabet",
+        activity: `vowel-${activeVowel}`,
+        event: "stage_completed",
+        success: true,
+        page: stageIndex + 1,
+        totalPages: vowelStages.length,
+      });
+    }
+
+    if (stageIndex >= vowelStages.length - 1) {
+      const setKey = `vowel-${activeVowel}`;
+      if (!completedSetsRef.current[setKey]) {
+        completedSetsRef.current[setKey] = true;
+        trackLessonEvent({
+          lesson: "language-arts:moveable-alphabet",
+          activity: `vowel-${activeVowel}`,
+          event: "lesson_completed",
+          success: true,
+          page: vowelStages.length,
+          totalPages: vowelStages.length,
+        });
+      }
+      setShowCompletion(true);
+    }
+
     if (stageIndex >= vowelStages.length - 1) return;
     if (advanceTimeoutRef.current !== null) return;
     advanceTimeoutRef.current = window.setTimeout(() => {
@@ -432,7 +530,7 @@ export default function MoveableAlphabet() {
         advanceTimeoutRef.current = null;
       }
     };
-  }, [rowStatuses, stageIndex, vowelStages.length]);
+  }, [activeVowel, rowStatuses, stageIndex, vowelStages.length]);
   useEffect(() => {
     if (!dragging) return;
     const handleMove = (event: PointerEvent) => {
@@ -468,7 +566,23 @@ export default function MoveableAlphabet() {
       }))
         .filter((target) => target.dist <= DROP_THRESHOLD)
         .sort((a, b) => a.dist - b.dist)[0];
+      const attempt = attemptCountRef.current + 1;
+      attemptCountRef.current = attempt;
       if (zone && zone.type === allowedType) {
+        trackLessonEvent({
+          lesson: "language-arts:moveable-alphabet",
+          activity: `vowel-${activeVowel}`,
+          event: "attempt_result",
+          success: true,
+          attempt,
+          value: letter.letter,
+          page: stageIndex + 1,
+          totalPages: vowelStages.length,
+          details: {
+            zone: zone.id,
+            zoneType: zone.type,
+          },
+        });
         setStatusMessage("");
         const yOffset = LETTER_Y_OFFSETS[letter.letter] ?? 0;
         setAssignments((prev) => {
@@ -501,6 +615,20 @@ export default function MoveableAlphabet() {
           return [...updated, clone];
         });
       } else {
+        trackLessonEvent({
+          lesson: "language-arts:moveable-alphabet",
+          activity: `vowel-${activeVowel}`,
+          event: "attempt_result",
+          success: false,
+          attempt,
+          value: letter.letter,
+          page: stageIndex + 1,
+          totalPages: vowelStages.length,
+          details: {
+            zone: zone?.id ?? "",
+            zoneType: zone?.type ?? "",
+          },
+        });
         setStatusMessage("Not the correct place, try again");
         setLetters((current) =>
           current.map((l) =>
@@ -524,7 +652,7 @@ export default function MoveableAlphabet() {
       window.removeEventListener("pointerup", handleUp);
       window.removeEventListener("pointercancel", handleUp);
     };
-  }, [dragging, convertPointerToBoard, letters, removeAssignment]);
+  }, [activeVowel, convertPointerToBoard, dragging, letters, removeAssignment, stageIndex, vowelStages.length]);
 
   const handlePointerDown = (event: React.PointerEvent<HTMLButtonElement>, letter: LetterState) => {
     event.preventDefault();
@@ -756,6 +884,17 @@ export default function MoveableAlphabet() {
           </Link>
         </div>
       </main>
+      <CompletionOverlay
+        open={showCompletion}
+        title={completionSteps.isEndOfSeries ? "Series Complete" : "Lesson Complete"}
+        message={
+          completionSteps.isEndOfSeries
+            ? `You completed vowel ${activeVowel.toUpperCase()} in this material.`
+            : `Great work on vowel ${activeVowel.toUpperCase()}.`
+        }
+        primaryAction={completionSteps.nextInSeries ?? completionSteps.nextMaterial}
+        secondaryAction={{ href: "/lessons/language-arts/phonics", label: "Back to Phonics" }}
+      />
     </div>
   );
 }

@@ -9,6 +9,7 @@ import { primeSpeechVoices, speakWithPreferredVoice } from "../lib/speech";
 type NumberRodsSceneProps = {
   playing: boolean;
   voiceEnabled: boolean;
+  micEnabled?: boolean;
   stageIndex?: number;
   onComplete?: () => void;
   onStageComplete?: () => void;
@@ -536,6 +537,7 @@ type QuizPhase = "click" | "name" | null;
 export default function NumberRodsScene({
   playing,
   voiceEnabled,
+  micEnabled = true,
   stageIndex = 0,
   onComplete,
   onStageComplete,
@@ -601,6 +603,9 @@ export default function NumberRodsScene({
   }, [onComplete]);
 
   const startRecognition = useCallback((onFinished: () => void) => {
+    if (!micEnabled) {
+      return false;
+    }
     if (typeof window === "undefined") {
       return false;
     }
@@ -646,7 +651,7 @@ export default function NumberRodsScene({
     recognitionRef.current = recognition;
     recognition.start();
     return true;
-  }, []);
+  }, [micEnabled]);
 
   const handleRodSelect = useCallback(
     (index: number) => {
@@ -719,7 +724,15 @@ export default function NumberRodsScene({
   }, [playing, stageIndex, resetQuizState]);
 
   useEffect(() => {
-    if (currentTarget === null || !voiceEnabled || quizPhase === null) {
+    if (currentTarget === null || quizPhase === null) {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {
+          // ignore
+        }
+        recognitionRef.current = null;
+      }
       return;
     }
     const promptKey = `${quizPhase}-${currentTarget}`;
@@ -729,14 +742,18 @@ export default function NumberRodsScene({
     promptRef.current[promptKey] = true;
 
     if (quizPhase === "click") {
-      speakText(`Can you click on ${rodNames[currentTarget]}?`);
+      if (voiceEnabled) {
+        speakText(`Can you click on ${rodNames[currentTarget]}?`);
+      }
       return;
     }
 
     if (quizPhase === "name") {
       awaitingAnswerRef.current = true;
       setQuizLiftRod(currentTarget);
-      speakText("What is this?");
+      if (voiceEnabled) {
+        speakText(micEnabled ? "What is this?" : `This is ${rodNames[currentTarget]}.`);
+      }
       const advance = () => {
         awaitingAnswerRef.current = false;
         setQuizLiftRod(null);
@@ -765,12 +782,12 @@ export default function NumberRodsScene({
         timeoutRef.current = window.setTimeout(advance, wait);
       };
 
-      const startedRecognition = startRecognition(finishAfterDelay);
+      const startedRecognition = micEnabled ? startRecognition(finishAfterDelay) : false;
       if (!startedRecognition) {
         finishAfterDelay();
       }
     }
-  }, [currentTarget, quizPhase, startRecognition, voiceEnabled, nameOrder.length]);
+  }, [currentTarget, micEnabled, quizPhase, startRecognition, voiceEnabled, nameOrder.length]);
 
   useEffect(() => {
     if (quizPhase !== null) {

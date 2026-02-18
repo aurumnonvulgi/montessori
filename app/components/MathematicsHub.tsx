@@ -58,6 +58,13 @@ const LESSONS = [
     preview: <TeenBoardPreview className="h-full" scene="symbols" />,
     completionKey: "teen-board-symbols-complete",
   },
+  {
+    key: "hundredBoard",
+    label: "Hundred Board",
+    href: "/lessons/hundred-board",
+    preview: <HundredBoardCardPreview />,
+    completionKey: "hundred-board-complete",
+  },
 ];
 
 type CompletionState = Record<string, boolean>;
@@ -82,6 +89,12 @@ export default function MathematicsHub() {
       <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 overflow-x-hidden px-6 py-12 sm:px-10">
         <div className="space-y-3 text-center">
           <h1 className="font-display text-3xl font-semibold text-stone-900">Mathematics</h1>
+          <a
+            href="/dashboard"
+            className="inline-flex items-center justify-center rounded-full border border-sky-200 bg-sky-50 px-4 py-2 text-xs uppercase tracking-[0.3em] text-sky-700"
+          >
+            Activity Dashboard
+          </a>
         </div>
 
         <div className="grid min-w-0 gap-5 lg:grid-cols-2">
@@ -141,6 +154,23 @@ function SandpaperNumeralsCardPreview() {
             </div>
           ))}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function HundredBoardCardPreview() {
+  return (
+    <div className="h-32 w-full overflow-hidden rounded-[24px] border border-stone-200 bg-[radial-gradient(circle_at_top,#f6efe4_0%,#efe3d3_55%,#e6d5bf_100%)] p-3 shadow-inner sm:h-36">
+      <div className="grid h-full grid-cols-5 gap-1.5">
+        {Array.from({ length: 25 }, (_, index) => index + 1).map((value) => (
+          <div
+            key={`hundred-preview-${value}`}
+            className="flex items-center justify-center rounded-md border border-amber-900/20 bg-amber-50/90 text-[10px] font-semibold text-amber-900"
+          >
+            {value}
+          </div>
+        ))}
       </div>
     </div>
   );

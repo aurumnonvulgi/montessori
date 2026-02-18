@@ -14,6 +14,7 @@ import { playChime } from "../lib/sounds";
 type NumeralsAndCountersSceneProps = {
   playing: boolean;
   voiceEnabled: boolean;
+  micEnabled?: boolean;
   stageIndex?: number;
   onComplete?: () => void;
   onStageComplete?: () => void;
@@ -166,6 +167,7 @@ const speakText = (text: string) => {
 type NumeralsAndCountersContentProps = {
   playing: boolean;
   voiceEnabled: boolean;
+  micEnabled?: boolean;
   numerals: number[];
   stageKey: number;
   onComplete?: () => void;
@@ -175,6 +177,7 @@ type NumeralsAndCountersContentProps = {
 function NumeralsAndCountersContent({
   playing,
   voiceEnabled,
+  micEnabled = true,
   numerals,
   stageKey,
   onStageComplete,
@@ -361,6 +364,7 @@ function NumeralsAndCountersContent({
 
   // Start speech recognition for name quiz
   const startRecognition = useCallback((onFinished: () => void) => {
+    if (!micEnabled) return false;
     if (typeof window === "undefined") return false;
 
     const speechWindow = window as Window & {
@@ -400,7 +404,7 @@ function NumeralsAndCountersContent({
     recognitionRef.current = recognition;
     recognition.start();
     return true;
-  }, []);
+  }, [micEnabled]);
 
   // Handle click on card or counter during click quiz
   const handleItemClick = useCallback((numeral: number) => {
@@ -451,7 +455,7 @@ function NumeralsAndCountersContent({
 
   // Voice prompts for quiz phases
   useEffect(() => {
-    if (currentTarget === null || !voiceEnabled || quizPhase === null) {
+    if (currentTarget === null || quizPhase === null) {
       // Stop recognition when quiz phase ends
       if (recognitionRef.current) {
         try {
@@ -469,14 +473,18 @@ function NumeralsAndCountersContent({
     promptRef.current[promptKey] = true;
 
     if (quizPhase === "click") {
-      speakText(`Can you click on ${numberWords[currentTarget - 1]}?`);
+      if (voiceEnabled) {
+        speakText(`Can you click on ${numberWords[currentTarget - 1]}?`);
+      }
       return;
     }
 
     if (quizPhase === "name") {
       awaitingAnswerRef.current = true;
       setQuizLiftCard(currentTarget);
-      speakText("What is this?");
+      if (voiceEnabled) {
+        speakText(micEnabled ? "What is this?" : `This is ${numberWords[currentTarget - 1]}.`);
+      }
 
       const advance = () => {
         awaitingAnswerRef.current = false;
@@ -504,12 +512,12 @@ function NumeralsAndCountersContent({
         timeoutRef.current = window.setTimeout(advance, wait);
       };
 
-      const startedRecognition = startRecognition(finishAfterDelay);
+      const startedRecognition = micEnabled ? startRecognition(finishAfterDelay) : false;
       if (!startedRecognition) {
         finishAfterDelay();
       }
     }
-  }, [currentTarget, quizPhase, voiceEnabled, nameOrder.length, startRecognition]);
+  }, [currentTarget, micEnabled, quizPhase, voiceEnabled, nameOrder.length, startRecognition]);
 
   // Fire onStageComplete when quiz finishes
   useEffect(() => {
@@ -797,6 +805,7 @@ function NumeralsAndCountersContent({
 export default function NumeralsAndCountersScene({
   playing,
   voiceEnabled,
+  micEnabled = true,
   stageIndex = 0,
   onComplete,
   onStageComplete,
@@ -818,6 +827,7 @@ export default function NumeralsAndCountersScene({
         <NumeralsAndCountersContent
           playing={playing}
           voiceEnabled={voiceEnabled}
+          micEnabled={micEnabled}
           numerals={numerals}
           stageKey={stageIndex}
           onComplete={onComplete}
