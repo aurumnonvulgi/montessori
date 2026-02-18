@@ -148,6 +148,13 @@ export default function LilacWordSetLesson({
             feedbackTimerRef.current = window.setTimeout(() => {
               setFeedbackWord(null);
             }, 900);
+            activeWordRef.current = "";
+            setListeningWord(null);
+            try {
+              recognition.stop();
+            } catch {
+              // Ignore browser stop errors.
+            }
           }
         };
 
