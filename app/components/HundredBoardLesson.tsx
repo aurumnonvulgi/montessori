@@ -5,6 +5,7 @@ import { OrbitControls, Text } from "@react-three/drei";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import HomeLink from "./HomeLink";
+import CompletionOverlay from "./CompletionOverlay";
 import { trackLessonEvent } from "../lib/lessonTelemetry";
 import ZoomResetButton from "./ZoomResetButton";
 
@@ -35,11 +36,12 @@ const PLAYMAT_DEPTH = BOARD_SPAN + BOARD_PADDING * 2 + 3.6;
 const PLAYMAT_CENTER_X = BOARD_CENTER_X - 0.45;
 const PLAYMAT_CENTER_Z = BOARD_CENTER_Z;
 
-const RACK_ROW_COUNTS = [3, 3, 3, 1] as const;
+const RACK_ROW_COUNTS = [3, 3, 3] as const;
 const RACK_COL_SPACING = TILE_SIZE + 0.01;
 const RACK_ROW_SPACING = TILE_SIZE + 0.02;
 const RACK_CENTER_X = BOARD_CENTER_X - BOARD_HALF - 0.56;
 const RACK_CENTER_Z = BOARD_CENTER_Z - 0.55;
+const RACK_COLUMN_SHIFT = 1;
 
 const COMPLETION_KEY = "hundred-board-complete";
 
@@ -113,7 +115,9 @@ const rackPositionForIndex = (index: number): [number, number, number] => {
   const rowCount = RACK_ROW_COUNTS[row] ?? 1;
   const rowCenterOffset = (rowCount - 1) / 2;
   const totalRows = RACK_ROW_COUNTS.length;
-  const x = RACK_CENTER_X + (localIndex - rowCenterOffset) * RACK_COL_SPACING;
+  // Shift the rack one column toward the board (easy to revert via RACK_COLUMN_SHIFT).
+  const shiftedIndex = localIndex + RACK_COLUMN_SHIFT;
+  const x = RACK_CENTER_X + (shiftedIndex - rowCenterOffset) * RACK_COL_SPACING;
   const z = RACK_CENTER_Z + (row - (totalRows - 1) / 2) * RACK_ROW_SPACING;
   return [x, TILE_HEIGHT / 2 + 0.006, z];
 };
@@ -397,11 +401,9 @@ function HundredBoardScene({
         );
       })}
 
-      {rackNumbers.map((number, index) => {
-        const isAvailable = availableTiles.includes(number);
-        if (!isAvailable) return null;
-        if (activeTile === number) return null;
-        return (
+      {rackNumbers
+        .filter((number) => availableTiles.includes(number) && activeTile !== number)
+        .map((number, index) => (
           <RackTile
             key={`rack-${number}`}
             number={number}
@@ -409,8 +411,7 @@ function HundredBoardScene({
             shaking={shakingTile === number}
             onGrab={onTileGrab}
           />
-        );
-      })}
+        ))}
 
       {activeTile !== null && pointerPoint ? (
         <NumberTile number={activeTile} position={[pointerPoint.x, ACTIVE_TILE_Y, pointerPoint.z]} ghost />
@@ -420,7 +421,7 @@ function HundredBoardScene({
 }
 
 export default function HundredBoardLesson() {
-  const [slotAssignments, setSlotAssignments] = useState<Record<number, number>>({});
+  const [slotAssignments, setSlotAssignments] = useState<Record<number, number>>({ 1: 1 });
   const [currentBatchStart, setCurrentBatchStart] = useState(1);
   const [activeTile, setActiveTile] = useState<number | null>(null);
   const [hoveredSlot, setHoveredSlot] = useState<number | null>(null);
@@ -428,10 +429,11 @@ export default function HundredBoardLesson() {
   const [correctFlashSlot, setCorrectFlashSlot] = useState<number | null>(null);
   const [wrongFlashSlot, setWrongFlashSlot] = useState<number | null>(null);
   const [shakingTile, setShakingTile] = useState<number | null>(null);
+  const [showBatchCompletion, setShowBatchCompletion] = useState(false);
+  const [completedBatchStart, setCompletedBatchStart] = useState<number | null>(null);
 
   const flashTimerRef = useRef<number | null>(null);
   const shakeTimerRef = useRef<number | null>(null);
-  const autoAdvanceTimerRef = useRef<number | null>(null);
   const completedBatchesRef = useRef<Record<number, true>>({});
   const completionLoggedRef = useRef(false);
   type OrbitControlsHandle = React.ElementRef<typeof OrbitControls>;
@@ -456,6 +458,17 @@ export default function HundredBoardLesson() {
     setRackNumbers(shuffledNumbers(batchNumbers));
   }, [batchNumbers]);
 
+  useEffect(() => {
+    const guideNumber = currentBatchStart;
+    setSlotAssignments((previous) => {
+      if (previous[guideNumber]) return previous;
+      return {
+        ...previous,
+        [guideNumber]: guideNumber,
+      };
+    });
+  }, [currentBatchStart]);
+
   const clearFlashTimer = useCallback(() => {
     if (flashTimerRef.current !== null) {
       window.clearTimeout(flashTimerRef.current);
@@ -467,13 +480,6 @@ export default function HundredBoardLesson() {
     if (shakeTimerRef.current !== null) {
       window.clearTimeout(shakeTimerRef.current);
       shakeTimerRef.current = null;
-    }
-  }, []);
-
-  const clearAutoAdvanceTimer = useCallback(() => {
-    if (autoAdvanceTimerRef.current !== null) {
-      window.clearTimeout(autoAdvanceTimerRef.current);
-      autoAdvanceTimerRef.current = null;
     }
   }, []);
 
@@ -591,6 +597,8 @@ export default function HundredBoardLesson() {
     if (!isBatchComplete) return;
     if (completedBatchesRef.current[currentBatchStart]) return;
     completedBatchesRef.current[currentBatchStart] = true;
+    setCompletedBatchStart(currentBatchStart);
+    setShowBatchCompletion(true);
 
     trackLessonEvent({
       lesson: "mathematics:hundred-board",
@@ -601,17 +609,7 @@ export default function HundredBoardLesson() {
       totalPages: 10,
     });
 
-    if (currentBatchStart >= 91) return;
-    clearAutoAdvanceTimer();
-    autoAdvanceTimerRef.current = window.setTimeout(() => {
-      setCurrentBatchStart((previous) => Math.min(previous + 10, 91));
-      setActiveTile(null);
-      setHoveredSlot(null);
-      setPointerPoint(null);
-    }, 750);
-
-    return () => clearAutoAdvanceTimer();
-  }, [batchIndex, clearAutoAdvanceTimer, currentBatchStart, isBatchComplete]);
+  }, [batchIndex, currentBatchStart, isBatchComplete]);
 
   useEffect(() => {
     if (placedCount < 100) return;
@@ -633,9 +631,8 @@ export default function HundredBoardLesson() {
     return () => {
       clearFlashTimer();
       clearShakeTimer();
-      clearAutoAdvanceTimer();
     };
-  }, [clearAutoAdvanceTimer, clearFlashTimer, clearShakeTimer]);
+  }, [clearFlashTimer, clearShakeTimer]);
 
   const handleTileGrab = (number: number, point: PointerPoint) => {
     if (slotAssignments[number]) return;
@@ -653,7 +650,8 @@ export default function HundredBoardLesson() {
   };
 
   const changeBatch = (nextStart: number) => {
-    clearAutoAdvanceTimer();
+    setShowBatchCompletion(false);
+    setCompletedBatchStart(null);
     setCurrentBatchStart(nextStart);
     setActiveTile(null);
     setHoveredSlot(null);
@@ -662,10 +660,9 @@ export default function HundredBoardLesson() {
   };
 
   const handleResetBoard = () => {
-    clearAutoAdvanceTimer();
     clearFlashTimer();
     clearShakeTimer();
-    setSlotAssignments({});
+    setSlotAssignments({ 1: 1 });
     setCurrentBatchStart(1);
     setActiveTile(null);
     setHoveredSlot(null);
@@ -673,6 +670,8 @@ export default function HundredBoardLesson() {
     setCorrectFlashSlot(null);
     setWrongFlashSlot(null);
     setShakingTile(null);
+    setShowBatchCompletion(false);
+    setCompletedBatchStart(null);
     completedBatchesRef.current = {};
     completionLoggedRef.current = false;
     if (typeof window !== "undefined") {
@@ -696,6 +695,25 @@ export default function HundredBoardLesson() {
     controls.target.set(0.75, 0.02, 0.48);
     controls.update();
   }, []);
+
+  const handleAdvanceBatch = useCallback(() => {
+    if (completedBatchStart === null || completedBatchStart >= 91) {
+      setShowBatchCompletion(false);
+      return;
+    }
+    const nextStart = Math.min(completedBatchStart + 10, 91);
+    setShowBatchCompletion(false);
+    setCompletedBatchStart(null);
+    setCurrentBatchStart(nextStart);
+    setActiveTile(null);
+    setHoveredSlot(null);
+    setPointerPoint(null);
+    setShakingTile(null);
+  }, [completedBatchStart]);
+
+  const completedBatchIndex =
+    completedBatchStart === null ? null : Math.floor((completedBatchStart - 1) / 10) + 1;
+  const isFinalCompletedBatch = completedBatchStart !== null && completedBatchStart >= 91;
 
   return (
     <div className="relative min-h-screen bg-[radial-gradient(circle_at_top,#f5efe6_0%,#fdfbf8_45%,#f7efe4_100%)]">
@@ -793,6 +811,21 @@ export default function HundredBoardLesson() {
           </div>
         </section>
       </main>
+      <CompletionOverlay
+        open={showBatchCompletion}
+        title={isFinalCompletedBatch ? "Lesson Complete" : "Stage Complete"}
+        message={
+          isFinalCompletedBatch
+            ? "Fantastic work. You completed all 100 tiles."
+            : `Batch ${completedBatchIndex ?? batchIndex} complete. Ready for the next 10 numbers.`
+        }
+        primaryAction={
+          isFinalCompletedBatch
+            ? { href: "/lessons/mathematics", label: "Back to Mathematics" }
+            : { onClick: handleAdvanceBatch, label: "Next 10" }
+        }
+        secondaryAction={{ onClick: () => setShowBatchCompletion(false), label: "Stay Here" }}
+      />
     </div>
   );
 }
