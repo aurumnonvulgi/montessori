@@ -68,6 +68,18 @@ const cards = [
       "/assets/language_arts/concept_development/transportation/water---ferry___transportation.png",
     ],
   },
+  {
+    title: "Parts to Whole",
+    description: "Match each part image to the full whole image.",
+    href: "/lessons/language-arts/concept-development/parts-to-whole",
+    accent: "from-amber-100 via-yellow-50 to-amber-50",
+    previewClassName: "bg-amber-50/70",
+    images: [
+      "/assets/language_arts/concept_development/parts-to-whole/butterfly-whole-to-part____parts-to-whole.png",
+      "/assets/language_arts/concept_development/parts-to-whole/giraffe-whole-to-part____parts-to-whole.png",
+      "/assets/language_arts/concept_development/parts-to-whole/tiger-whole-to-part____parts-to-whole.png",
+    ],
+  },
 ];
 
 export default function ConceptDevelopment() {

@@ -96,6 +96,7 @@ export default function MontessoriHome() {
               </p>
             </div>
           </a>
+
         </div>
 
         <div className="mt-6 w-full max-w-5xl">
@@ -144,6 +145,33 @@ export default function MontessoriHome() {
               <MicrophonePrivacyToggle compact />
             </div>
           </section>
+        </div>
+
+        <div className="mt-6 w-full max-w-5xl">
+          <a
+            href="/lessons/development-tools"
+            aria-label="Open Development Tools hub"
+            className={`${CARD_STYLE} block max-w-full`}
+          >
+            <div className="flex flex-col gap-5 sm:gap-8">
+              <h2 className="font-display text-3xl font-semibold text-stone-900">Development Tools</h2>
+              <div className="grid h-48 grid-cols-2 gap-3 rounded-[24px] border border-stone-200 bg-gradient-to-br from-slate-100 via-white to-cyan-50 p-4 shadow-inner">
+                <div className="rounded-2xl border border-cyan-200 bg-cyan-100/70 p-3">
+                  <p className="text-[10px] uppercase tracking-[0.25em] text-cyan-800">3D</p>
+                  <p className="mt-2 text-sm font-semibold text-cyan-900">Playground</p>
+                </div>
+                <div className="rounded-2xl border border-amber-200 bg-amber-100/70 p-3">
+                  <p className="text-[10px] uppercase tracking-[0.25em] text-amber-800">Camera</p>
+                  <p className="mt-2 text-sm font-semibold text-amber-900">Coordinates</p>
+                </div>
+                <div className="col-span-2 rounded-2xl border border-emerald-200 bg-emerald-100/70 p-3">
+                  <p className="text-[10px] uppercase tracking-[0.25em] text-emerald-800">Copy + Share</p>
+                  <p className="mt-2 text-sm font-semibold text-emerald-900">Send exact view values</p>
+                </div>
+              </div>
+              <p className="text-sm text-stone-500">Utilities for dialing in 3D layout and camera settings.</p>
+            </div>
+          </a>
         </div>
       </main>
     </div>

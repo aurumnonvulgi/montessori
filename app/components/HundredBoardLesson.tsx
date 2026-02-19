@@ -36,12 +36,12 @@ const PLAYMAT_DEPTH = BOARD_SPAN + BOARD_PADDING * 2 + 3.6;
 const PLAYMAT_CENTER_X = BOARD_CENTER_X - 0.45;
 const PLAYMAT_CENTER_Z = BOARD_CENTER_Z;
 
-const RACK_ROW_COUNTS = [3, 3, 3] as const;
+const RACK_ROW_COUNTS = [3, 3, 3, 1] as const;
 const RACK_COL_SPACING = TILE_SIZE + 0.01;
 const RACK_ROW_SPACING = TILE_SIZE + 0.02;
-const RACK_CENTER_X = BOARD_CENTER_X - BOARD_HALF - 0.56;
-const RACK_CENTER_Z = BOARD_CENTER_Z - 0.55;
-const RACK_COLUMN_SHIFT = 1;
+const RACK_CENTER_X = BOARD_CENTER_X - BOARD_HALF - 0.72;
+const RACK_CENTER_Z = BOARD_CENTER_Z - 0.56;
+const RACK_COLUMN_SHIFT = 0.15;
 
 const COMPLETION_KEY = "hundred-board-complete";
 
@@ -115,7 +115,7 @@ const rackPositionForIndex = (index: number): [number, number, number] => {
   const rowCount = RACK_ROW_COUNTS[row] ?? 1;
   const rowCenterOffset = (rowCount - 1) / 2;
   const totalRows = RACK_ROW_COUNTS.length;
-  // Shift the rack one column toward the board (easy to revert via RACK_COLUMN_SHIFT).
+  // Fine-tune rack offset so tiles stay close to the board without overlapping it.
   const shiftedIndex = localIndex + RACK_COLUMN_SHIFT;
   const x = RACK_CENTER_X + (shiftedIndex - rowCenterOffset) * RACK_COL_SPACING;
   const z = RACK_CENTER_Z + (row - (totalRows - 1) / 2) * RACK_ROW_SPACING;
@@ -130,6 +130,11 @@ const shuffledNumbers = (values: number[]) => {
   }
   return next;
 };
+
+const delay = (ms: number) =>
+  new Promise<void>((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
 
 type NumberTileProps = {
   number: number;
@@ -213,6 +218,7 @@ type HundredBoardSceneProps = {
   rackNumbers: number[];
   activeTile: number | null;
   availableTiles: number[];
+  hiddenRackNumbers?: number[];
   hoveredSlot: number | null;
   pointerPoint: PointerPoint | null;
   shakingTile: number | null;
@@ -228,6 +234,7 @@ function HundredBoardScene({
   rackNumbers,
   activeTile,
   availableTiles,
+  hiddenRackNumbers = [],
   hoveredSlot,
   pointerPoint,
   shakingTile,
@@ -401,9 +408,11 @@ function HundredBoardScene({
         );
       })}
 
-      {rackNumbers
-        .filter((number) => availableTiles.includes(number) && activeTile !== number)
-        .map((number, index) => (
+      {rackNumbers.map((number, index) => {
+        const isAvailable = availableTiles.includes(number);
+        const isHidden = hiddenRackNumbers.includes(number);
+        if (!isAvailable || isHidden || activeTile === number) return null;
+        return (
           <RackTile
             key={`rack-${number}`}
             number={number}
@@ -411,7 +420,8 @@ function HundredBoardScene({
             shaking={shakingTile === number}
             onGrab={onTileGrab}
           />
-        ))}
+        );
+      })}
 
       {activeTile !== null && pointerPoint ? (
         <NumberTile number={activeTile} position={[pointerPoint.x, ACTIVE_TILE_Y, pointerPoint.z]} ghost />
@@ -421,7 +431,7 @@ function HundredBoardScene({
 }
 
 export default function HundredBoardLesson() {
-  const [slotAssignments, setSlotAssignments] = useState<Record<number, number>>({ 1: 1 });
+  const [slotAssignments, setSlotAssignments] = useState<Record<number, number>>({});
   const [currentBatchStart, setCurrentBatchStart] = useState(1);
   const [activeTile, setActiveTile] = useState<number | null>(null);
   const [hoveredSlot, setHoveredSlot] = useState<number | null>(null);
@@ -431,9 +441,13 @@ export default function HundredBoardLesson() {
   const [shakingTile, setShakingTile] = useState<number | null>(null);
   const [showBatchCompletion, setShowBatchCompletion] = useState(false);
   const [completedBatchStart, setCompletedBatchStart] = useState<number | null>(null);
+  const [introState, setIntroState] = useState<"pending" | "running" | "done">("pending");
+  const [introTilePositions, setIntroTilePositions] = useState<Record<number, [number, number, number]>>({});
 
   const flashTimerRef = useRef<number | null>(null);
   const shakeTimerRef = useRef<number | null>(null);
+  const introAnimationFrameRef = useRef<number | null>(null);
+  const introRunIdRef = useRef(0);
   const completedBatchesRef = useRef<Record<number, true>>({});
   const completionLoggedRef = useRef(false);
   type OrbitControlsHandle = React.ElementRef<typeof OrbitControls>;
@@ -444,7 +458,7 @@ export default function HundredBoardLesson() {
     [currentBatchStart]
   );
   const [rackNumbers, setRackNumbers] = useState<number[]>(() =>
-    shuffledNumbers(Array.from({ length: 10 }, (_, index) => index + 1))
+    [...shuffledNumbers(Array.from({ length: 9 }, (_, index) => index + 2)), 1]
   );
   const batchIndex = useMemo(() => Math.floor((currentBatchStart - 1) / 10) + 1, [currentBatchStart]);
   const availableTiles = useMemo(
@@ -455,11 +469,14 @@ export default function HundredBoardLesson() {
   const isBatchComplete = availableTiles.length === 0;
 
   useEffect(() => {
-    setRackNumbers(shuffledNumbers(batchNumbers));
-  }, [batchNumbers]);
+    const guideNumber = currentBatchStart;
+    const shuffledWithoutGuide = shuffledNumbers(batchNumbers.filter((number) => number !== guideNumber));
+    setRackNumbers([...shuffledWithoutGuide, guideNumber]);
+  }, [batchNumbers, currentBatchStart]);
 
   useEffect(() => {
     const guideNumber = currentBatchStart;
+    if (currentBatchStart === 1 && introState !== "done") return;
     setSlotAssignments((previous) => {
       if (previous[guideNumber]) return previous;
       return {
@@ -467,7 +484,7 @@ export default function HundredBoardLesson() {
         [guideNumber]: guideNumber,
       };
     });
-  }, [currentBatchStart]);
+  }, [currentBatchStart, introState]);
 
   const clearFlashTimer = useCallback(() => {
     if (flashTimerRef.current !== null) {
@@ -480,6 +497,13 @@ export default function HundredBoardLesson() {
     if (shakeTimerRef.current !== null) {
       window.clearTimeout(shakeTimerRef.current);
       shakeTimerRef.current = null;
+    }
+  }, []);
+
+  const clearIntroAnimationFrame = useCallback(() => {
+    if (introAnimationFrameRef.current !== null) {
+      window.cancelAnimationFrame(introAnimationFrameRef.current);
+      introAnimationFrameRef.current = null;
     }
   }, []);
 
@@ -514,6 +538,7 @@ export default function HundredBoardLesson() {
 
   const handleDropAtSlot = useCallback(
     (slot: number | null) => {
+      if (currentBatchStart === 1 && introState !== "done") return;
       if (activeTile === null) return;
 
       if (slot === null) {
@@ -569,7 +594,7 @@ export default function HundredBoardLesson() {
       setHoveredSlot(null);
       setPointerPoint(null);
     },
-    [activeTile, batchIndex, clearShakeTimer, showCorrectFlash, showWrongFlash, slotAssignments]
+    [activeTile, batchIndex, clearShakeTimer, currentBatchStart, introState, showCorrectFlash, showWrongFlash, slotAssignments]
   );
 
   useEffect(() => {
@@ -631,10 +656,185 @@ export default function HundredBoardLesson() {
     return () => {
       clearFlashTimer();
       clearShakeTimer();
+      clearIntroAnimationFrame();
+      introRunIdRef.current += 1;
     };
-  }, [clearFlashTimer, clearShakeTimer]);
+  }, [clearFlashTimer, clearIntroAnimationFrame, clearShakeTimer]);
+
+  const getRackPositionForNumber = useCallback(
+    (number: number): [number, number, number] | null => {
+      const rackIndex = rackNumbers.indexOf(number);
+      if (rackIndex < 0) return null;
+      return rackPositionForIndex(rackIndex);
+    },
+    [rackNumbers]
+  );
+
+  const animateIntroTile = useCallback(
+    (
+      number: number,
+      from: [number, number, number],
+      to: [number, number, number],
+      runId: number,
+      duration = 720,
+      arcHeight = 0.34
+    ) =>
+      new Promise<void>((resolve) => {
+        const start = performance.now();
+        const step = (now: number) => {
+          if (introRunIdRef.current !== runId) {
+            resolve();
+            return;
+          }
+
+          const elapsed = now - start;
+          const rawProgress = Math.min(elapsed / duration, 1);
+          const easedProgress = 1 - (1 - rawProgress) ** 3;
+          const arc = Math.sin(Math.PI * rawProgress) * arcHeight;
+          const x = from[0] + (to[0] - from[0]) * easedProgress;
+          const y = from[1] + (to[1] - from[1]) * easedProgress + arc;
+          const z = from[2] + (to[2] - from[2]) * easedProgress;
+          setIntroTilePositions((previous) => ({
+            ...previous,
+            [number]: [x, y, z],
+          }));
+
+          if (rawProgress >= 1) {
+            introAnimationFrameRef.current = null;
+            resolve();
+            return;
+          }
+
+          introAnimationFrameRef.current = window.requestAnimationFrame(step);
+        };
+
+        clearIntroAnimationFrame();
+        introAnimationFrameRef.current = window.requestAnimationFrame(step);
+      }),
+    [clearIntroAnimationFrame]
+  );
+
+  const runIntroDemo = useCallback(async () => {
+    if (introState !== "pending") return;
+    const runId = introRunIdRef.current + 1;
+    introRunIdRef.current = runId;
+    setIntroState("running");
+    setShowBatchCompletion(false);
+    setCompletedBatchStart(null);
+    setActiveTile(null);
+    setHoveredSlot(null);
+    setPointerPoint(null);
+    setShakingTile(null);
+    setCorrectFlashSlot(null);
+    setWrongFlashSlot(null);
+
+    const rackOne = getRackPositionForNumber(1);
+    const rackTwo = getRackPositionForNumber(2);
+    const rackThree = getRackPositionForNumber(3);
+    if (!rackOne || !rackTwo || !rackThree) {
+      setIntroState("done");
+      setSlotAssignments((previous) => ({ ...previous, 1: 1 }));
+      setIntroTilePositions({});
+      return;
+    }
+
+    const slotOne = slotInfoFromNumber(1);
+    const slotTwo = slotInfoFromNumber(2);
+    const slotThree = slotInfoFromNumber(3);
+    const boardOne: [number, number, number] = [slotOne.centerX, PLACED_TILE_Y, slotOne.centerZ];
+    const boardTwo: [number, number, number] = [slotTwo.centerX, PLACED_TILE_Y, slotTwo.centerZ];
+    const boardThree: [number, number, number] = [slotThree.centerX, PLACED_TILE_Y, slotThree.centerZ];
+
+    setIntroTilePositions({
+      1: rackOne,
+      2: rackTwo,
+      3: rackThree,
+    });
+
+    await animateIntroTile(1, rackOne, boardOne, runId, 860, 0.4);
+    if (introRunIdRef.current !== runId) return;
+    setSlotAssignments((previous) => ({ ...previous, 1: 1 }));
+    setIntroTilePositions((previous) => {
+      const next = { ...previous };
+      delete next[1];
+      return next;
+    });
+    showCorrectFlash(1);
+    await delay(200);
+    if (introRunIdRef.current !== runId) return;
+
+    await animateIntroTile(2, rackTwo, boardTwo, runId, 760, 0.33);
+    if (introRunIdRef.current !== runId) return;
+    setSlotAssignments((previous) => ({ ...previous, 2: 2 }));
+    setIntroTilePositions((previous) => {
+      const next = { ...previous };
+      delete next[2];
+      return next;
+    });
+    showCorrectFlash(2);
+    await delay(180);
+    if (introRunIdRef.current !== runId) return;
+
+    await animateIntroTile(3, rackThree, boardThree, runId, 760, 0.33);
+    if (introRunIdRef.current !== runId) return;
+    setSlotAssignments((previous) => ({ ...previous, 3: 3 }));
+    setIntroTilePositions((previous) => {
+      const next = { ...previous };
+      delete next[3];
+      return next;
+    });
+    showCorrectFlash(3);
+
+    await delay(2000);
+    if (introRunIdRef.current !== runId) return;
+
+    setSlotAssignments((previous) => {
+      const next = { ...previous };
+      delete next[3];
+      return next;
+    });
+    setIntroTilePositions((previous) => ({
+      ...previous,
+      3: boardThree,
+    }));
+    await animateIntroTile(3, boardThree, rackThree, runId, 700, 0.28);
+    if (introRunIdRef.current !== runId) return;
+    setIntroTilePositions((previous) => {
+      const next = { ...previous };
+      delete next[3];
+      return next;
+    });
+
+    setSlotAssignments((previous) => {
+      const next = { ...previous };
+      delete next[2];
+      return next;
+    });
+    setIntroTilePositions((previous) => ({
+      ...previous,
+      2: boardTwo,
+    }));
+    await animateIntroTile(2, boardTwo, rackTwo, runId, 700, 0.28);
+    if (introRunIdRef.current !== runId) return;
+    setIntroTilePositions((previous) => {
+      const next = { ...previous };
+      delete next[2];
+      return next;
+    });
+
+    setIntroState("done");
+    trackLessonEvent({
+      lesson: "mathematics:hundred-board",
+      activity: "batch-1",
+      event: "intro_completed",
+      success: true,
+      page: 1,
+      totalPages: 10,
+    });
+  }, [animateIntroTile, getRackPositionForNumber, introState, showCorrectFlash]);
 
   const handleTileGrab = (number: number, point: PointerPoint) => {
+    if (currentBatchStart === 1 && introState !== "done") return;
     if (slotAssignments[number]) return;
     setActiveTile(number);
     setPointerPoint(point);
@@ -650,6 +850,14 @@ export default function HundredBoardLesson() {
   };
 
   const changeBatch = (nextStart: number) => {
+    introRunIdRef.current += 1;
+    clearIntroAnimationFrame();
+    setIntroTilePositions({});
+    if (nextStart !== 1) {
+      setIntroState("done");
+    } else {
+      setIntroState(slotAssignments[1] ? "done" : "pending");
+    }
     setShowBatchCompletion(false);
     setCompletedBatchStart(null);
     setCurrentBatchStart(nextStart);
@@ -660,9 +868,11 @@ export default function HundredBoardLesson() {
   };
 
   const handleResetBoard = () => {
+    introRunIdRef.current += 1;
+    clearIntroAnimationFrame();
     clearFlashTimer();
     clearShakeTimer();
-    setSlotAssignments({ 1: 1 });
+    setSlotAssignments({});
     setCurrentBatchStart(1);
     setActiveTile(null);
     setHoveredSlot(null);
@@ -670,6 +880,8 @@ export default function HundredBoardLesson() {
     setCorrectFlashSlot(null);
     setWrongFlashSlot(null);
     setShakingTile(null);
+    setIntroTilePositions({});
+    setIntroState("pending");
     setShowBatchCompletion(false);
     setCompletedBatchStart(null);
     completedBatchesRef.current = {};
@@ -689,10 +901,10 @@ export default function HundredBoardLesson() {
     const controls = controlsRef.current;
     if (!controls) return;
     const camera = controls.object as THREE.PerspectiveCamera;
-    camera.position.set(0.95, 1.8, 6.05);
-    camera.fov = 48;
+    camera.position.set(0.95, 2.35, 5.85);
+    camera.fov = 47;
     camera.updateProjectionMatrix();
-    controls.target.set(0.75, 0.02, 0.48);
+    controls.target.set(0.75, 0.02, 0.3);
     controls.update();
   }, []);
 
@@ -702,6 +914,12 @@ export default function HundredBoardLesson() {
       return;
     }
     const nextStart = Math.min(completedBatchStart + 10, 91);
+    introRunIdRef.current += 1;
+    clearIntroAnimationFrame();
+    setIntroTilePositions({});
+    if (nextStart !== 1) {
+      setIntroState("done");
+    }
     setShowBatchCompletion(false);
     setCompletedBatchStart(null);
     setCurrentBatchStart(nextStart);
@@ -709,11 +927,12 @@ export default function HundredBoardLesson() {
     setHoveredSlot(null);
     setPointerPoint(null);
     setShakingTile(null);
-  }, [completedBatchStart]);
+  }, [clearIntroAnimationFrame, completedBatchStart]);
 
   const completedBatchIndex =
     completedBatchStart === null ? null : Math.floor((completedBatchStart - 1) / 10) + 1;
   const isFinalCompletedBatch = completedBatchStart !== null && completedBatchStart >= 91;
+  const introLocked = currentBatchStart === 1 && introState !== "done";
 
   return (
     <div className="relative min-h-screen bg-[radial-gradient(circle_at_top,#f5efe6_0%,#fdfbf8_45%,#f7efe4_100%)]">
@@ -729,9 +948,9 @@ export default function HundredBoardLesson() {
           <div className="relative h-[720px] overflow-hidden rounded-[30px] border border-stone-200 bg-[#efe6d8]">
             <Canvas
               shadows
-              camera={{ position: [0.95, 1.8, 6.05], fov: 48 }}
+              camera={{ position: [0.95, 2.35, 5.85], fov: 47 }}
               onCreated={({ camera }) => {
-                camera.lookAt(0.75, 0.02, 0.48);
+                camera.lookAt(0.75, 0.02, 0.3);
               }}
             >
               <HundredBoardScene
@@ -739,6 +958,7 @@ export default function HundredBoardLesson() {
                 rackNumbers={rackNumbers}
                 activeTile={activeTile}
                 availableTiles={availableTiles}
+                hiddenRackNumbers={Object.keys(introTilePositions).map((value) => Number(value))}
                 hoveredSlot={hoveredSlot}
                 pointerPoint={pointerPoint}
                 shakingTile={shakingTile}
@@ -748,18 +968,21 @@ export default function HundredBoardLesson() {
                 onHoverChange={handleHoverChange}
                 onDropAtSlot={handleDropAtSlot}
               />
+              {Object.entries(introTilePositions).map(([number, position]) => (
+                <NumberTile key={`intro-${number}`} number={Number(number)} position={position} tone="rack" />
+              ))}
               <OrbitControls
                 ref={controlsRef}
                 enablePan
                 enableZoom
-                enableRotate={activeTile === null}
+                enableRotate={activeTile === null && introState !== "running"}
                 minPolarAngle={Math.PI / 4.2}
                 maxPolarAngle={Math.PI / 2.05}
                 minAzimuthAngle={-Math.PI / 2.4}
                 maxAzimuthAngle={Math.PI / 2.2}
                 minDistance={4.7}
                 maxDistance={8.8}
-                target={[0.75, 0.02, 0.48]}
+                target={[0.75, 0.02, 0.3]}
                 mouseButtons={{
                   LEFT: THREE.MOUSE.ROTATE,
                   MIDDLE: THREE.MOUSE.DOLLY,
@@ -772,6 +995,25 @@ export default function HundredBoardLesson() {
               />
             </Canvas>
             <ZoomResetButton onClick={handleZoomReset} />
+            {currentBatchStart === 1 && introState === "pending" ? (
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                <div className="pointer-events-auto rounded-2xl border border-emerald-200 bg-white/95 px-6 py-5 text-center shadow-xl">
+                  <p className="text-lg font-bold uppercase tracking-[0.18em] text-emerald-700">Hundred Board Lesson</p>
+                  <button
+                    type="button"
+                    onClick={runIntroDemo}
+                    className="mt-4 rounded-full bg-emerald-600 px-5 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-white transition hover:bg-emerald-700"
+                  >
+                    Start Lesson
+                  </button>
+                </div>
+              </div>
+            ) : null}
+            {currentBatchStart === 1 && introState === "running" ? (
+              <div className="pointer-events-none absolute left-1/2 top-4 -translate-x-1/2 rounded-full border border-emerald-200 bg-white/95 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-700 shadow">
+                Lesson Demo Running
+              </div>
+            ) : null}
           </div>
 
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-stone-200 bg-white/90 px-4 py-3">
@@ -787,7 +1029,7 @@ export default function HundredBoardLesson() {
               <button
                 type="button"
                 onClick={() => changeBatch(Math.max(1, currentBatchStart - 10))}
-                disabled={currentBatchStart <= 1}
+                disabled={currentBatchStart <= 1 || introLocked}
                 className="rounded-full border border-stone-300 bg-stone-50 px-4 py-2 text-xs uppercase tracking-[0.24em] text-stone-700 disabled:opacity-35"
               >
                 Prev 10
@@ -795,7 +1037,7 @@ export default function HundredBoardLesson() {
               <button
                 type="button"
                 onClick={() => changeBatch(Math.min(91, currentBatchStart + 10))}
-                disabled={currentBatchStart >= 91}
+                disabled={currentBatchStart >= 91 || introLocked}
                 className="rounded-full border border-stone-300 bg-stone-50 px-4 py-2 text-xs uppercase tracking-[0.24em] text-stone-700 disabled:opacity-35"
               >
                 Next 10
@@ -803,7 +1045,8 @@ export default function HundredBoardLesson() {
               <button
                 type="button"
                 onClick={handleResetBoard}
-                className="rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-xs uppercase tracking-[0.24em] text-rose-700"
+                disabled={introState === "running"}
+                className="rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-xs uppercase tracking-[0.24em] text-rose-700 disabled:opacity-35"
               >
                 Reset Board
               </button>

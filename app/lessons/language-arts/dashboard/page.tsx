@@ -521,6 +521,12 @@ export default function LanguageArtsDashboardPage() {
         href: "/lessons/language-arts/concept-development/transportation",
         lesson: "language-arts:concept-development-transportation",
       },
+      {
+        key: "concept-parts-to-whole",
+        label: "Parts to Whole",
+        href: "/lessons/language-arts/concept-development/parts-to-whole",
+        lesson: "language-arts:concept-development-parts-to-whole",
+      },
     ] as const;
 
     return activities.map((activity) => {
