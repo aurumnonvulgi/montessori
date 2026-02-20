@@ -899,7 +899,7 @@ export default function MoveableAlphabet() {
             : `Great work on vowel ${activeVowel.toUpperCase()}.`
         }
         primaryAction={completionSteps.nextInSeries ?? completionSteps.nextMaterial}
-        secondaryAction={{ href: "/lessons/language-arts/phonics", label: "Back to Phonics" }}
+        secondaryAction={{ href: "/lessons/language-arts/phonics", label: "Back to Phonics | Pink Series" }}
       />
     </div>
   );

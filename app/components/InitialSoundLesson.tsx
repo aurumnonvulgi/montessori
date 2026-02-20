@@ -24,11 +24,28 @@ type InitialSoundLessonProps = {
   slides?: InitialSoundSlide[];
   groupLabel?: string;
   groupSlug?: string;
+  telemetryPageOffset?: number;
+  telemetryTotalPages?: number;
 };
 
-export default function InitialSoundLesson({ slides: slidesProp, groupLabel, groupSlug }: InitialSoundLessonProps) {
+export default function InitialSoundLesson({
+  slides: slidesProp,
+  groupLabel,
+  groupSlug,
+  telemetryPageOffset,
+  telemetryTotalPages,
+}: InitialSoundLessonProps) {
   const slides = useMemo(() => (slidesProp && slidesProp.length ? slidesProp : DEFAULT_SLIDES), [slidesProp]);
   const activityKey = groupSlug ? `group-${groupSlug}` : "group-default";
+  const trackedPageOffset = Math.max(0, Math.floor(telemetryPageOffset ?? 0));
+  const trackedTotalPages = Math.max(
+    slides.length,
+    Math.floor(telemetryTotalPages ?? slides.length)
+  );
+  const toTrackedPage = (index: number) => {
+    const page = trackedPageOffset + index + 1;
+    return Math.min(trackedTotalPages, Math.max(1, page));
+  };
   const [scaled, setScaled] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [voiceIndex, setVoiceIndex] = useState(0);
@@ -62,8 +79,8 @@ export default function InitialSoundLesson({ slides: slidesProp, groupLabel, gro
       lesson: "language-arts:initial-sound-cards",
       activity: activityKey,
       event: "slide_viewed",
-      page: index + 1,
-      totalPages: slides.length,
+      page: toTrackedPage(index),
+      totalPages: trackedTotalPages,
       value: slides[index].word,
     });
     setScaled(true);
@@ -79,19 +96,19 @@ export default function InitialSoundLesson({ slides: slidesProp, groupLabel, gro
             activity: activityKey,
             event: "lesson_completed",
             success: true,
-            page: slides.length,
-            totalPages: slides.length,
+            page: toTrackedPage(index),
+            totalPages: trackedTotalPages,
             value: slides[index].word,
           });
           setIsPlaying(false);
         } else {
           const nextIndex = index + 1;
           setActiveIndex(nextIndex);
-        sequenceTimeouts.current.push(
-          window.setTimeout(() => {
-            playSlide(nextIndex);
-          }, 1200)
-        );
+          sequenceTimeouts.current.push(
+            window.setTimeout(() => {
+              playSlide(nextIndex);
+            }, 1200)
+          );
         }
       }, 4000)
     );
@@ -102,12 +119,12 @@ export default function InitialSoundLesson({ slides: slidesProp, groupLabel, gro
       lesson: "language-arts:initial-sound-cards",
       activity: activityKey,
       event: "lesson_opened",
-      totalPages: slides.length,
+      totalPages: trackedTotalPages,
       details: {
         groupLabel,
       },
     });
-  }, [activityKey, groupLabel, slides.length]);
+  }, [activityKey, groupLabel, trackedTotalPages]);
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
@@ -144,8 +161,8 @@ export default function InitialSoundLesson({ slides: slidesProp, groupLabel, gro
         lesson: "language-arts:initial-sound-cards",
         activity: activityKey,
         event: "lesson_started",
-        page: activeIndex + 1,
-        totalPages: slides.length,
+        page: toTrackedPage(activeIndex),
+        totalPages: trackedTotalPages,
       });
       setIsPlaying(true);
       playSlide(activeIndex);

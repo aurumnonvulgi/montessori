@@ -766,7 +766,7 @@ export default function PhonicThreePartCardsLabelsLesson() {
             : `Great work on vowel ${vowel.toUpperCase()}.`
         }
         primaryAction={completionSteps.nextInSeries ?? completionSteps.nextMaterial}
-        secondaryAction={{ href: "/lessons/language-arts/phonics", label: "Back to Phonics" }}
+        secondaryAction={{ href: "/lessons/language-arts/phonics", label: "Back to Phonics | Pink Series" }}
       />
     </div>
   );

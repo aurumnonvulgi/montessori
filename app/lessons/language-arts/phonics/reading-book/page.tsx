@@ -75,7 +75,7 @@ const BOOK_PAGES = [
 ];
 
 const COVER_TITLE = "Booklets Cartoon Images";
-const COVER_SUBTITLE = "Phonics";
+const COVER_SUBTITLE = "Phonics | Pink Series";
 const BOOKLET_SPEED_OPTIONS = [
   { value: 0.9, label: "Normal" },
   { value: 0.8, label: "Slower" },
@@ -618,7 +618,7 @@ export default function PhonicsReadingBook() {
       <HomeLink onClick={handleBookHome} />
       <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-10 px-6 py-10">
         <header className="space-y-3 text-center md:space-y-3">
-          <p className="hidden text-xs uppercase tracking-[0.35em] text-stone-400 md:block">Language Arts · Phonics</p>
+          <p className="hidden text-xs uppercase tracking-[0.35em] text-stone-400 md:block">Language Arts · Phonics | Pink Series</p>
           <h1 className="hidden font-display text-4xl font-semibold text-stone-900 md:block">Booklets Cartoon Images</h1>
           <p className="hidden text-sm text-stone-600 md:block">Choose a letter book and read along.</p>
         </header>
@@ -991,7 +991,7 @@ export default function PhonicsReadingBook() {
               }
             : completionSteps?.nextMaterial
         }
-        secondaryAction={{ href: "/lessons/language-arts/phonics", label: "Back to Phonics" }}
+        secondaryAction={{ href: "/lessons/language-arts/phonics", label: "Back to Phonics | Pink Series" }}
       />
     </div>
   );

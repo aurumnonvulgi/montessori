@@ -39,9 +39,24 @@ const PLAYMAT_CENTER_Z = BOARD_CENTER_Z;
 const RACK_ROW_COUNTS = [3, 3, 3, 1] as const;
 const RACK_COL_SPACING = TILE_SIZE + 0.01;
 const RACK_ROW_SPACING = TILE_SIZE + 0.02;
-const RACK_CENTER_X = BOARD_CENTER_X - BOARD_HALF - 0.72;
+// Shift the rack one board-slot closer to the board.
+const RACK_CENTER_X = BOARD_CENTER_X - BOARD_HALF - 0.24;
 const RACK_CENTER_Z = BOARD_CENTER_Z - 0.56;
 const RACK_COLUMN_SHIFT = 0.15;
+const SCATTER_CLUSTER_X = BOARD_CENTER_X - BOARD_HALF - 1.34;
+const SCATTER_CLUSTER_Z = BOARD_CENTER_Z - BOARD_HALF - 1.02;
+const SCATTER_OFFSETS: Array<[number, number]> = [
+  [0.0, 0.0],
+  [0.22, 0.08],
+  [-0.2, 0.06],
+  [0.36, 0.18],
+  [-0.34, 0.14],
+  [0.12, 0.27],
+  [-0.08, 0.24],
+  [0.42, 0.3],
+  [-0.28, 0.33],
+  [0.04, 0.4],
+];
 
 const COMPLETION_KEY = "hundred-board-complete";
 
@@ -120,6 +135,12 @@ const rackPositionForIndex = (index: number): [number, number, number] => {
   const x = RACK_CENTER_X + (shiftedIndex - rowCenterOffset) * RACK_COL_SPACING;
   const z = RACK_CENTER_Z + (row - (totalRows - 1) / 2) * RACK_ROW_SPACING;
   return [x, TILE_HEIGHT / 2 + 0.006, z];
+};
+
+const scatterPositionForIndex = (index: number): [number, number, number] => {
+  const [offsetX, offsetZ] = SCATTER_OFFSETS[index % SCATTER_OFFSETS.length] ?? [0, 0];
+  const yJitter = (index % 3) * 0.002;
+  return [SCATTER_CLUSTER_X + offsetX, TILE_HEIGHT / 2 + 0.006 + yJitter, SCATTER_CLUSTER_Z + offsetZ];
 };
 
 const shuffledNumbers = (values: number[]) => {
@@ -224,6 +245,7 @@ type HundredBoardSceneProps = {
   shakingTile: number | null;
   correctFlashSlot: number | null;
   wrongFlashSlot: number | null;
+  rackMode?: "stacked" | "scatter";
   onTileGrab: (number: number, point: PointerPoint) => void;
   onHoverChange: (slot: number | null, point: PointerPoint | null) => void;
   onDropAtSlot: (slot: number | null) => void;
@@ -240,6 +262,7 @@ function HundredBoardScene({
   shakingTile,
   correctFlashSlot,
   wrongFlashSlot,
+  rackMode = "stacked",
   onTileGrab,
   onHoverChange,
   onDropAtSlot,
@@ -416,7 +439,7 @@ function HundredBoardScene({
           <RackTile
             key={`rack-${number}`}
             number={number}
-            position={rackPositionForIndex(index)}
+            position={rackMode === "scatter" ? scatterPositionForIndex(index) : rackPositionForIndex(index)}
             shaking={shakingTile === number}
             onGrab={onTileGrab}
           />
@@ -670,6 +693,15 @@ export default function HundredBoardLesson() {
     [rackNumbers]
   );
 
+  const getScatterPositionForNumber = useCallback(
+    (number: number): [number, number, number] | null => {
+      const rackIndex = rackNumbers.indexOf(number);
+      if (rackIndex < 0) return null;
+      return scatterPositionForIndex(rackIndex);
+    },
+    [rackNumbers]
+  );
+
   const animateIntroTile = useCallback(
     (
       number: number,
@@ -728,10 +760,13 @@ export default function HundredBoardLesson() {
     setCorrectFlashSlot(null);
     setWrongFlashSlot(null);
 
+    const scatterOne = getScatterPositionForNumber(1);
+    const scatterTwo = getScatterPositionForNumber(2);
+    const scatterThree = getScatterPositionForNumber(3);
     const rackOne = getRackPositionForNumber(1);
     const rackTwo = getRackPositionForNumber(2);
     const rackThree = getRackPositionForNumber(3);
-    if (!rackOne || !rackTwo || !rackThree) {
+    if (!scatterOne || !scatterTwo || !scatterThree || !rackOne || !rackTwo || !rackThree) {
       setIntroState("done");
       setSlotAssignments((previous) => ({ ...previous, 1: 1 }));
       setIntroTilePositions({});
@@ -746,12 +781,12 @@ export default function HundredBoardLesson() {
     const boardThree: [number, number, number] = [slotThree.centerX, PLACED_TILE_Y, slotThree.centerZ];
 
     setIntroTilePositions({
-      1: rackOne,
-      2: rackTwo,
-      3: rackThree,
+      1: scatterOne,
+      2: scatterTwo,
+      3: scatterThree,
     });
 
-    await animateIntroTile(1, rackOne, boardOne, runId, 860, 0.4);
+    await animateIntroTile(1, scatterOne, boardOne, runId, 860, 0.4);
     if (introRunIdRef.current !== runId) return;
     setSlotAssignments((previous) => ({ ...previous, 1: 1 }));
     setIntroTilePositions((previous) => {
@@ -763,7 +798,7 @@ export default function HundredBoardLesson() {
     await delay(200);
     if (introRunIdRef.current !== runId) return;
 
-    await animateIntroTile(2, rackTwo, boardTwo, runId, 760, 0.33);
+    await animateIntroTile(2, scatterTwo, boardTwo, runId, 760, 0.33);
     if (introRunIdRef.current !== runId) return;
     setSlotAssignments((previous) => ({ ...previous, 2: 2 }));
     setIntroTilePositions((previous) => {
@@ -775,7 +810,7 @@ export default function HundredBoardLesson() {
     await delay(180);
     if (introRunIdRef.current !== runId) return;
 
-    await animateIntroTile(3, rackThree, boardThree, runId, 760, 0.33);
+    await animateIntroTile(3, scatterThree, boardThree, runId, 760, 0.33);
     if (introRunIdRef.current !== runId) return;
     setSlotAssignments((previous) => ({ ...previous, 3: 3 }));
     setIntroTilePositions((previous) => {
@@ -831,7 +866,7 @@ export default function HundredBoardLesson() {
       page: 1,
       totalPages: 10,
     });
-  }, [animateIntroTile, getRackPositionForNumber, introState, showCorrectFlash]);
+  }, [animateIntroTile, getRackPositionForNumber, getScatterPositionForNumber, introState, showCorrectFlash]);
 
   const handleTileGrab = (number: number, point: PointerPoint) => {
     if (currentBatchStart === 1 && introState !== "done") return;
@@ -901,7 +936,7 @@ export default function HundredBoardLesson() {
     const controls = controlsRef.current;
     if (!controls) return;
     const camera = controls.object as THREE.PerspectiveCamera;
-    camera.position.set(0.95, 2.35, 5.85);
+    camera.position.set(0.95, 5.731, 5.85);
     camera.fov = 47;
     camera.updateProjectionMatrix();
     controls.target.set(0.75, 0.02, 0.3);
@@ -948,7 +983,7 @@ export default function HundredBoardLesson() {
           <div className="relative h-[720px] overflow-hidden rounded-[30px] border border-stone-200 bg-[#efe6d8]">
             <Canvas
               shadows
-              camera={{ position: [0.95, 2.35, 5.85], fov: 47 }}
+              camera={{ position: [0.95, 5.731, 5.85], fov: 47 }}
               onCreated={({ camera }) => {
                 camera.lookAt(0.75, 0.02, 0.3);
               }}
@@ -964,6 +999,7 @@ export default function HundredBoardLesson() {
                 shakingTile={shakingTile}
                 correctFlashSlot={correctFlashSlot}
                 wrongFlashSlot={wrongFlashSlot}
+                rackMode={currentBatchStart === 1 && introState === "pending" ? "scatter" : "stacked"}
                 onTileGrab={handleTileGrab}
                 onHoverChange={handleHoverChange}
                 onDropAtSlot={handleDropAtSlot}

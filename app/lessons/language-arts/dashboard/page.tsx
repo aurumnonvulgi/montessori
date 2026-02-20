@@ -545,7 +545,7 @@ export default function LanguageArtsDashboardPage() {
   const initialSoundPercent = averagePercent(initialSoundGroupItems);
   const conceptDevelopmentPercent = averagePercent(conceptDevelopmentItems);
   const languagePercent = averagePercent([
-    { key: "lang-phonics", label: "Phonics", percent: phonicsPercent, status: "", detail: "" },
+    { key: "lang-phonics", label: "Phonics | Pink Series", percent: phonicsPercent, status: "", detail: "" },
     { key: "lang-lilac", label: "Lilac", percent: lilacPercent, status: "", detail: "" },
     { key: "lang-initial", label: "Initial Sound", percent: initialSoundPercent, status: "", detail: "" },
     { key: "lang-concept", label: "Concept Development", percent: conceptDevelopmentPercent, status: "", detail: "" },
@@ -652,7 +652,7 @@ export default function LanguageArtsDashboardPage() {
           onToggle={() => setOpenCategory((prev) => ({ ...prev, language: !prev.language }))}
         >
           <OpenCard
-            title="Phonics"
+            title="Phonics | Pink Series"
             subtitle={toStatus(phonicsPercent)}
             percent={phonicsPercent}
             color="#0369a1"
@@ -660,7 +660,7 @@ export default function LanguageArtsDashboardPage() {
             onToggle={() => setOpenCategory((prev) => ({ ...prev, phonics: !prev.phonics }))}
           >
             <div className="rounded-2xl border border-sky-200 bg-gradient-to-br from-sky-50 via-indigo-50 to-blue-50 p-4">
-              <p className="mb-3 text-xs uppercase tracking-[0.28em] text-sky-700">All Phonics Metrics</p>
+              <p className="mb-3 text-xs uppercase tracking-[0.28em] text-sky-700">All Phonics | Pink Series Metrics</p>
               <div className="grid gap-3 lg:grid-cols-2">
                 {phonicsActivities.map((activity) => (
                   <ActivityCard key={activity.key} item={activity} color="#0284c7" />

@@ -95,7 +95,7 @@ export default function LanguageArtsHub() {
           >
             <div className="flex items-center gap-3">
               <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-pink-300 bg-pink-100 text-xl font-semibold text-pink-700">📁</span>
-              <h2 className="font-display text-2xl font-semibold text-stone-900">Phonics</h2>
+              <h2 className="font-display text-2xl font-semibold text-stone-900">Phonics | Pink Series</h2>
             </div>
             <ImageGridPreview images={phonicsImages} className="bg-pink-50/70" />
             <p className="text-xs uppercase tracking-[0.35em] text-pink-700">Moveable alphabet + labels</p>

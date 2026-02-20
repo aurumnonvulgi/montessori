@@ -67,8 +67,8 @@ export default function PhonicsHub() {
       <HomeLink onClick={() => router.push("/lessons/language-arts")} />
       <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-6 py-10">
         <header className="space-y-3 text-center">
-          <p className="text-xs uppercase tracking-[0.35em] text-stone-400">Language Arts · Phonics</p>
-          <h1 className="font-display text-4xl font-semibold text-stone-900">Phonics</h1>
+          <p className="text-xs uppercase tracking-[0.35em] text-stone-400">Language Arts · Phonics | Pink Series</p>
+          <h1 className="font-display text-4xl font-semibold text-stone-900">Phonics | Pink Series</h1>
           <p className="text-sm text-stone-600">Choose a phonics material to continue.</p>
         </header>
         <div className="grid gap-6 md:grid-cols-2">

@@ -11,6 +11,13 @@ export type InitialSoundGroup = {
   slides: InitialSoundSlide[];
 };
 
+export type InitialSoundLetterSet = {
+  letter: string;
+  slides: InitialSoundSlide[];
+  // 0-based index into group.slides where this letter's sequence starts.
+  offset: number;
+};
+
 const A_SLIDES: InitialSoundSlide[] = [
   { word: "alligator", image: "/assets/language_arts/initial_sound/Initial Sound - A/a---alligator___initial_sound-20260209_185322-1.png" },
   { word: "ambulance", image: "/assets/language_arts/initial_sound/Initial Sound - A/a---ambulance___initial_sound-20260209_185755-1.png" },
@@ -113,7 +120,6 @@ const L_SLIDES: InitialSoundSlide[] = [
 const M_SLIDES: InitialSoundSlide[] = [
   { word: "map", image: "/assets/language_arts/initial_sound/Initial Sound - M/m---map___initial_sound.png" },
   { word: "milk", image: "/assets/language_arts/initial_sound/Initial Sound - M/m---milk___initial_sound.png" },
-  { word: "mix", image: "/assets/language_arts/initial_sound/Initial Sound - M/m---mix___initial_sound.png" },
   { word: "monkey", image: "/assets/language_arts/initial_sound/Initial Sound - M/m---monkey___initial_sound.png" },
   { word: "moon", image: "/assets/language_arts/initial_sound/Initial Sound - M/m---moon___initial_sound.png" },
   { word: "mouse", image: "/assets/language_arts/initial_sound/Initial Sound - M/m---mouse___initial_sound.png" },
@@ -274,3 +280,27 @@ export const initialSoundGroups: InitialSoundGroup[] = [
     slides: [...U_SLIDES, ...QU_SLIDES, ...V_SLIDES, ...Y_SLIDES, ...Z_SLIDES],
   },
 ];
+
+const normalizeLetterKey = (word: string) => {
+  const lower = word.toLowerCase();
+  if (lower.startsWith("qu")) return "qu";
+  return lower.charAt(0);
+};
+
+export const getInitialSoundLetterSets = (group: InitialSoundGroup): InitialSoundLetterSet[] => {
+  return group.letters.map((letter) => {
+    const normalizedLetter = letter.toLowerCase();
+    const slides = group.slides.filter((slide) => normalizeLetterKey(slide.word) === normalizedLetter);
+    const offset = group.slides.findIndex((slide) => normalizeLetterKey(slide.word) === normalizedLetter);
+    return {
+      letter: normalizedLetter,
+      slides,
+      offset: offset >= 0 ? offset : 0,
+    };
+  });
+};
+
+export const getInitialSoundLetterSet = (group: InitialSoundGroup, letter: string): InitialSoundLetterSet | null => {
+  const target = letter.toLowerCase();
+  return getInitialSoundLetterSets(group).find((entry) => entry.letter === target) ?? null;
+};
