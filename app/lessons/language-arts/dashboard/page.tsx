@@ -329,10 +329,12 @@ export default function LanguageArtsDashboardPage() {
   const [events, setEvents] = useState<LessonEvent[]>([]);
   const [openCategory, setOpenCategory] = useState({
     language: true,
+    historyTime: false,
     math: false,
     cultural: false,
     sensorial: false,
     phonics: true,
+    settings: false,
   });
 
   const refreshEvents = () => {
@@ -574,7 +576,6 @@ export default function LanguageArtsDashboardPage() {
     { key: "lang-lilac", label: "Lilac", percent: lilacPercent, status: "", detail: "" },
     { key: "lang-initial", label: "Initial Sound", percent: initialSoundPercent, status: "", detail: "" },
     { key: "lang-concept", label: "Concept Development", percent: conceptDevelopmentPercent, status: "", detail: "" },
-    { key: "lang-history-time", label: "History & Time", percent: historyTimePercent, status: "", detail: "" },
   ]);
 
   const mathItems = useMemo(
@@ -657,16 +658,7 @@ export default function LanguageArtsDashboardPage() {
           >
             Refresh
           </button>
-          <button
-            type="button"
-            onClick={handleClearRecords}
-            className="rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-xs uppercase tracking-[0.22em] text-rose-700"
-          >
-            Clear Records
-          </button>
         </div>
-
-        <MicrophonePrivacyToggle />
 
         <OpenCard
           title="Language"
@@ -811,50 +803,55 @@ export default function LanguageArtsDashboardPage() {
               </div>
             </section>
 
-            <section className="rounded-2xl border border-cyan-200 bg-gradient-to-br from-cyan-50 to-sky-50 p-4">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <Pie percent={historyTimePercent} color="#0891b2" />
-                  <div>
-                    <p className="font-semibold text-stone-900">History &amp; Time</p>
-                    <p className="text-sm text-stone-600">{toStatus(historyTimePercent)}</p>
+          </div>
+        </OpenCard>
+
+        <OpenCard
+          title="History & Time"
+          subtitle={toStatus(historyTimePercent)}
+          percent={historyTimePercent}
+          color="#0891b2"
+          topLayer
+          open={openCategory.historyTime}
+          onToggle={() => setOpenCategory((prev) => ({ ...prev, historyTime: !prev.historyTime }))}
+        >
+          <div className="rounded-2xl border border-cyan-200 bg-gradient-to-br from-cyan-50 to-sky-50 p-4">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <p className="font-semibold text-stone-900">Clock Activities Progress</p>
+              <Link
+                href="/lessons/history-time"
+                className="rounded-full border border-sky-200 bg-sky-50 px-3 py-2 text-[11px] uppercase tracking-[0.2em] text-sky-700"
+              >
+                Work on This Activity
+              </Link>
+            </div>
+            <div className="space-y-2">
+              {historyTimeItems.map((item) => (
+                <div
+                  key={item.key}
+                  className={`flex items-center justify-between gap-2 rounded-xl border bg-white/80 px-3 py-2 text-sm ${
+                    item.percent >= 100 ? "border-emerald-300" : "border-cyan-200"
+                  }`}
+                >
+                  <span className={`font-semibold ${item.percent >= 100 ? "text-emerald-800" : "text-stone-700"}`}>
+                    {item.label}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className={item.percent >= 100 ? "text-emerald-700" : "text-stone-600"}>
+                      {item.status} {item.percent >= 100 ? "✓" : ""}
+                    </span>
+                    {item.href ? (
+                      <Link
+                        href={item.href}
+                        className="rounded-full border border-cyan-300 bg-cyan-100 px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-cyan-800"
+                      >
+                        Open
+                      </Link>
+                    ) : null}
                   </div>
                 </div>
-                <Link
-                  href="/lessons/history-time"
-                  className="rounded-full border border-sky-200 bg-sky-50 px-3 py-2 text-[11px] uppercase tracking-[0.2em] text-sky-700"
-                >
-                  Work on This Activity
-                </Link>
-              </div>
-              <div className="space-y-2">
-                {historyTimeItems.map((item) => (
-                  <div
-                    key={item.key}
-                    className={`flex items-center justify-between gap-2 rounded-xl border bg-white/80 px-3 py-2 text-sm ${
-                      item.percent >= 100 ? "border-emerald-300" : "border-cyan-200"
-                    }`}
-                  >
-                    <span className={`font-semibold ${item.percent >= 100 ? "text-emerald-800" : "text-stone-700"}`}>
-                      {item.label}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <span className={item.percent >= 100 ? "text-emerald-700" : "text-stone-600"}>
-                        {item.status} {item.percent >= 100 ? "✓" : ""}
-                      </span>
-                      {item.href ? (
-                        <Link
-                          href={item.href}
-                          className="rounded-full border border-cyan-300 bg-cyan-100 px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-cyan-800"
-                        >
-                          Open
-                        </Link>
-                      ) : null}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
+              ))}
+            </div>
           </div>
         </OpenCard>
 
@@ -923,6 +920,27 @@ export default function LanguageArtsDashboardPage() {
           <p className="rounded-2xl border border-dashed border-pink-300 bg-pink-50 p-4 text-sm text-pink-800">
             Tracking UI is ready. Activities can be connected as soon as Sensorial lessons are added.
           </p>
+        </OpenCard>
+
+        <OpenCard
+          title="Settings"
+          subtitle="Tools"
+          percent={0}
+          color="#64748b"
+          topLayer
+          open={openCategory.settings}
+          onToggle={() => setOpenCategory((prev) => ({ ...prev, settings: !prev.settings }))}
+        >
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={handleClearRecords}
+              className="rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-xs uppercase tracking-[0.22em] text-rose-700"
+            >
+              Clear Records
+            </button>
+            <MicrophonePrivacyToggle compact />
+          </div>
         </OpenCard>
       </main>
     </div>

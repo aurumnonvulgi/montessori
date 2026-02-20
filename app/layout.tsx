@@ -16,7 +16,7 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "Montessori Studio",
+  title: "Montessori Digital Studio",
   description: "A playful Montessori materials lab with 3D learning.",
   manifest: "/manifest.json",
   icons: {
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Montessori",
+    title: "Montessori Digital Studio",
   },
   other: {
     "mobile-web-app-capable": "yes",

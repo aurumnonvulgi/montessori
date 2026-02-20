@@ -42,8 +42,8 @@ export default function MontessoriHome() {
     <div className="min-h-screen select-none bg-[radial-gradient(circle_at_top,#f5efe6_0%,#fdfbf8_45%,#f7efe4_100%)]">
       <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col items-center justify-center px-6 py-12 sm:px-10">
         <div className="space-y-6 text-center">
-          <p className="text-xs uppercase tracking-[0.4em] text-stone-400">Montessori Studio</p>
-          <h1 className="font-display text-4xl font-semibold text-stone-900 md:text-5xl">Montessori Studio</h1>
+          <p className="text-xs uppercase tracking-[0.4em] text-stone-400">Montessori Digital Studio</p>
+          <h1 className="font-display text-4xl font-semibold text-stone-900 md:text-5xl">Montessori Digital Studio</h1>
           <a
             href="/dashboard"
             className="inline-flex min-w-[320px] items-center justify-center rounded-full border border-sky-200 bg-sky-50 px-8 py-3 text-sm uppercase tracking-[0.25em] text-sky-700 shadow-sm transition hover:bg-sky-100"

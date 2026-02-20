@@ -9,7 +9,6 @@ const MODE_CARDS = [
   {
     href: "/lessons/history-time/hour-clock",
     title: "Hour Clock",
-    subtitle: "Enter the isolated hour material",
     badge: "Hour",
     mode: "hours" as ClockMode,
     value: { h: 3, m: 0 } as TimeValue,
@@ -17,7 +16,6 @@ const MODE_CARDS = [
   {
     href: "/lessons/history-time/minute-clock",
     title: "Minute Clock",
-    subtitle: "Enter minute-track focused material",
     badge: "Minute",
     mode: "minutes" as ClockMode,
     value: { h: 12, m: 25 } as TimeValue,
@@ -25,7 +23,6 @@ const MODE_CARDS = [
   {
     href: "/lessons/history-time/clock",
     title: "Clock",
-    subtitle: "Enter full clock work (hours + minutes)",
     badge: "Full",
     mode: "both" as ClockMode,
     value: { h: 4, m: 25 } as TimeValue,
@@ -61,8 +58,7 @@ export default function HistoryTimeHub() {
               <div className="mt-4 overflow-hidden rounded-2xl border border-stone-200 bg-stone-50">
                 <HistoryTimeClockPreview mode={card.mode} value={card.value} />
               </div>
-              <p className="mt-4 text-sm text-stone-600">{card.subtitle}</p>
-              <p className="mt-3 text-xs uppercase tracking-[0.24em] text-stone-500">Open Material</p>
+              <p className="mt-4 text-xs uppercase tracking-[0.24em] text-stone-500">Open Material</p>
             </Link>
           ))}
         </section>
