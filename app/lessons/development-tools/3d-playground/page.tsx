@@ -35,6 +35,7 @@ type CameraPreset = {
   key: string;
   label: string;
   snapshot: CameraSnapshot;
+  scene: "playmat" | "clock";
 };
 
 const round = (value: number) => Number(value.toFixed(3));
@@ -81,6 +82,7 @@ const PLAYMAT_PRESETS: CameraPreset[] = [
     key: "playground-default",
     label: "3D Playground Default",
     snapshot: DEFAULT_SNAPSHOT,
+    scene: "playmat",
   },
   {
     key: "hundred-board",
@@ -90,6 +92,7 @@ const PLAYMAT_PRESETS: CameraPreset[] = [
       target: [0.75, 0.02, 0.3],
       fov: 47,
     },
+    scene: "playmat",
   },
   {
     key: "sandpaper-numerals",
@@ -99,6 +102,37 @@ const PLAYMAT_PRESETS: CameraPreset[] = [
       target: [0, 0, 0.3],
       fov: 28,
     },
+    scene: "playmat",
+  },
+  {
+    key: "hour-clock-activities",
+    label: "Hour Clock Activities (cam [0, 0, 5.6] · target [0, 0, 0] · fov 34)",
+    snapshot: {
+      position: [0, 0, 5.6],
+      target: [0, 0, 0],
+      fov: 34,
+    },
+    scene: "clock",
+  },
+  {
+    key: "minute-clock-activities",
+    label: "Minute Clock Activities (cam [0, 0, 5.6] · target [0, 0, 0] · fov 34)",
+    snapshot: {
+      position: [0, 0, 5.6],
+      target: [0, 0, 0],
+      fov: 34,
+    },
+    scene: "clock",
+  },
+  {
+    key: "clock-activities",
+    label: "Clock Activities (cam [0, 0, 5.6] · target [0, 0, 0] · fov 34)",
+    snapshot: {
+      position: [0, 0, 5.6],
+      target: [0, 0, 0],
+      fov: 34,
+    },
+    scene: "clock",
   },
   {
     key: "coordinates-tool",
@@ -108,6 +142,7 @@ const PLAYMAT_PRESETS: CameraPreset[] = [
       target: [0, 0.02, 0],
       fov: 46,
     },
+    scene: "playmat",
   },
 ];
 
@@ -373,6 +408,75 @@ function PlaygroundScene() {
   );
 }
 
+function ClockReferenceScene() {
+  return (
+    <>
+      <ambientLight intensity={0.72} />
+      <directionalLight
+        position={[2.2, 3.5, 4]}
+        intensity={0.82}
+        castShadow
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
+      />
+      <directionalLight position={[-2.8, 2.2, -3.1]} intensity={0.28} />
+
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.06, 0]} receiveShadow>
+        <planeGeometry args={[9, 7]} />
+        <meshStandardMaterial color="#ddd7cf" roughness={0.92} metalness={0} />
+      </mesh>
+
+      <mesh position={[0, 0, -0.18]} rotation={[Math.PI / 2, 0, 0]} receiveShadow>
+        <cylinderGeometry args={[1.605, 1.605, 0.32, 64]} />
+        <meshStandardMaterial color="#d4b487" roughness={0.9} metalness={0.01} />
+      </mesh>
+
+      <mesh position={[0, 0, -0.05]} rotation={[Math.PI / 2, 0, 0]} receiveShadow>
+        <cylinderGeometry args={[1.52, 1.52, 0.1, 64]} />
+        <meshStandardMaterial color="#8b5e2e" roughness={0.82} metalness={0.02} />
+      </mesh>
+
+      <mesh position={[0, 0, 0]} rotation={[Math.PI / 2, 0, 0]} receiveShadow>
+        <cylinderGeometry args={[1.35, 1.35, 0.08, 64]} />
+        <meshStandardMaterial color="#f9f0e1" roughness={0.88} metalness={0.01} />
+      </mesh>
+
+      {Array.from({ length: 60 }, (_, index) => {
+        const angle = (index / 60) * Math.PI * 2;
+        const radius = index % 5 === 0 ? 1.2 : 1.26;
+        const length = index % 5 === 0 ? 0.14 : 0.08;
+        const thickness = index % 5 === 0 ? 0.02 : 0.012;
+        const x = Math.sin(angle) * radius;
+        const y = Math.cos(angle) * radius;
+        return (
+          <mesh key={`tick-${index}`} position={[x, y, 0.06]} rotation={[0, 0, -angle]}>
+            <boxGeometry args={[thickness, length, 0.02]} />
+            <meshStandardMaterial color="#5b4120" />
+          </mesh>
+        );
+      })}
+
+      <group rotation={[0, 0, THREE.MathUtils.degToRad(-300)]}>
+        <mesh position={[0, 0.34, 0.11]}>
+          <boxGeometry args={[0.12, 0.66, 0.04]} />
+          <meshStandardMaterial color="#2f261e" />
+        </mesh>
+      </group>
+      <group rotation={[0, 0, THREE.MathUtils.degToRad(-120)]}>
+        <mesh position={[0, 0.5, 0.12]}>
+          <boxGeometry args={[0.07, 1, 0.03]} />
+          <meshStandardMaterial color="#475569" />
+        </mesh>
+      </group>
+
+      <mesh position={[0, 0, 0.14]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.08, 0.08, 0.06, 24]} />
+        <meshStandardMaterial color="#f8fafc" metalness={0.2} roughness={0.45} />
+      </mesh>
+    </>
+  );
+}
+
 export default function ThreeDPlaygroundPage() {
   const router = useRouter();
   const controlsRef = useRef<React.ElementRef<typeof OrbitControls> | null>(null);
@@ -381,6 +485,7 @@ export default function ThreeDPlaygroundPage() {
   const locksRef = useRef<CoordinateLocks>(DEFAULT_LOCKS);
   const snapshotRef = useRef<CameraSnapshot>(snapshot);
   const [selectedPreset, setSelectedPreset] = useState<string>("playground-default");
+  const [activeScene, setActiveScene] = useState<"playmat" | "clock">("playmat");
   const [pastedValues, setPastedValues] = useState("");
   const [pasteStatus, setPasteStatus] = useState<string | null>(null);
   const [copyLabel, setCopyLabel] = useState("Copy Coordinates");
@@ -467,6 +572,7 @@ export default function ThreeDPlaygroundPage() {
   const resetView = useCallback(() => {
     applySnapshot(DEFAULT_SNAPSHOT);
     setSelectedPreset("playground-default");
+    setActiveScene("playmat");
     setPasteStatus(null);
   }, [applySnapshot]);
 
@@ -477,6 +583,7 @@ export default function ThreeDPlaygroundPage() {
       if (value === "custom") return;
       const preset = PLAYMAT_PRESETS.find((item) => item.key === value);
       if (!preset) return;
+      setActiveScene(preset.scene);
       applySnapshot(preset.snapshot);
     },
     [applySnapshot]
@@ -560,7 +667,7 @@ export default function ThreeDPlaygroundPage() {
                 camera.lookAt(0, 0.02, 0.2);
               }}
             >
-              <PlaygroundScene />
+              {activeScene === "clock" ? <ClockReferenceScene /> : <PlaygroundScene />}
               <OrbitControls
                 ref={controlsRef}
                 enablePan

@@ -179,6 +179,7 @@ export default function HistoryTimeLesson({ mode }: HistoryTimeLessonProps) {
   const [presentationStep, setPresentationStep] = useState(0);
   const [presentationFeedback, setPresentationFeedback] = useState<string | null>(null);
   const [skipTarget, setSkipTarget] = useState(5);
+  const [mobileOptionsOpen, setMobileOptionsOpen] = useState(false);
   const completedActivitiesRef = useRef<Set<ActivityKey>>(new Set());
   const lessonStartedRef = useRef(false);
   const lessonCompletedRef = useRef(false);
@@ -241,6 +242,15 @@ export default function HistoryTimeLesson({ mode }: HistoryTimeLessonProps) {
     });
   }, [mode, modeActivityKey, totalActivityPages]);
 
+  useEffect(() => {
+    if (!mobileOptionsOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [mobileOptionsOpen]);
+
   const instructionText = useMemo(() => {
     if (activity === "set") {
       if (mode === "hours") return `Set the clock to ${toHourLabel(targetTime.h)}.`;
@@ -259,8 +269,8 @@ export default function HistoryTimeLesson({ mode }: HistoryTimeLessonProps) {
   }, [activity, mode, skipTarget, targetTime]);
 
   const draggable = activity === "set" || activity === "skip";
-  const showSliders = activity === "set" || activity === "skip";
-  const minuteSliderStep = activity === "skip" ? 5 : minuteStage === "five" ? 5 : 1;
+  const canNudgeHand = draggable;
+  const minuteNudgeStep = activity === "skip" ? 5 : minuteStage === "five" ? 5 : 1;
 
   const presentationHighlight = useMemo(() => {
     if (!presentationMode) return null;
@@ -275,7 +285,10 @@ export default function HistoryTimeLesson({ mode }: HistoryTimeLessonProps) {
           <button
             key={entry.key}
             type="button"
-            onClick={() => setActivity(entry.key)}
+            onClick={() => {
+              setActivity(entry.key);
+              setMobileOptionsOpen(false);
+            }}
             className={`rounded-full border px-4 py-2 text-xs uppercase tracking-[0.2em] transition ${
               entry.key === activity
                 ? "border-amber-300 bg-amber-100 text-amber-800"
@@ -464,45 +477,44 @@ export default function HistoryTimeLesson({ mode }: HistoryTimeLessonProps) {
     totalActivityPages,
   ]);
 
-  const setHourFromSlider = useCallback(
-    (nextHour: number) => {
-      const normalized = nextHour <= 0 ? 12 : nextHour;
-      if (mode === "minutes") {
-        setClockTime((previous) => ({ ...previous, h: 12 }));
-        return;
-      }
-      setClockTime((previous) => ({ ...previous, h: normalized }));
-      setFeedback(null);
-    },
-    [mode]
-  );
+  const nudgeActiveHand = useCallback(
+    (direction: 1 | -1) => {
+      if (!canNudgeHand) return;
 
-  const setMinuteFromSlider = useCallback(
-    (nextMinute: number) => {
-      const snappedMinute = minuteToStage(nextMinute, minuteSliderStep === 5 ? "five" : "one");
-      if (mode === "hours") {
-        setClockTime((previous) => ({ ...previous, m: 0 }));
-        return;
-      }
-      if (mode === "minutes") {
-        setClockTime({ h: 12, m: snappedMinute });
-      } else {
-        setClockTime((previous) => ({ ...previous, m: snappedMinute }));
-      }
+      setClockTime((previous) => {
+        if (mode === "hours") {
+          const nextHour = ((previous.h - 1 + direction + 12) % 12) + 1;
+          return { h: nextHour, m: 0 };
+        }
+
+        const nudgeStage: MinuteStage = minuteNudgeStep === 5 ? "five" : "one";
+        const nextMinuteRaw = (previous.m + direction * minuteNudgeStep + 60) % 60;
+        const nextMinute = minuteToStage(nextMinuteRaw, nudgeStage);
+
+        if (mode === "minutes") {
+          return { h: 12, m: nextMinute };
+        }
+
+        return { ...previous, m: nextMinute };
+      });
+
       setFeedback(null);
     },
-    [minuteSliderStep, mode]
+    [canNudgeHand, minuteNudgeStep, mode]
   );
 
   return (
     <div className="relative min-h-screen bg-[radial-gradient(circle_at_top,#f5efe6,#fdfbf8_55%,#f7efe4)]">
       <HomeLink />
-      <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-6 px-6 py-10 sm:px-10">
+      <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-6 px-6 py-10 pb-28 sm:px-10 lg:pb-10">
         <header className="space-y-2 text-center">
           <p className="text-xs uppercase tracking-[0.32em] text-stone-500">History &amp; Time</p>
           <h1 className="font-display text-4xl font-semibold text-stone-900">{MODE_TITLES[mode]}</h1>
           <p className="text-sm text-stone-600">{MODE_NOTES[mode]}</p>
         </header>
+        <div className="w-full rounded-md border border-rose-300 bg-rose-600 px-3 py-1 text-center text-[10px] font-semibold uppercase tracking-[0.28em] text-white">
+          In Progress | Logic Not Developed
+        </div>
 
         {presentationMode ? (
           <section className="rounded-3xl border border-sky-200 bg-sky-50/70 p-4">
@@ -572,7 +584,7 @@ export default function HistoryTimeLesson({ mode }: HistoryTimeLessonProps) {
         ) : null}
 
         <section className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-          <div>
+          <div className="relative">
             <TimeClockScene
               mode={mode}
               value={activity === "read" || activity === "match" ? targetTime : clockTime}
@@ -584,6 +596,28 @@ export default function HistoryTimeLesson({ mode }: HistoryTimeLessonProps) {
               highlightPart={presentationHighlight}
               className="h-[520px]"
             />
+            <button
+              type="button"
+              onClick={() => nudgeActiveHand(-1)}
+              disabled={!canNudgeHand}
+              className={`absolute bottom-6 left-6 rounded-full px-3 py-1 text-6xl font-semibold leading-none ${
+                canNudgeHand ? "text-black/90 hover:text-black" : "cursor-not-allowed text-black/30"
+              }`}
+              aria-label="Move active hand backward"
+            >
+              -
+            </button>
+            <button
+              type="button"
+              onClick={() => nudgeActiveHand(1)}
+              disabled={!canNudgeHand}
+              className={`absolute bottom-5 right-6 rounded-full px-3 py-1 text-7xl font-semibold leading-none ${
+                canNudgeHand ? "text-black/90 hover:text-black" : "cursor-not-allowed text-black/30"
+              }`}
+              aria-label="Move active hand forward"
+            >
+              +
+            </button>
           </div>
           <aside className="rounded-3xl border border-stone-200 bg-white/90 p-4 shadow-sm">
             <p className="text-xs uppercase tracking-[0.3em] text-stone-500">Lesson Prompt</p>
@@ -620,44 +654,6 @@ export default function HistoryTimeLesson({ mode }: HistoryTimeLessonProps) {
                 <p className="mt-1 text-sm font-semibold text-stone-900">
                   {toDigitalTimeLabel(clockTime)} · {toPhraseTimeLabel(clockTime)}
                 </p>
-              </div>
-            ) : null}
-
-            {showSliders ? (
-              <div className="mt-4 rounded-2xl border border-stone-200 bg-white p-3">
-                <p className="text-xs uppercase tracking-[0.24em] text-stone-500">Hand Sliders</p>
-                {mode !== "minutes" ? (
-                  <div className="mt-2">
-                    <label className="text-[11px] uppercase tracking-[0.2em] text-stone-600">Hour</label>
-                    <input
-                      type="range"
-                      min={1}
-                      max={12}
-                      step={1}
-                      value={clockTime.h}
-                      onChange={(event) => setHourFromSlider(Number(event.target.value))}
-                      className="mt-1 w-full accent-amber-600"
-                    />
-                    <p className="text-xs text-stone-600">{toHourLabel(clockTime.h)}</p>
-                  </div>
-                ) : null}
-                {mode !== "hours" ? (
-                  <div className="mt-3">
-                    <label className="text-[11px] uppercase tracking-[0.2em] text-stone-600">
-                      Minute ({minuteSliderStep}-step)
-                    </label>
-                    <input
-                      type="range"
-                      min={0}
-                      max={59}
-                      step={minuteSliderStep}
-                      value={clockTime.m}
-                      onChange={(event) => setMinuteFromSlider(Number(event.target.value))}
-                      className="mt-1 w-full accent-sky-600"
-                    />
-                    <p className="text-xs text-stone-600">{toMinuteLabel(clockTime.m)}</p>
-                  </div>
-                ) : null}
               </div>
             ) : null}
 
@@ -702,8 +698,39 @@ export default function HistoryTimeLesson({ mode }: HistoryTimeLessonProps) {
             ) : null}
           </aside>
         </section>
-        {controlsPanel}
+        <div className="hidden lg:block">{controlsPanel}</div>
       </main>
+
+      <button
+        type="button"
+        onClick={() => setMobileOptionsOpen(true)}
+        className="fixed bottom-4 left-4 right-4 z-40 rounded-full border border-stone-300 bg-white/95 px-5 py-3 text-xs font-semibold uppercase tracking-[0.22em] text-stone-800 shadow-[0_18px_40px_-24px_rgba(15,23,42,0.85)] lg:hidden"
+      >
+        Open Options
+      </button>
+
+      {mobileOptionsOpen ? (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <button
+            type="button"
+            aria-label="Close options"
+            onClick={() => setMobileOptionsOpen(false)}
+            className="absolute inset-0 bg-black/40"
+          />
+          <div className="absolute inset-x-0 bottom-0 max-h-[78vh] overflow-y-auto px-3 pb-4 pt-2">
+            <div className="mb-2 flex justify-center">
+              <button
+                type="button"
+                onClick={() => setMobileOptionsOpen(false)}
+                className="rounded-full border border-stone-300 bg-white px-4 py-1 text-xs uppercase tracking-[0.2em] text-stone-700"
+              >
+                Close
+              </button>
+            </div>
+            {controlsPanel}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

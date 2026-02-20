@@ -24,9 +24,12 @@ type TimeClockSceneProps = {
   checkTime?: TimeValue | null;
   highlightPart?: "hour" | "minute" | "track" | null;
   className?: string;
+  cameraPositionZ?: number;
 };
 
-const CLOCK_RADIUS = 1.35;
+const FACE_RADIUS = 1.35;
+const INNER_RING_RADIUS = 1.52;
+const OUTER_FRAME_RADIUS = INNER_RING_RADIUS + (INNER_RING_RADIUS - FACE_RADIUS) / 2;
 
 const toClockAngleFromPoint = (point: THREE.Vector3) => {
   const radians = Math.atan2(point.x, point.y);
@@ -53,17 +56,23 @@ function ClockHands({
     [checkTime]
   );
 
-  const minuteVisible = mode !== "hours";
-  const hourVisible = mode !== "minutes";
+  const minuteVisible = true;
+  const hourVisible = true;
   const minuteLocked = mode === "hours";
   const hourLocked = mode === "minutes";
+  const displayedHourAngle = mode === "minutes" ? 30 : angles.hourAngle;
+  const displayedMinuteAngle = mode === "hours" ? 0 : angles.minuteAngle;
 
   const baseWood = contrast ? "#f2e7d0" : "#d4b487";
   const ringWood = contrast ? "#7c5528" : "#8b5e2e";
   const faceColor = contrast ? "#fffaf1" : "#f9f0e1";
   const tickColor = contrast ? "#111111" : "#5b4120";
-  const hourColor = contrast ? "#111111" : "#2f261e";
-  const minuteColor = contrast ? "#1f2937" : "#475569";
+  const activeRed = contrast ? "#b91c1c" : "#dc2626";
+  const guideBlue = "#2579d9";
+  const hourGuideTransparent = mode === "minutes";
+  const hourOpacity = hourGuideTransparent ? 0.62 : 1;
+  const hourColor = mode === "hours" ? activeRed : mode === "minutes" ? guideBlue : contrast ? "#111111" : "#2f261e";
+  const minuteColor = mode === "minutes" ? activeRed : contrast ? "#1f2937" : "#475569";
   const pulseOn = highlightPart ? 1 : 0;
   const pulseScale = pulseOn ? 1.05 : 1;
 
@@ -121,6 +130,8 @@ function ClockHands({
     event: ThreeEvent<PointerEvent>
   ) => {
     if (!draggable) return;
+    if ((hand === "hour" && hourLocked) || (hand === "minute" && minuteLocked)) return;
+    event.nativeEvent.preventDefault();
     event.stopPropagation();
     const pointerTarget = event.nativeEvent.target as
       | (EventTarget & {
@@ -134,12 +145,14 @@ function ClockHands({
 
   const handleMove = (event: ThreeEvent<PointerEvent>) => {
     if (!dragging) return;
+    event.nativeEvent.preventDefault();
     event.stopPropagation();
     updateFromDrag(dragging, getDragPoint(event));
   };
 
   const handleUp = (event: ThreeEvent<PointerEvent>) => {
     if (!dragging) return;
+    event.nativeEvent.preventDefault();
     event.stopPropagation();
     const pointerTarget = event.nativeEvent.target as
       | (EventTarget & {
@@ -157,17 +170,17 @@ function ClockHands({
       <directionalLight position={[-2.8, 2.2, -3.1]} intensity={0.28} />
 
       <mesh position={[0, 0, -0.18]} rotation={[Math.PI / 2, 0, 0]} receiveShadow>
-        <cylinderGeometry args={[1.95, 1.95, 0.32, 64]} />
+        <cylinderGeometry args={[OUTER_FRAME_RADIUS, OUTER_FRAME_RADIUS, 0.32, 64]} />
         <meshStandardMaterial color={baseWood} roughness={0.9} metalness={0.01} />
       </mesh>
 
       <mesh position={[0, 0, -0.05]} rotation={[Math.PI / 2, 0, 0]} receiveShadow>
-        <cylinderGeometry args={[1.52, 1.52, 0.1, 64]} />
+        <cylinderGeometry args={[INNER_RING_RADIUS, INNER_RING_RADIUS, 0.1, 64]} />
         <meshStandardMaterial color={ringWood} roughness={0.82} metalness={0.02} />
       </mesh>
 
       <mesh position={[0, 0, 0]} rotation={[Math.PI / 2, 0, 0]} receiveShadow>
-        <cylinderGeometry args={[CLOCK_RADIUS, CLOCK_RADIUS, 0.08, 64]} />
+        <cylinderGeometry args={[FACE_RADIUS, FACE_RADIUS, 0.08, 64]} />
         <meshStandardMaterial color={faceColor} roughness={0.88} metalness={0.01} />
       </mesh>
 
@@ -233,7 +246,7 @@ function ClockHands({
       ) : null}
 
       {hourVisible ? (
-        <group rotation={[0, 0, THREE.MathUtils.degToRad(-angles.hourAngle)]}>
+        <group rotation={[0, 0, THREE.MathUtils.degToRad(-displayedHourAngle)]}>
           <mesh
             position={[0, 0.33, 0.11]}
           >
@@ -242,26 +255,30 @@ function ClockHands({
               color={hourColor}
               emissive={highlightPart === "hour" ? "#f59e0b" : "#000000"}
               emissiveIntensity={highlightPart === "hour" ? 0.35 : 0}
+              transparent={hourGuideTransparent}
+              opacity={hourOpacity}
             />
           </mesh>
           <mesh
             position={[0, 0.67, 0.115]}
           >
             <sphereGeometry args={[0.07, 16, 16]} />
-            <meshStandardMaterial color={hourColor} />
+            <meshStandardMaterial color={hourColor} transparent={hourGuideTransparent} opacity={hourOpacity} />
           </mesh>
-          <mesh
-            position={[0, 0.38, 0.125]}
-            onPointerDown={(event) => handleDown("hour", event)}
-          >
-            <boxGeometry args={[0.34, 0.82, 0.12]} />
-            <meshBasicMaterial transparent opacity={0} depthWrite={false} />
-          </mesh>
+          {!hourLocked ? (
+            <mesh
+              position={[0, 0.38, 0.125]}
+              onPointerDown={(event) => handleDown("hour", event)}
+            >
+              <boxGeometry args={[0.34, 0.82, 0.12]} />
+              <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+            </mesh>
+          ) : null}
         </group>
       ) : null}
 
       {minuteVisible ? (
-        <group rotation={[0, 0, THREE.MathUtils.degToRad(-angles.minuteAngle)]}>
+        <group rotation={[0, 0, THREE.MathUtils.degToRad(-displayedMinuteAngle)]}>
           <mesh
             position={[0, 0.5, 0.12]}
           >
@@ -278,13 +295,15 @@ function ClockHands({
             <sphereGeometry args={[0.055, 16, 16]} />
             <meshStandardMaterial color={minuteColor} />
           </mesh>
-          <mesh
-            position={[0, 0.56, 0.13]}
-            onPointerDown={(event) => handleDown("minute", event)}
-          >
-            <boxGeometry args={[0.3, 1.16, 0.12]} />
-            <meshBasicMaterial transparent opacity={0} depthWrite={false} />
-          </mesh>
+          {!minuteLocked ? (
+            <mesh
+              position={[0, 0.56, 0.13]}
+              onPointerDown={(event) => handleDown("minute", event)}
+            >
+              <boxGeometry args={[0.3, 1.16, 0.12]} />
+              <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+            </mesh>
+          ) : null}
         </group>
       ) : null}
 
@@ -319,12 +338,14 @@ export default function TimeClockScene({
   checkTime = null,
   highlightPart = null,
   className,
+  cameraPositionZ = 5.6,
 }: TimeClockSceneProps) {
   return (
     <div
-      className={`relative w-full overflow-hidden rounded-[26px] border border-stone-200 bg-[radial-gradient(circle_at_top,#fbf7f2_0%,#f2ebe3_55%,#ece2d6_100%)] ${className ?? "h-[420px]"}`}
+      className={`relative w-full touch-none overscroll-contain overflow-hidden rounded-[26px] border border-stone-200 bg-[radial-gradient(circle_at_top,#fbf7f2_0%,#f2ebe3_55%,#ece2d6_100%)] ${className ?? "h-[420px]"}`}
+      style={{ touchAction: "none" }}
     >
-      <Canvas camera={{ position: [0, 0, 5], fov: 32 }} shadows>
+      <Canvas camera={{ position: [0, 0, cameraPositionZ], fov: 34 }} shadows>
         <ClockHands
           mode={mode}
           value={value}
