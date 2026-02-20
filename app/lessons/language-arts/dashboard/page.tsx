@@ -16,6 +16,11 @@ import {
 
 const VOWELS = ["a", "e", "i", "o", "u"] as const;
 const WORDS_PER_LILAC_PAGE = 10;
+const HISTORY_TIME_TRACKS = [
+  { key: "hours", label: "Hour Clock", activity: "mode-hours", href: "/lessons/history-time/hour-clock" },
+  { key: "minutes", label: "Minute Clock", activity: "mode-minutes", href: "/lessons/history-time/minute-clock" },
+  { key: "both", label: "Clock", activity: "mode-both", href: "/lessons/history-time/clock" },
+] as const;
 
 type MathLesson = {
   key: string;
@@ -542,13 +547,34 @@ export default function LanguageArtsDashboardPage() {
     });
   }, [events]);
 
+  const historyTimeItems = useMemo(() => {
+    return HISTORY_TIME_TRACKS.map((track) => {
+      const trackEvents = events.filter(
+        (event) =>
+          event.lesson === "history-time:clock-activities" &&
+          event.activity === track.activity
+      );
+      return buildProgressItem({
+        key: `history-time-${track.key}`,
+        label: track.label,
+        events: trackEvents,
+        completionEvent: "activity_completed",
+        completionSignalEvent: "lesson_completed",
+        totalUnits: 3,
+        href: track.href,
+      });
+    });
+  }, [events]);
+
   const initialSoundPercent = averagePercent(initialSoundGroupItems);
   const conceptDevelopmentPercent = averagePercent(conceptDevelopmentItems);
+  const historyTimePercent = averagePercent(historyTimeItems);
   const languagePercent = averagePercent([
     { key: "lang-phonics", label: "Phonics | Pink Series", percent: phonicsPercent, status: "", detail: "" },
     { key: "lang-lilac", label: "Lilac", percent: lilacPercent, status: "", detail: "" },
     { key: "lang-initial", label: "Initial Sound", percent: initialSoundPercent, status: "", detail: "" },
     { key: "lang-concept", label: "Concept Development", percent: conceptDevelopmentPercent, status: "", detail: "" },
+    { key: "lang-history-time", label: "History & Time", percent: historyTimePercent, status: "", detail: "" },
   ]);
 
   const mathItems = useMemo(
@@ -775,6 +801,51 @@ export default function LanguageArtsDashboardPage() {
                         <Link
                           href={item.href}
                           className="rounded-full border border-amber-300 bg-amber-100 px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-amber-800"
+                        >
+                          Open
+                        </Link>
+                      ) : null}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="rounded-2xl border border-cyan-200 bg-gradient-to-br from-cyan-50 to-sky-50 p-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <Pie percent={historyTimePercent} color="#0891b2" />
+                  <div>
+                    <p className="font-semibold text-stone-900">History &amp; Time</p>
+                    <p className="text-sm text-stone-600">{toStatus(historyTimePercent)}</p>
+                  </div>
+                </div>
+                <Link
+                  href="/lessons/history-time"
+                  className="rounded-full border border-sky-200 bg-sky-50 px-3 py-2 text-[11px] uppercase tracking-[0.2em] text-sky-700"
+                >
+                  Work on This Activity
+                </Link>
+              </div>
+              <div className="space-y-2">
+                {historyTimeItems.map((item) => (
+                  <div
+                    key={item.key}
+                    className={`flex items-center justify-between gap-2 rounded-xl border bg-white/80 px-3 py-2 text-sm ${
+                      item.percent >= 100 ? "border-emerald-300" : "border-cyan-200"
+                    }`}
+                  >
+                    <span className={`font-semibold ${item.percent >= 100 ? "text-emerald-800" : "text-stone-700"}`}>
+                      {item.label}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className={item.percent >= 100 ? "text-emerald-700" : "text-stone-600"}>
+                        {item.status} {item.percent >= 100 ? "✓" : ""}
+                      </span>
+                      {item.href ? (
+                        <Link
+                          href={item.href}
+                          className="rounded-full border border-cyan-300 bg-cyan-100 px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-cyan-800"
                         >
                           Open
                         </Link>

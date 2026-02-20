@@ -92,6 +92,15 @@ const PLAYMAT_PRESETS: CameraPreset[] = [
     },
   },
   {
+    key: "sandpaper-numerals",
+    label: "Sandpaper Numerals Playmat",
+    snapshot: {
+      position: [0, 4.052, 1.75],
+      target: [0, 0, 0.3],
+      fov: 28,
+    },
+  },
+  {
     key: "coordinates-tool",
     label: "Coordinates Tool Playmat",
     snapshot: {

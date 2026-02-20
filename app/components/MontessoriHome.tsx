@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useMemo } from "react";
 import LanguageArtsPreview from "./LanguageArtsPreview";
 import MicrophonePrivacyToggle from "./MicrophonePrivacyToggle";
+import HistoryTimeClockPreview from "./HistoryTimeClockPreview";
 
 const CARD_STYLE =
   "group select-none rounded-[36px] border border-stone-200 bg-white/90 p-6 shadow-[0_30px_80px_-50px_rgba(60,40,20,0.6)] transition hover:-translate-y-1 hover:shadow-[0_40px_90px_-50px_rgba(60,40,20,0.7)]";
@@ -51,7 +52,7 @@ export default function MontessoriHome() {
           </a>
         </div>
 
-        <div className="mt-10 grid w-full gap-6 lg:grid-cols-2">
+        <div className="mt-10 grid w-full gap-6 md:grid-cols-2 xl:grid-cols-3">
           <a
             href="/lessons/mathematics"
             aria-label="Open Mathematics hub"
@@ -94,6 +95,33 @@ export default function MontessoriHome() {
               <p className="text-sm text-stone-500">
                 Initial Sound Cards — trace each letter as you hear its matching object.
               </p>
+            </div>
+          </a>
+
+          <a
+            href="/lessons/history-time"
+            aria-label="Open History & Time hub"
+            className={`${CARD_STYLE} max-w-full`}
+          >
+            <div className="flex flex-col gap-5 sm:gap-8">
+              <h2 className="font-display text-3xl font-semibold text-stone-900">History &amp; Time</h2>
+              <div className="grid h-48 grid-cols-3 gap-3 rounded-[24px] border border-stone-200 bg-gradient-to-br from-amber-50 via-stone-50 to-sky-50 p-3 shadow-inner">
+                {["Hours", "Minutes", "Both"].map((label, index) => (
+                  <div
+                    key={label}
+                    className="flex flex-col items-center justify-center rounded-2xl border border-stone-200 bg-white/90"
+                  >
+                    <HistoryTimeClockPreview
+                      mode={index === 0 ? "hours" : index === 1 ? "minutes" : "both"}
+                      value={index === 0 ? { h: 3, m: 0 } : index === 1 ? { h: 12, m: 25 } : { h: 4, m: 25 }}
+                      className="w-full"
+                      viewportClassName="h-20"
+                    />
+                    <p className="mt-2 text-[10px] uppercase tracking-[0.2em] text-stone-500">{label}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="text-sm text-stone-500">Montessori analog clock material with three separate games.</p>
             </div>
           </a>
 

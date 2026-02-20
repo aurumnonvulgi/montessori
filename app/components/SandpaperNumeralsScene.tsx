@@ -705,7 +705,7 @@ export default function SandpaperNumeralsScene({
     () =>
       (isMobile
         ? [0, 0.9, 1.6]
-        : [0, 1.35, 1.75]) as [number, number, number],
+        : [0, 4.052, 1.75]) as [number, number, number],
     [isMobile],
   );
   const cameraFov = useMemo(() => (isMobile ? 45 : 28), [isMobile]);
@@ -751,7 +751,7 @@ export default function SandpaperNumeralsScene({
           minAzimuthAngle={-(Math.PI * 65) / 180}
           maxAzimuthAngle={(Math.PI * 65) / 180}
           minDistance={2.2}
-          maxDistance={3.6}
+          maxDistance={6.8}
         />
       </Canvas>
       {showZoomReset ? <ZoomResetButton onClick={handleZoomReset} /> : null}
