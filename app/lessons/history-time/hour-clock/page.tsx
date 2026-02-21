@@ -10,6 +10,17 @@ export default function HourClockHubPage() {
       badge="Hour"
       mode="hours"
       value={{ h: 3, m: 0 }}
+      materials={[
+        {
+          label: "Hour Clock Three-Part Cards",
+          href: "/lessons/history-time/hour-clock/three-part-cards",
+          badge: "Material",
+          mode: "hours",
+          value: { h: 8, m: 0 },
+          ctaLabel: "Open material",
+          note: "12 hour cards across 4 pages.",
+        },
+      ]}
     />
   );
 }

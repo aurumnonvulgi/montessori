@@ -23,7 +23,11 @@ const toCompressedImageDataUrl = (canvas: HTMLCanvasElement) => {
   return output.toDataURL("image/jpeg", 0.72);
 };
 
-export default function FeedbackWidget() {
+type FeedbackWidgetProps = {
+  placement?: "fixed" | "inline";
+};
+
+export default function FeedbackWidget({ placement = "fixed" }: FeedbackWidgetProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [comment, setComment] = useState("");
@@ -97,7 +101,14 @@ export default function FeedbackWidget() {
 
   return (
     <>
-      <div data-feedback-widget="true" className="fixed bottom-4 right-4 z-[1300]">
+      <div
+        data-feedback-widget="true"
+        className={
+          placement === "fixed"
+            ? "fixed bottom-4 right-4 z-[1300]"
+            : "relative z-20 flex justify-end"
+        }
+      >
         <button
           type="button"
           onClick={() => setOpen(true)}

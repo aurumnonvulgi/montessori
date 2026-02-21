@@ -13,6 +13,15 @@ type HistoryTimeTrackHubProps = {
   badge: string;
   mode: ClockMode;
   value: TimeValue;
+  materials?: Array<{
+    label: string;
+    href: string;
+    badge: string;
+    mode: ClockMode;
+    value: TimeValue;
+    ctaLabel?: string;
+    note?: string;
+  }>;
 };
 
 export default function HistoryTimeTrackHub({
@@ -23,7 +32,29 @@ export default function HistoryTimeTrackHub({
   badge,
   mode,
   value,
+  materials = [],
 }: HistoryTimeTrackHubProps) {
+  const cards = [
+    {
+      label: activityLabel,
+      href: activityHref,
+      badge,
+      mode,
+      value,
+      ctaLabel: "Open activities",
+      note: "",
+    },
+    ...materials.map((item) => ({
+      label: item.label,
+      href: item.href,
+      badge: item.badge,
+      mode: item.mode,
+      value: item.value,
+      ctaLabel: item.ctaLabel ?? "Open material",
+      note: item.note ?? "",
+    })),
+  ];
+
   return (
     <div className="relative min-h-screen bg-[radial-gradient(circle_at_top,#f3efe8,#faf7f2_52%,#f1ebe2)]">
       <HomeLink />
@@ -34,24 +65,26 @@ export default function HistoryTimeTrackHub({
           <p className="text-sm text-stone-600">{subtitle}</p>
         </header>
 
-        <section className="mx-auto w-full max-w-xl">
-          <Link
-            href={activityHref}
-            className="group block rounded-3xl border border-stone-200 bg-white/90 p-6 shadow-[0_28px_65px_-45px_rgba(15,23,42,0.75)] transition hover:-translate-y-0.5 hover:shadow-[0_36px_75px_-45px_rgba(15,23,42,0.75)]"
-          >
-            <div className="flex items-center justify-between">
-              <p className="font-display text-3xl font-semibold text-stone-900">{activityLabel}</p>
-              <span className="rounded-full border border-stone-300 bg-stone-100 px-3 py-1 text-[10px] uppercase tracking-[0.24em] text-stone-700">
-                {badge}
-              </span>
-            </div>
-            <div className="mt-4 overflow-hidden rounded-2xl border border-stone-200 bg-stone-50">
-              <HistoryTimeClockPreview mode={mode} value={value} />
-            </div>
-            <p className="mt-4 text-xs uppercase tracking-[0.24em] text-stone-500">
-              Open activities
-            </p>
-          </Link>
+        <section className={`mx-auto grid w-full gap-5 ${cards.length > 1 ? "max-w-5xl md:grid-cols-2" : "max-w-xl"}`}>
+          {cards.map((card) => (
+            <Link
+              key={card.href}
+              href={card.href}
+              className="group block rounded-3xl border border-stone-200 bg-white/90 p-6 shadow-[0_28px_65px_-45px_rgba(15,23,42,0.75)] transition hover:-translate-y-0.5 hover:shadow-[0_36px_75px_-45px_rgba(15,23,42,0.75)]"
+            >
+              <div className="flex items-center justify-between">
+                <p className="font-display text-3xl font-semibold text-stone-900">{card.label}</p>
+                <span className="rounded-full border border-stone-300 bg-stone-100 px-3 py-1 text-[10px] uppercase tracking-[0.24em] text-stone-700">
+                  {card.badge}
+                </span>
+              </div>
+              <div className="mt-4 overflow-hidden rounded-2xl border border-stone-200 bg-stone-50">
+                <HistoryTimeClockPreview mode={card.mode} value={card.value} />
+              </div>
+              {card.note ? <p className="mt-3 text-sm text-stone-600">{card.note}</p> : null}
+              <p className="mt-4 text-xs uppercase tracking-[0.24em] text-stone-500">{card.ctaLabel}</p>
+            </Link>
+          ))}
         </section>
       </main>
     </div>

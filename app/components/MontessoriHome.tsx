@@ -40,16 +40,19 @@ export default function MontessoriHome() {
 
   return (
     <div className="min-h-screen select-none bg-[radial-gradient(circle_at_top,#f5efe6_0%,#fdfbf8_45%,#f7efe4_100%)]">
-      <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col items-center justify-center px-6 py-12 sm:px-10">
-        <div className="space-y-6 text-center">
-          <p className="text-xs uppercase tracking-[0.4em] text-stone-400">Montessori Digital Studio</p>
-          <h1 className="font-display text-4xl font-semibold text-stone-900 md:text-5xl">Montessori Digital Studio</h1>
-          <a
-            href="/dashboard"
-            className="inline-flex min-w-[320px] items-center justify-center rounded-full border border-sky-200 bg-sky-50 px-8 py-3 text-sm uppercase tracking-[0.25em] text-sky-700 shadow-sm transition hover:bg-sky-100"
-          >
-            Activity Dashboard
-          </a>
+      <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col items-center justify-start px-6 pb-12 pt-4 sm:px-10 sm:pt-6">
+        <div className="space-y-2 text-center">
+          <div className="mx-auto flex w-full flex-col items-center gap-0">
+            <Image
+              src="/MDS_f.png"
+              alt="Montessori DS logo"
+              width={132}
+              height={132}
+              priority
+              className="h-32 w-32 object-contain"
+            />
+            <p className="text-xs uppercase tracking-[0.38em] text-stone-500">Montessori Digital Studio</p>
+          </div>
         </div>
 
         <div className="mt-10 grid w-full gap-6 md:grid-cols-2 xl:grid-cols-3">

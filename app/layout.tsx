@@ -3,7 +3,6 @@ import { Fraunces, Manrope } from "next/font/google";
 import "./globals.css";
 import IOSHideMenuBridge from "./components/IOSHideMenuBridge";
 import ActivityTelemetryBridge from "./components/ActivityTelemetryBridge";
-import FeedbackWidget from "./components/FeedbackWidget";
 
 const fraunces = Fraunces({
   variable: "--font-fraunces",
@@ -52,7 +51,6 @@ export default function RootLayout({
         <IOSHideMenuBridge />
         <ActivityTelemetryBridge />
         {children}
-        <FeedbackWidget />
       </body>
     </html>
   );
