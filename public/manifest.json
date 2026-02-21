@@ -1,6 +1,6 @@
 {
-  "name": "Montessori Digital Studio",
-  "short_name": "Digital Studio",
+  "name": "Montessori DS",
+  "short_name": "Montessori DS",
   "description": "A playful Montessori materials lab with 3D learning",
   "start_url": "/",
   "display": "fullscreen",
@@ -16,6 +16,11 @@
     {
       "src": "/icon-512.png",
       "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/MDS.png",
+      "sizes": "680x680",
       "type": "image/png"
     }
   ]

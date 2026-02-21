@@ -20,13 +20,17 @@ export const metadata: Metadata = {
   description: "A playful Montessori materials lab with 3D learning.",
   manifest: "/manifest.json",
   icons: {
-    icon: "/favicon.png",
+    icon: [
+      { url: "/favicon.png", type: "image/png", sizes: "64x64" },
+      { url: "/MDS.png", type: "image/png", sizes: "680x680" },
+    ],
     apple: "/apple-touch-icon.png",
+    shortcut: "/favicon.png",
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Montessori Digital Studio",
+    title: "Montessori DS",
   },
   other: {
     "mobile-web-app-capable": "yes",
