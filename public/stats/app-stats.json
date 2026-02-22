@@ -1,8 +1,8 @@
 {
-  "generatedAtISO": "2026-02-22T19:22:30.759Z",
+  "generatedAtISO": "2026-02-22T23:02:05.339Z",
   "totals": {
-    "files": 7314,
-    "sizeBytes": 1526046447
+    "files": 7322,
+    "sizeBytes": 1538151974
   },
   "pages": {
     "total": 91,
@@ -10,27 +10,27 @@
     "dynamicLesson": 16
   },
   "components": {
-    "total": 75,
+    "total": 76,
     "apiRoutes": 7
   },
   "media": {
-    "total": 7021,
-    "images": 6658,
+    "total": 7023,
+    "images": 6660,
     "audio": 361,
     "video": 2
   },
   "assets": {
-    "total": 6999,
+    "total": 7002,
     "public": 3486,
-    "master": 3513,
+    "master": 3516,
     "publicMedia": {
       "total": 3524,
       "images": 3308,
       "audio": 216
     },
     "masterMedia": {
-      "total": 3479,
-      "images": 3334,
+      "total": 3480,
+      "images": 3335,
       "audio": 145
     }
   },
@@ -45,9 +45,9 @@
     "newestPage": {
       "relPath": "app/register/page.tsx",
       "extension": ".tsx",
-      "size": 8147,
+      "size": 13574,
       "createdMs": 1771751019798.9233,
-      "modifiedMs": 1771782324103.4463
+      "modifiedMs": 1771795857694.3792
     },
     "oldestLessonPage": {
       "relPath": "app/lessons/number-rods-presentation/page.tsx",
@@ -71,11 +71,11 @@
       "modifiedMs": 1771723583129.4983
     },
     "newestFile": {
-      "relPath": "app/components/MaterialTeachersGuide.tsx",
-      "extension": ".tsx",
-      "size": 4942,
-      "createdMs": 1771788024176.5933,
-      "modifiedMs": 1771788024176.8953
+      "relPath": "assets_master/downloads/.DS_Store",
+      "extension": "",
+      "size": 6148,
+      "createdMs": 1771801157587.5752,
+      "modifiedMs": 1771801157588.718
     }
   },
   "lessonSubjects": [
@@ -143,15 +143,15 @@
   "topLevels": [
     {
       "name": "public",
-      "count": 3575
+      "count": 3578
     },
     {
       "name": "assets_master",
-      "count": 3513
+      "count": 3516
     },
     {
       "name": "app",
-      "count": 205
+      "count": 207
     },
     {
       "name": "scripts",
@@ -185,7 +185,7 @@
   "extensions": [
     {
       "name": ".png",
-      "count": 6625
+      "count": 6627
     },
     {
       "name": ".m4a",
@@ -193,18 +193,18 @@
     },
     {
       "name": ".tsx",
-      "count": 170
+      "count": 171
     },
     {
       "name": "(no ext)",
-      "count": 57
-    },
-    {
-      "name": ".svg",
-      "count": 33
+      "count": 58
     },
     {
       "name": ".ts",
+      "count": 34
+    },
+    {
+      "name": ".svg",
       "count": 33
     },
     {
@@ -220,6 +220,10 @@
       "count": 5
     },
     {
+      "name": ".pdf",
+      "count": 3
+    },
+    {
       "name": ".md",
       "count": 2
     },
@@ -233,10 +237,6 @@
     },
     {
       "name": ".local",
-      "count": 1
-    },
-    {
-      "name": ".py",
       "count": 1
     }
   ],
@@ -254,6 +254,20 @@
       "size": 6250996,
       "createdMs": 1771706377842.2292,
       "modifiedMs": 1771706378421.586
+    },
+    {
+      "relPath": "assets_master/downloads/Phonic_Picture_Cards_Pink_Series_Pictures.pdf",
+      "extension": ".pdf",
+      "size": 5769429,
+      "createdMs": 1771798523261.1582,
+      "modifiedMs": 1771801034067.4553
+    },
+    {
+      "relPath": "public/downloads/Phonic_Picture_Cards_Pink_Series_Pictures.pdf",
+      "extension": ".pdf",
+      "size": 5769429,
+      "createdMs": 1771799528552.5938,
+      "modifiedMs": 1771801286799.243
     },
     {
       "relPath": "assets_master/language_arts/initial_sound/Initial Sound - I/i---inch___initial_sound.png",
@@ -310,20 +324,6 @@
       "size": 2196719,
       "createdMs": 1771451082006.1812,
       "modifiedMs": 1771451082007.6748
-    },
-    {
-      "relPath": "assets_master/language_arts/concept_development/parts-to-whole/cheetah-part-to-whole____parts-to-whole.png",
-      "extension": ".png",
-      "size": 2091125,
-      "createdMs": 1771451263922.0503,
-      "modifiedMs": 1771723601375.948
-    },
-    {
-      "relPath": "public/assets/language_arts/concept_development/parts-to-whole/cheetah-part-to-whole____parts-to-whole.png",
-      "extension": ".png",
-      "size": 2091125,
-      "createdMs": 1771451263920.698,
-      "modifiedMs": 1771451263922.0503
     }
   ]
 }

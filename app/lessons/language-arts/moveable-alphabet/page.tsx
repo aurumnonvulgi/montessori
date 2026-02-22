@@ -49,7 +49,13 @@ export default function MoveableAlphabetHub() {
             Back to Language Arts
           </Link>
         </div>
-        <MaterialTeachersGuide guide={PHONIC_PICTURE_CARDS_MOVEABLE_ALPHABET_PINK_TEACHERS_GUIDE} />
+        <MaterialTeachersGuide
+          guide={PHONIC_PICTURE_CARDS_MOVEABLE_ALPHABET_PINK_TEACHERS_GUIDE}
+          materialPdfHref="/downloads/Phonic_Picture_Cards_Pink_Series_Pictures.pdf"
+          materialPdfLabel="Download Pink Series Pictures PDF"
+          teacherGuidePdfHref="/downloads/Phonic_Picture_Cards_Pink_Series_Teachers_Guide.pdf"
+          teacherGuidePdfLabel="Download Teacher's Guide PDF"
+        />
       </main>
     </div>
   );

@@ -919,6 +919,29 @@ export default function MoveableAlphabet() {
             Back to Vowels
           </Link>
         </div>
+        <div className="rounded-3xl border border-sky-200 bg-sky-50/80 p-4 shadow-[0_20px_50px_-40px_rgba(14,116,144,0.5)]">
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#0e6798]">Downloads</p>
+          <div className="mt-3 flex flex-wrap gap-3">
+            <a
+              href="/downloads/Phonic_Picture_Cards_Pink_Series_Pictures.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              download
+              className="inline-flex items-center justify-center rounded-full border border-[#71c0ee] bg-white px-5 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-[#0e6798] transition hover:bg-[#e8f5fc]"
+            >
+              Pink Series Pictures PDF
+            </a>
+            <a
+              href="/downloads/Phonic_Picture_Cards_Pink_Series_Teachers_Guide.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              download
+              className="inline-flex items-center justify-center rounded-full border border-[#71c0ee] bg-[#71c0ee] px-5 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-white transition hover:bg-[#5cb6e8]"
+            >
+              Teacher&apos;s Guide PDF
+            </a>
+          </div>
+        </div>
       </main>
       <CompletionOverlay
         open={showCompletion}
