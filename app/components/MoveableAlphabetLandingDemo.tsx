@@ -946,7 +946,7 @@ export default function MoveableAlphabetLandingDemo() {
         </div>
       ) : null}
 
-      <div className="mt-4 flex justify-center">
+      <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
         <button
           type="button"
           onClick={resetSample}
@@ -955,6 +955,15 @@ export default function MoveableAlphabetLandingDemo() {
         >
           Reset Sample
         </button>
+        <a
+          href="/downloads/Phonic_Picture_Cards_Pink_Series_Pictures.pdf"
+          target="_blank"
+          rel="noopener noreferrer"
+          download
+          className="inline-flex items-center justify-center rounded-full border border-[#71c0ee] bg-[#71c0ee] px-6 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-white transition hover:bg-[#5cb6e8]"
+        >
+          Download Pink Series Pictures Cards
+        </a>
       </div>
     </div>
   );

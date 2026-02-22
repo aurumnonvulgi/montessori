@@ -78,6 +78,17 @@ export default function PublicLanding() {
             />
           </div>
 
+          <div className="mt-6 rounded-3xl border border-[#71c0ee] bg-[#e8f5fc] p-6 text-left shadow-[0_24px_70px_-50px_rgba(14,103,152,0.45)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.26em] text-[#0e6798]">Progress Tracking</p>
+            <h3 className="mt-2 font-display text-2xl font-semibold text-slate-900 sm:text-3xl">
+              Follow Learning Clearly
+            </h3>
+            <p className="mt-3 max-w-5xl text-sm text-slate-700 sm:text-base">
+              The dashboard allows parents and educators to see learner progress across materials, assign lessons by
+              readiness, and control lesson release so new activities unlock in a purposeful sequence.
+            </p>
+          </div>
+
           <div className="mt-6 overflow-hidden rounded-3xl border-2 border-[#71c0ee] bg-[#1f4f8a] text-left shadow-[0_24px_70px_-40px_rgba(30,64,175,0.65)]">
             <div className="border-b border-[#71c0ee] bg-white/10 px-6 py-4">
               <p className="text-xs font-semibold uppercase tracking-[0.26em] text-[#71c0ee]">Sign Up</p>
@@ -91,12 +102,6 @@ export default function PublicLanding() {
             </div>
 
             <div className="grid gap-3 px-6 py-5 sm:grid-cols-2">
-              <div className="rounded-2xl border border-[#71c0ee] bg-white/85 p-4">
-                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#0e6798]">Progress Tracking</p>
-                <p className="mt-1 text-sm text-stone-700">
-                  Track attempts and completion by lesson so adults and educators can follow progress clearly.
-                </p>
-              </div>
               <div className="rounded-2xl border border-[#71c0ee] bg-white/85 p-4">
                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#0e6798]">Precise Naming</p>
                 <p className="mt-1 text-sm text-stone-700">
