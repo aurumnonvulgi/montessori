@@ -7,6 +7,7 @@ type MaterialTeachersGuideProps = {
   guide: MaterialTeachersGuideData;
   className?: string;
   autoPreviewOnVisible?: boolean;
+  defaultOpen?: boolean;
   materialPdfHref?: string;
   materialPdfLabel?: string;
   teacherGuidePdfHref?: string;
@@ -17,6 +18,7 @@ export default function MaterialTeachersGuide({
   guide,
   className = "",
   autoPreviewOnVisible = false,
+  defaultOpen = false,
   materialPdfHref,
   materialPdfLabel = "Download Material PDF",
   teacherGuidePdfHref,
@@ -27,7 +29,7 @@ export default function MaterialTeachersGuide({
   const hasAutoPreviewPlayedRef = useRef(false);
   const timerIdsRef = useRef<number[]>([]);
   const [attentionOn, setAttentionOn] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(defaultOpen);
 
   const clearTimers = useCallback(() => {
     timerIdsRef.current.forEach((id) => window.clearTimeout(id));

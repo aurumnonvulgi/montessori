@@ -69,7 +69,7 @@ export default function PublicLanding() {
             <MaterialTeachersGuide
               className="mt-6"
               guide={PHONIC_PICTURE_CARDS_MOVEABLE_ALPHABET_PINK_TEACHERS_GUIDE}
-              autoPreviewOnVisible
+              defaultOpen
               materialPdfHref="/downloads/Phonic_Picture_Cards_Pink_Series_Pictures.pdf"
               materialPdfLabel="Download Pink Series Pictures PDF"
               teacherGuidePdfHref="/downloads/Phonic_Picture_Cards_Pink_Series_Teachers_Guide.pdf"
