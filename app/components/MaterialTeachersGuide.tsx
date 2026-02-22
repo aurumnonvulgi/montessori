@@ -7,12 +7,20 @@ type MaterialTeachersGuideProps = {
   guide: MaterialTeachersGuideData;
   className?: string;
   autoPreviewOnVisible?: boolean;
+  materialPdfHref?: string;
+  materialPdfLabel?: string;
+  teacherGuidePdfHref?: string;
+  teacherGuidePdfLabel?: string;
 };
 
 export default function MaterialTeachersGuide({
   guide,
   className = "",
   autoPreviewOnVisible = false,
+  materialPdfHref,
+  materialPdfLabel = "Download Material PDF",
+  teacherGuidePdfHref,
+  teacherGuidePdfLabel = "Download Teacher's Guide PDF",
 }: MaterialTeachersGuideProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const detailsRef = useRef<HTMLDetailsElement | null>(null);
@@ -196,19 +204,46 @@ export default function MaterialTeachersGuide({
             </div>
 
             <div className="flex justify-end rounded-2xl border border-sky-200/80 bg-white/75 p-5 shadow-sm">
-              <div className="group/print relative" title="Please register for an account with printing rights.">
-                <button
-                  type="button"
-                  disabled
-                  aria-disabled="true"
-                  className="pointer-events-none cursor-not-allowed rounded-full border border-stone-300 bg-stone-100 px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-stone-400 sm:text-sm"
-                >
-                  Print PDF Material or Guide
-                </button>
-                <div className="pointer-events-none absolute -top-11 right-0 rounded-full bg-stone-900 px-4 py-2 text-xs text-white opacity-0 transition group-hover/print:opacity-100 group-active/print:opacity-100 group-focus-within/print:opacity-100">
-                  Please register for an account with printing rights.
+              {materialPdfHref || teacherGuidePdfHref ? (
+                <div className="flex flex-wrap justify-end gap-2">
+                  {materialPdfHref ? (
+                    <a
+                      href={materialPdfHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      download
+                      className="inline-flex items-center justify-center rounded-full border border-[#71c0ee] bg-[#e8f5fc] px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#0e6798] transition hover:bg-[#d8eefb] sm:text-sm"
+                    >
+                      {materialPdfLabel}
+                    </a>
+                  ) : null}
+                  {teacherGuidePdfHref ? (
+                    <a
+                      href={teacherGuidePdfHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      download
+                      className="inline-flex items-center justify-center rounded-full border border-[#71c0ee] bg-[#71c0ee] px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-[#5cb6e8] sm:text-sm"
+                    >
+                      {teacherGuidePdfLabel}
+                    </a>
+                  ) : null}
                 </div>
-              </div>
+              ) : (
+                <div className="group/print relative" title="Please register for an account with printing rights.">
+                  <button
+                    type="button"
+                    disabled
+                    aria-disabled="true"
+                    className="pointer-events-none cursor-not-allowed rounded-full border border-stone-300 bg-stone-100 px-5 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-stone-400 sm:text-sm"
+                  >
+                    Print PDF Material or Guide
+                  </button>
+                  <div className="pointer-events-none absolute -top-11 right-0 rounded-full bg-stone-900 px-4 py-2 text-xs text-white opacity-0 transition group-hover/print:opacity-100 group-active/print:opacity-100 group-focus-within/print:opacity-100">
+                    Please register for an account with printing rights.
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           </div>
