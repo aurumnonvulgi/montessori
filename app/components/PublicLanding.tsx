@@ -37,11 +37,11 @@ export default function PublicLanding() {
           Montessori Digital Studio
         </h1>
         <p className="mx-auto mt-3 max-w-3xl text-base text-stone-600 sm:text-lg">
-          A calm digital companion for Montessori materials, lessons, and guided practice.
+          A digital companion for Montessori materials, lessons, and guided practice.
         </p>
 
         <p className="mx-auto mt-8 w-full max-w-6xl text-left text-base leading-relaxed text-stone-700 sm:text-lg">
-          Montessori Digital Studio is a complete, calm, and faithful Montessori lesson library, spanning all subject
+          Montessori Digital Studio is a complete and faithful Montessori lesson library, spanning all subject
           areas with hundreds of clean, Montessori-like presentations that honor the most respected manuals used in the
           U.S. and worldwide. It helps children learn with clarity and independence, while giving parents, teachers,
           and institutions a reliable reference for precise sequencing, language, and purpose. With PDF companion
