@@ -3,6 +3,8 @@
 import { useState } from "react";
 import HomeLink from "./HomeLink";
 import TeenBoardScene from "./TeenBoardScene";
+import MaterialTeachersGuide from "./MaterialTeachersGuide";
+import { TEEN_BOARD_QUANTITIES_TEACHERS_GUIDE } from "../data/materialTeachersGuides";
 
 export default function TeenBoardQuantitiesLesson() {
   const [positions, setPositions] = useState<Record<string, [number, number, number]>>({});
@@ -101,6 +103,8 @@ export default function TeenBoardQuantitiesLesson() {
             )}
           </div>
         </section>
+
+        <MaterialTeachersGuide guide={TEEN_BOARD_QUANTITIES_TEACHERS_GUIDE} className="mt-2" />
       </main>
     </div>
   );

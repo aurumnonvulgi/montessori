@@ -2,6 +2,8 @@
 
 import HomeLink from "./HomeLink";
 import TeenBoardSceneSymbols from "./TeenBoardSceneSymbols";
+import MaterialTeachersGuide from "./MaterialTeachersGuide";
+import { TEEN_BOARD_SYMBOLS_TEACHERS_GUIDE } from "../data/materialTeachersGuides";
 
 export default function TeenBoardSymbolsLesson() {
   return (
@@ -32,6 +34,8 @@ export default function TeenBoardSymbolsLesson() {
             <TeenBoardSceneSymbols className="h-full" interactive />
           </div>
         </section>
+
+        <MaterialTeachersGuide guide={TEEN_BOARD_SYMBOLS_TEACHERS_GUIDE} className="mt-2" />
       </main>
     </div>
   );

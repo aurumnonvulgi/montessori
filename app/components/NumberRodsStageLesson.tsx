@@ -6,6 +6,7 @@ import NumberRodsScene from "./NumberRodsScene";
 import { primeSounds } from "../lib/sounds";
 import HomeLink from "./HomeLink";
 import { useMicrophoneEnabled } from "../lib/microphonePreferences";
+import MicrophoneLessonBanner from "./MicrophoneLessonBanner";
 
 type NumberRodsStageProps = {
   stageIndex: number;
@@ -15,7 +16,15 @@ const STAGE_NAMES = ["1, 2, 3", "4, 5, 6", "7, 8, 9", "10"];
 
 function RotateDeviceIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-16 w-16 animate-pulse">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-16 w-16 animate-pulse"
+    >
       <rect x="4" y="2" width="16" height="20" rx="2" />
       <path d="M12 18h.01" />
       <path d="M2 12l2-2m0 0l2 2m-2-2v4" />
@@ -34,7 +43,15 @@ function PlayIcon() {
 
 function HomeIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-5 w-5"
+    >
       <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
       <polyline points="9 22 9 12 15 12 15 22" />
     </svg>
@@ -43,7 +60,15 @@ function HomeIcon() {
 
 function BackIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-5 w-5"
+    >
       <path d="M19 12H5M12 19l-7-7 7-7" />
     </svg>
   );
@@ -51,16 +76,22 @@ function BackIcon() {
 
 function RestartIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-5 w-5"
+    >
       <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
       <path d="M3 3v5h5" />
     </svg>
   );
 }
 
-export default function NumberRodsStageLesson({
-  stageIndex,
-}: NumberRodsStageProps) {
+export default function NumberRodsStageLesson({ stageIndex }: NumberRodsStageProps) {
   const router = useRouter();
   const { microphoneEnabled } = useMicrophoneEnabled();
   const [lessonStarted, setLessonStarted] = useState(false);
@@ -68,7 +99,6 @@ export default function NumberRodsStageLesson({
   const [isPortraitMobile, setIsPortraitMobile] = useState(false);
   const [isMobileLandscape, setIsMobileLandscape] = useState(false);
 
-  // Detect orientation on mobile
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -76,16 +106,13 @@ export default function NumberRodsStageLesson({
       const width = window.innerWidth;
       const height = window.innerHeight;
       const isLandscape = width > height;
-      // Mobile landscape: height is small (< 500px) and in landscape orientation
       const mobileLandscape = height < 500 && isLandscape;
-      // Mobile portrait: small screen in portrait
       const mobilePortrait = (width < 640 || height < 500) && !isLandscape;
 
       setIsMobileLandscape(mobileLandscape);
       setIsPortraitMobile(mobilePortrait);
     };
 
-    // Try to lock to landscape on mobile
     const lockLandscape = async () => {
       try {
         const orientation = screen.orientation as ScreenOrientation & {
@@ -93,7 +120,7 @@ export default function NumberRodsStageLesson({
         };
         await orientation.lock?.("landscape");
       } catch {
-        // Orientation lock not supported or denied - that's fine
+        // Orientation lock not supported or denied.
       }
     };
 
@@ -103,24 +130,22 @@ export default function NumberRodsStageLesson({
     window.addEventListener("resize", checkOrientation);
     window.addEventListener("orientationchange", checkOrientation);
 
-      return () => {
-        window.removeEventListener("resize", checkOrientation);
-        window.removeEventListener("orientationchange", checkOrientation);
-        // Unlock orientation on unmount
-        try {
-          const orientation = screen.orientation as ScreenOrientation & {
-            unlock?: () => void;
-          };
-          orientation.unlock?.();
-        } catch {
-          // ignore
-        }
-      };
+    return () => {
+      window.removeEventListener("resize", checkOrientation);
+      window.removeEventListener("orientationchange", checkOrientation);
+      try {
+        const orientation = screen.orientation as ScreenOrientation & {
+          unlock?: () => void;
+        };
+        orientation.unlock?.();
+      } catch {
+        // ignore
+      }
+    };
   }, []);
 
   const requestFullscreen = useCallback(() => {
     if (typeof document === "undefined") return;
-    // Only request fullscreen on mobile
     const isMobile = window.innerHeight < 500 || window.innerWidth < 640;
     if (!isMobile) return;
 
@@ -134,7 +159,7 @@ export default function NumberRodsStageLesson({
         elem.webkitRequestFullscreen();
       }
     } catch {
-      // Fullscreen not supported - that's fine
+      // Fullscreen not supported.
     }
   }, []);
 
@@ -142,10 +167,7 @@ export default function NumberRodsStageLesson({
     setLessonStarted(true);
     setResetKey((value) => value + 1);
 
-    // Request fullscreen on mobile
     requestFullscreen();
-
-    // Prime audio for mobile browsers
     primeSounds();
 
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
@@ -172,10 +194,7 @@ export default function NumberRodsStageLesson({
   const handleStageComplete = useCallback(() => {
     const stageNumber = stageIndex + 1;
     if (typeof window !== "undefined") {
-      window.localStorage.setItem(
-        `number-rods-stage-${stageNumber}-complete`,
-        "true"
-      );
+      window.localStorage.setItem(`number-rods-stage-${stageNumber}-complete`, "true");
     }
     setTimeout(() => {
       router.push("/lessons/number-rods");
@@ -185,7 +204,7 @@ export default function NumberRodsStageLesson({
   return (
     <div className="fixed inset-0 overflow-hidden bg-[radial-gradient(circle_at_top,#f5efe6_0%,#fdfbf8_45%,#f7efe4_100%)]">
       <HomeLink />
-      {/* Mobile landscape: Right sidebar */}
+
       {isMobileLandscape && (
         <div className="fixed right-0 top-0 z-10 flex h-full w-12 flex-col items-center justify-center gap-4 bg-white/80 shadow-lg backdrop-blur-sm">
           {!lessonStarted ? (
@@ -226,9 +245,7 @@ export default function NumberRodsStageLesson({
         </div>
       )}
 
-      {/* Main content */}
       <main className={`flex h-full flex-col ${isMobileLandscape ? "pr-12" : ""}`}>
-        {/* Desktop header - hidden on mobile landscape */}
         {!isMobileLandscape && (
           <div className="flex items-center justify-end px-6 py-4 sm:px-10">
             <div className="flex items-center gap-3 text-[10px] uppercase tracking-[0.3em] text-stone-400">
@@ -238,7 +255,10 @@ export default function NumberRodsStageLesson({
           </div>
         )}
 
-        {/* Scene container - fills available space */}
+        <div className={isMobileLandscape ? "px-1 pb-1" : "px-2 pb-2 sm:px-6 sm:pb-3"}>
+          <MicrophoneLessonBanner microphoneEnabled={microphoneEnabled} />
+        </div>
+
         <div className={`flex-1 ${isMobileLandscape ? "p-1" : "px-2 pb-2 sm:px-6 sm:pb-4"}`}>
           <NumberRodsScene
             key={resetKey}
@@ -251,7 +271,6 @@ export default function NumberRodsStageLesson({
           />
         </div>
 
-        {/* Desktop bottom button - hidden on mobile landscape */}
         {!isMobileLandscape && (
           <div className="hidden px-6 pb-6 sm:block sm:px-10">
             {!lessonStarted ? (
@@ -275,16 +294,11 @@ export default function NumberRodsStageLesson({
         )}
       </main>
 
-      {/* Portrait orientation overlay for mobile */}
       {isPortraitMobile && (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-6 bg-[#f5efe6]/95 backdrop-blur-sm">
           <RotateDeviceIcon />
-          <p className="font-display text-xl text-stone-700">
-            Please rotate your device
-          </p>
-          <p className="text-sm text-stone-500">
-            This lesson works best in landscape mode
-          </p>
+          <p className="font-display text-xl text-stone-700">Please rotate your device</p>
+          <p className="text-sm text-stone-500">This lesson works best in landscape mode</p>
           <button
             type="button"
             onClick={goBack}

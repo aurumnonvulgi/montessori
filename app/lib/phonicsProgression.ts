@@ -5,6 +5,7 @@ export type PhonicsMaterialId =
   | "moveable-alphabet"
   | "phonic-labels"
   | "phonic-three-part-cards"
+  | "phonic-three-part-cards-labels-only"
   | "phonic-three-part-cards-labels"
   | "reading-book";
 
@@ -40,6 +41,11 @@ const PHONICS_MATERIALS: MaterialDefinition[] = [
     id: "phonic-three-part-cards",
     title: "Phonic Three-Part Cards",
     hrefForVowel: (vowel) => `/lessons/language-arts/phonic-three-part-cards/${vowel}`,
+  },
+  {
+    id: "phonic-three-part-cards-labels-only",
+    title: "Phonic Three-Part Cards Labels",
+    hrefForVowel: (vowel) => `/lessons/language-arts/phonic-three-part-cards-labels-only/${vowel}`,
   },
   {
     id: "phonic-three-part-cards-labels",

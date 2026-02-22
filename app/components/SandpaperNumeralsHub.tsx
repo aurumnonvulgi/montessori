@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import SandpaperNumeralsPreview from "./SandpaperNumeralsPreview";
 import HomeLink from "./HomeLink";
+import MaterialTeachersGuide from "./MaterialTeachersGuide";
+import { SANDPAPER_NUMERALS_TEACHERS_GUIDE } from "../data/materialTeachersGuides";
 
 const LEVELS = [
   {
@@ -77,6 +79,8 @@ export default function SandpaperNumeralsHub() {
             </button>
           ))}
         </div>
+
+        <MaterialTeachersGuide guide={SANDPAPER_NUMERALS_TEACHERS_GUIDE} className="mt-8" />
       </main>
     </div>
   );

@@ -575,6 +575,39 @@ export default function MoveableAlphabet() {
       const attempt = attemptCountRef.current + 1;
       attemptCountRef.current = attempt;
       if (zone && zone.type === allowedType) {
+        const occupiedBy = assignments[zone.id];
+        if (occupiedBy && occupiedBy !== letter.id) {
+          trackLessonEvent({
+            lesson: "language-arts:moveable-alphabet",
+            activity: `vowel-${activeVowel}`,
+            event: "attempt_result",
+            success: false,
+            attempt,
+            value: letter.letter,
+            page: stageIndex + 1,
+            totalPages: vowelStages.length,
+            details: {
+              zone: zone.id,
+              zoneType: zone.type,
+              reason: "occupied-slot",
+            },
+          });
+          setStatusMessage("That box already has a letter.");
+          setLetters((current) =>
+            current.map((l) =>
+              l.id === letter.id
+                ? {
+                    ...l,
+                    x: l.homeX,
+                    y: l.homeY,
+                  }
+                : l
+            )
+          );
+          setDragging(null);
+          return;
+        }
+
         trackLessonEvent({
           lesson: "language-arts:moveable-alphabet",
           activity: `vowel-${activeVowel}`,
@@ -593,9 +626,6 @@ export default function MoveableAlphabet() {
         const yOffset = LETTER_Y_OFFSETS[letter.letter] ?? 0;
         setAssignments((prev) => {
           const updated = { ...prev };
-          if (updated[zone.id]) {
-            delete updated[zone.id];
-          }
           updated[zone.id] = letter.id;
           return updated;
         });
@@ -658,7 +688,7 @@ export default function MoveableAlphabet() {
       window.removeEventListener("pointerup", handleUp);
       window.removeEventListener("pointercancel", handleUp);
     };
-  }, [activeVowel, convertPointerToBoard, dragging, letters, removeAssignment, stageIndex, vowelStages.length]);
+  }, [activeVowel, assignments, convertPointerToBoard, dragging, letters, removeAssignment, stageIndex, vowelStages.length]);
 
   const handlePointerDown = (event: React.PointerEvent<HTMLButtonElement>, letter: LetterState) => {
     event.preventDefault();

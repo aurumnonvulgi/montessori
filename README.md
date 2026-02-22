@@ -48,6 +48,38 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
 
 A soft chime is included at `public/audio/chime.wav`. Replace it with your own file if desired.
 
+## Asset Workflow (High-Res + Web)
+
+Use this to keep print-quality originals untouched while shipping faster web assets.
+
+1) Initialize master originals once from current web assets:
+
+```bash
+npm run assets:master:init
+```
+
+2) From now on, edit/replace your high-res files in:
+
+```bash
+assets_master/
+```
+
+3) Generate optimized web copies into:
+
+```bash
+public/assets/
+```
+
+```bash
+npm run assets:optimize
+```
+
+Optional:
+
+- `npm run assets:optimize -- --dry-run` (preview changes only)
+- `npm run assets:optimize -- --scope language_arts/consonant_blend` (process one subfolder)
+- `ASSET_MAX_DIM=1800 ASSET_QUALITY=82 npm run assets:optimize` (tune output size/quality)
+
 ## Deploy
 
 Deploy with Vercel and add the same Supabase env vars in the Vercel project settings.

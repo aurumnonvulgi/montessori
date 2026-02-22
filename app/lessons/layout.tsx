@@ -1,4 +1,5 @@
 import FeedbackWidget from "../components/FeedbackWidget";
+import { ENABLE_FEEDBACK } from "../lib/featureFlags";
 
 export default function LessonsLayout({
   children,
@@ -8,9 +9,11 @@ export default function LessonsLayout({
   return (
     <>
       {children}
-      <div className="mx-auto w-full max-w-7xl px-6 pb-6 sm:px-10">
-        <FeedbackWidget placement="inline" />
-      </div>
+      {ENABLE_FEEDBACK ? (
+        <div className="mx-auto w-full max-w-7xl px-6 pb-6 sm:px-10">
+          <FeedbackWidget placement="inline" />
+        </div>
+      ) : null}
     </>
   );
 }

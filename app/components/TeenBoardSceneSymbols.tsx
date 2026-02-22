@@ -169,10 +169,10 @@ function SceneContent({
 
   const handleBarPointerDown = useCallback(
     (id: string) => (event: ThreeEvent<PointerEvent>) => {
-      event.stopPropagation();
       if (!interactive) {
         return;
       }
+      event.stopPropagation();
       const currentPosition = new THREE.Vector3(...(barPositions[id] ?? [0, 0, 0]));
       const offset = event.point.clone().sub(currentPosition);
       setDragTarget({ id, offset, type: "bar" });
@@ -185,10 +185,10 @@ function SceneContent({
 
   const handleTilePointerDown = useCallback(
     (id: string) => (event: ThreeEvent<PointerEvent>) => {
-      event.stopPropagation();
       if (!interactive) {
         return;
       }
+      event.stopPropagation();
       const currentPosition = new THREE.Vector3(...(tilePositions[id] ?? [0, 0, 0]));
       const offset = event.point.clone().sub(currentPosition);
       setDragTarget({ id, offset, type: "tile" });
@@ -320,9 +320,9 @@ function SceneContent({
         minPolarAngle={0.15}
         maxDistance={1.8}
         minDistance={0.6}
-        enablePan
-        enableZoom
-        enableRotate
+        enablePan={interactive}
+        enableZoom={interactive}
+        enableRotate={interactive}
       />
     </>
   );
@@ -331,11 +331,13 @@ function SceneContent({
 export default function TeenBoardSceneSymbols({
   className,
   interactive = true,
+  preview = false,
   showZoomReset,
 }: TeenBoardSceneProps) {
   type OrbitControlsHandle = React.ElementRef<typeof DreiOrbitControls>;
   const controlsRef = useRef<OrbitControlsHandle | null>(null);
-  const shouldShowZoomReset = showZoomReset ?? interactive;
+  const isInteractive = interactive && !preview;
+  const shouldShowZoomReset = showZoomReset ?? isInteractive;
 
   const handleZoomReset = useCallback(() => {
     const controls = controlsRef.current;
@@ -349,9 +351,9 @@ export default function TeenBoardSceneSymbols({
   }, []);
 
   return (
-    <div className={`relative ${className ?? "h-full w-full"}`}>
-      <Canvas camera={{ position: [0, 0.35, 0.8], fov: 45 }}>
-        <SceneContent interactive={interactive} controlsRef={controlsRef} />
+    <div className={`relative ${isInteractive ? "" : "pointer-events-none select-none"} ${className ?? "h-full w-full"}`}>
+      <Canvas camera={{ position: [0, 0.35, 0.8], fov: 45 }} frameloop={isInteractive ? "always" : "demand"}>
+        <SceneContent interactive={isInteractive} controlsRef={controlsRef} />
       </Canvas>
       {shouldShowZoomReset ? <ZoomResetButton onClick={handleZoomReset} /> : null}
     </div>

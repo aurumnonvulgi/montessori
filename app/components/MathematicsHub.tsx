@@ -14,7 +14,7 @@ const LESSONS = [
     key: "numberRods",
     label: "Number Rods",
     href: "/lessons/number-rods",
-    preview: <NumberRodsScene playing={false} voiceEnabled={false} className="h-full" showZoomReset={false} />,
+    preview: <NumberRodsScene playing={false} voiceEnabled={false} className="h-full" showZoomReset={false} preview />,
     completionKey: "number-rods-complete",
   },
   {

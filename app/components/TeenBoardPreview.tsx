@@ -9,15 +9,24 @@ type TeenBoardPreviewProps = {
 };
 
 const QUANTITIES_PREVIEW_CAMERA = {
-  x: 0,
-  y: 0.42,
-  z: 1.1,
-  fov: 52,
+  x: 0.32,
+  y: 0.34,
+  z: 1.05,
+  fov: 50,
+};
+
+const QUANTITIES_PREVIEW_TARGET = {
+  x: 0.33,
+  y: 0,
+  z: 0.42,
 };
 
 export default function TeenBoardPreview({ className, scene = "quantities" }: TeenBoardPreviewProps) {
   return (
-    <div className={`h-full w-full ${className ?? ""}`}>
+    <div
+      className={`pointer-events-none h-full w-full ${className ?? ""}`}
+      style={{ touchAction: "pan-y" }}
+    >
       {scene === "symbols" ? (
         <TeenBoardSceneSymbols interactive={false} showZoomReset={false} />
       ) : (
@@ -25,6 +34,7 @@ export default function TeenBoardPreview({ className, scene = "quantities" }: Te
           interactive={false}
           showZoomReset={false}
           cameraSettings={QUANTITIES_PREVIEW_CAMERA}
+          cameraTarget={QUANTITIES_PREVIEW_TARGET}
         />
       )}
     </div>

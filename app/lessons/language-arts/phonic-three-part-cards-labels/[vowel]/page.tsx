@@ -76,16 +76,6 @@ const toPictureImage = (file: string) =>
 const toLabelImage = (file: string) =>
   `/assets/language_arts/moveable_alphabet/phonic_labels/${file}`;
 
-const parseCardFile = (file: string) => {
-  if (!file.endsWith(".png")) return null;
-  const base = file.replace(/\.png$/i, "");
-  const [letter, marker, ...rest] = base.split("-");
-  if (!letter || marker !== "tcp" || rest.length === 0) return null;
-  const wordSlug = rest.join("-");
-  const wordLabel = rest.join(" ");
-  return { letter, wordSlug, wordLabel };
-};
-
 const parseLabelFile = (file: string) => {
   if (!file.endsWith("-label.png")) return null;
   const base = file.replace(/-label\.png$/i, "");
@@ -222,7 +212,7 @@ export default function PhonicThreePartCardsLabelsLesson() {
         };
       })
       .filter(Boolean) as ThreePartPair[];
-    setPairs(nextPairs);
+    setPairs(shuffleArray(nextPairs));
     setStageIndex(0);
   }, [cardFiles, pictureFiles, labelFiles, vowel]);
 
@@ -249,11 +239,11 @@ export default function PhonicThreePartCardsLabelsLesson() {
   }, [stageCount, vowel]);
 
   useEffect(() => {
-    const shuffled = shuffleArray(stagePairs);
+    const shuffledPictures = shuffleArray(stagePairs);
+    const shuffledLabels = shuffleArray(stagePairs);
     const nextCards: CardState[] = [];
-    shuffled.forEach((pair, index) => {
+    shuffledPictures.forEach((pair, index) => {
       const pictureSlot = PICTURE_STACK_SLOTS[index] ?? PICTURE_STACK_SLOTS[PICTURE_STACK_SLOTS.length - 1];
-      const labelSlot = LABEL_STACK_SLOTS[index] ?? LABEL_STACK_SLOTS[LABEL_STACK_SLOTS.length - 1];
       nextCards.push({
         id: `pic-${stageIndex}-${pair.id}`,
         pairId: pair.id,
@@ -263,6 +253,9 @@ export default function PhonicThreePartCardsLabelsLesson() {
         homeX: pictureSlot.x + pictureSlot.width / 2,
         homeY: pictureSlot.y + pictureSlot.height / 2,
       });
+    });
+    shuffledLabels.forEach((pair, index) => {
+      const labelSlot = LABEL_STACK_SLOTS[index] ?? LABEL_STACK_SLOTS[LABEL_STACK_SLOTS.length - 1];
       nextCards.push({
         id: `label-${stageIndex}-${pair.id}`,
         pairId: pair.id,

@@ -10,12 +10,12 @@ const toStoredValue = (enabled: boolean) => (enabled ? "true" : "false");
 const parseStoredValue = (value: string | null) => {
   if (value === "false") return false;
   if (value === "true") return true;
-  return true;
+  return false;
 };
 
 export const getMicrophoneEnabled = () => {
   if (typeof window === "undefined") {
-    return true;
+    return false;
   }
   return parseStoredValue(window.localStorage.getItem(MICROPHONE_ENABLED_STORAGE_KEY));
 };
@@ -87,7 +87,7 @@ const subscribeToMicrophoneEnabled = (listener: (enabled: boolean) => void) => {
 };
 
 export const useMicrophoneEnabled = () => {
-  const [microphoneEnabled, setMicrophoneEnabledState] = useState(true);
+  const [microphoneEnabled, setMicrophoneEnabledState] = useState(false);
 
   useEffect(() => {
     setMicrophoneEnabledState(getMicrophoneEnabled());

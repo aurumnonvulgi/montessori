@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { ENABLE_FEEDBACK } from "../lib/featureFlags";
 import { addUserFeedbackEntry } from "../lib/userFeedback";
 
 const toCompressedImageDataUrl = (canvas: HTMLCanvasElement) => {
@@ -98,6 +99,8 @@ export default function FeedbackWidget({ placement = "fixed" }: FeedbackWidgetPr
       setSubmitting(false);
     }
   }, [captureScreenshot, comment, currentUrl, screenshotDataUrl]);
+
+  if (!ENABLE_FEEDBACK) return null;
 
   return (
     <>

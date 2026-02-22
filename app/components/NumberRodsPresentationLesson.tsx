@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import NumberRodsPresentationCanvas from "./NumberRodsPresentationCanvas";
 import { useMicrophoneEnabled } from "../lib/microphonePreferences";
+import MicrophoneLessonBanner from "./MicrophoneLessonBanner";
 
 const CompletionCheck = () => (
   <div className="flex h-full items-center justify-center">
@@ -87,6 +88,8 @@ export default function NumberRodsPresentationLesson() {
           <span>Three-Period Lesson</span>
           <span>Number Rods Presentation</span>
         </div>
+
+        <MicrophoneLessonBanner microphoneEnabled={microphoneEnabled} />
 
         <NumberRodsPresentationCanvas
           key={resetKey}

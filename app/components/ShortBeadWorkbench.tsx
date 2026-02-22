@@ -26,9 +26,10 @@ const BAR_LAYOUT = [
 
 type ShortBeadWorkbenchProps = {
   className?: string;
+  frozen?: boolean;
 };
 
-const ShortBeadWorkbench = ({ className }: ShortBeadWorkbenchProps) => {
+const ShortBeadWorkbench = ({ className, frozen = true }: ShortBeadWorkbenchProps) => {
   const beadGeometry = useMemo(() => new THREE.SphereGeometry(BEAD_RADIUS, 32, 32), []);
   const wireGeometry = useMemo(() => new THREE.CylinderGeometry(1, 1, 1, 16), []);
   const loopGeometry = useMemo(() => new THREE.TorusGeometry(WIRE_LOOP_RADIUS, WIRE_LOOP_TUBE, 16, 32), []);
@@ -49,8 +50,8 @@ const ShortBeadWorkbench = ({ className }: ShortBeadWorkbenchProps) => {
 
   const wrapperClass = className ?? "h-[520px]";
   return (
-    <div className={`w-full ${wrapperClass}`}>
-      <Canvas camera={{ position: [0, 0.25, 0.12], fov: 40 }}>
+    <div className={`w-full ${frozen ? "pointer-events-none select-none" : ""} ${wrapperClass}`}>
+      <Canvas camera={{ position: [0, 0.25, 0.12], fov: 40 }} frameloop={frozen ? "demand" : "always"}>
         <color attach="background" args={["#f8f4ec"]} />
         <ambientLight intensity={0.6} />
         <directionalLight position={[0.5, 1, 0.3]} intensity={0.95} />
@@ -98,16 +99,18 @@ const ShortBeadWorkbench = ({ className }: ShortBeadWorkbenchProps) => {
           );
         })}
 
-        <OrbitControls
-          enablePan={false}
-          enableZoom
-          maxPolarAngle={Math.PI / 2.4}
-          minPolarAngle={Math.PI / 3}
-          minAzimuthAngle={-Math.PI / 6}
-          maxAzimuthAngle={Math.PI / 6}
-          minDistance={0.12}
-          maxDistance={0.35}
-        />
+        {!frozen ? (
+          <OrbitControls
+            enablePan={false}
+            enableZoom
+            maxPolarAngle={Math.PI / 2.4}
+            minPolarAngle={Math.PI / 3}
+            minAzimuthAngle={-Math.PI / 6}
+            maxAzimuthAngle={Math.PI / 6}
+            minDistance={0.12}
+            maxDistance={0.35}
+          />
+        ) : null}
       </Canvas>
     </div>
   );

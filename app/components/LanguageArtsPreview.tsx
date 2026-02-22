@@ -1,34 +1,23 @@
 "use client";
 
-const LETTER_ROWS = [
-  ["a", "b", "c", "d", "e", "f", "g"],
-  ["h", "i", "j", "k", "l", "m"],
-  ["n", "o", "p", "q", "r", "s", "t"],
-  ["u", "v", "w", "x", "y", "z"],
-];
+import Image from "next/image";
 
-const VOWELS = new Set(["a", "e", "i", "o", "u"]);
+const BOARD_IMAGE = "/assets/language_arts/moveable_alphabet/moveable_alphabet_board1.svg";
 
 export default function LanguageArtsPreview({ className }: { className?: string }) {
   return (
     <div
-      className={`pointer-events-none overflow-hidden rounded-[24px] border border-stone-200 bg-[radial-gradient(circle_at_top,_#f9f4ed,_#f2e7d3)] p-4 shadow-inner ${className ?? ""}`}
+      className={`pointer-events-none overflow-hidden rounded-[24px] border border-stone-200 bg-[radial-gradient(circle_at_top,_#f6efe7,_#f3ebdf)] p-3 shadow-inner ${className ?? ""}`}
     >
-      <div className="grid gap-1">
-        {LETTER_ROWS.map((row, rowIndex) => (
-          <div key={`row-${rowIndex}`} className="flex justify-between gap-1">
-            {row.map((letter) => (
-              <span
-                key={letter}
-                className={`flex h-10 w-10 items-center justify-center rounded-lg border border-stone-100 bg-white text-lg font-semibold uppercase tracking-wide ${
-                  VOWELS.has(letter) ? "text-sky-600" : "text-rose-600"
-                }`}
-              >
-                {letter}
-              </span>
-            ))}
-          </div>
-        ))}
+      <div className="relative h-full w-full overflow-hidden rounded-[18px] border border-stone-200 bg-white/92">
+        <Image
+          src={BOARD_IMAGE}
+          alt="Moveable alphabet board preview"
+          fill
+          className="object-contain"
+          sizes="(max-width: 768px) 50vw, 420px"
+          priority={false}
+        />
       </div>
     </div>
   );

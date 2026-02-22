@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import SandpaperNumeralsScene from "./SandpaperNumeralsScene";
 import HomeLink from "./HomeLink";
 import { useMicrophoneEnabled } from "../lib/microphonePreferences";
+import MicrophoneLessonBanner from "./MicrophoneLessonBanner";
 
 const SANDPAPER_LEVEL_IDS = [1, 2, 3];
 
@@ -73,6 +74,8 @@ export default function SandpaperNumeralsLesson({
             </span>
           </div>
         </div>
+
+        <MicrophoneLessonBanner microphoneEnabled={microphoneEnabled} />
 
         <SandpaperNumeralsScene
           key={resetKey}

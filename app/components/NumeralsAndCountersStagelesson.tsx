@@ -6,6 +6,7 @@ import NumeralsAndCountersScene from "./NumeralsAndCountersScene";
 import { primeSounds } from "../lib/sounds";
 import HomeLink from "./HomeLink";
 import { useMicrophoneEnabled } from "../lib/microphonePreferences";
+import MicrophoneLessonBanner from "./MicrophoneLessonBanner";
 
 type NumeralsAndCountersStageProps = {
   stageIndex: number;
@@ -296,6 +297,10 @@ export default function NumeralsAndCountersStageLesson({
             </div>
           </div>
         )}
+
+        <div className={isMobileLandscape ? "px-1 pb-1" : "px-2 pb-2 sm:px-6 sm:pb-3"}>
+          <MicrophoneLessonBanner microphoneEnabled={microphoneEnabled} />
+        </div>
 
         {/* Scene container - fills available space */}
         <div className={`flex-1 ${isMobileLandscape ? "p-1" : "px-2 pb-2 sm:px-6 sm:pb-4"}`}>

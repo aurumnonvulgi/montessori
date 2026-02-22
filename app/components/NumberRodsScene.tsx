@@ -16,6 +16,12 @@ type NumberRodsSceneProps = {
   onStageComplete?: () => void;
   className?: string;
   showZoomReset?: boolean;
+  preview?: boolean;
+  cameraPositionOverride?: [number, number, number];
+  cameraTargetOverride?: [number, number, number];
+  cameraFovOverride?: number;
+  speakTextOverride?: (text: string) => void;
+  quizEnabled?: boolean;
 };
 
 type Step = {
@@ -121,7 +127,7 @@ const smoothstep = (t: number) => t * t * (3 - 2 * t);
 const clamp01 = (t: number) => Math.min(1, Math.max(0, t));
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
-const speakText = (text: string) => {
+const speakTextWithDeviceVoice = (text: string) => {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) {
     return;
   }
@@ -172,6 +178,7 @@ type NumberRodsContentProps = Omit<NumberRodsSceneProps, "className"> & {
   stageKey: number;
   quizLiftRod: number | null;
   onRodSelect: (index: number) => void;
+  speakText: (text: string) => void;
 };
 
 function NumberRodsContent({
@@ -185,6 +192,7 @@ function NumberRodsContent({
   quizLiftRod,
   onComplete,
   onRodSelect,
+  speakText,
 }: NumberRodsContentProps) {
   const rodRefs = useRef<THREE.Group[]>([]);
   const segmentRefs = useRef<THREE.Mesh[][]>(
@@ -545,6 +553,12 @@ export default function NumberRodsScene({
   onStageComplete,
   className,
   showZoomReset = true,
+  preview = false,
+  cameraPositionOverride,
+  cameraTargetOverride,
+  cameraFovOverride,
+  speakTextOverride,
+  quizEnabled = true,
 }: NumberRodsSceneProps) {
   useEffect(() => {
     primeSpeechVoices();
@@ -572,9 +586,14 @@ export default function NumberRodsScene({
     [stageRods],
   );
   const targetX = leftEdge + (segmentLength * stageMax) / 2;
+  const cameraTarget = useMemo(
+    () => cameraTargetOverride ?? ([targetX, 0.03, 0] as [number, number, number]),
+    [cameraTargetOverride, targetX],
+  );
+  const cameraFov = cameraFovOverride ?? 33;
   const cameraPosition = useMemo(
-    () => [targetX + 0.5, 0.46, 0.98] as [number, number, number],
-    [targetX],
+    () => cameraPositionOverride ?? ([targetX + 0.5, 0.46, 0.98] as [number, number, number]),
+    [cameraPositionOverride, targetX],
   );
 
   const [quizIndex, setQuizIndex] = useState<number | null>(null);
@@ -588,6 +607,16 @@ export default function NumberRodsScene({
   const awaitingAnswerRef = useRef(false);
   type OrbitControlsHandle = React.ElementRef<typeof OrbitControls>;
   const controlsRef = useRef<OrbitControlsHandle | null>(null);
+  const speak = useCallback(
+    (text: string) => {
+      if (speakTextOverride) {
+        speakTextOverride(text);
+        return;
+      }
+      speakTextWithDeviceVoice(text);
+    },
+    [speakTextOverride],
+  );
 
   const currentTarget =
     quizIndex !== null && quizPhase === "click"
@@ -597,7 +626,7 @@ export default function NumberRodsScene({
         : null;
 
   const handleSequenceComplete = useCallback(() => {
-    if (!quizDoneRef.current) {
+    if (quizEnabled && !quizDoneRef.current) {
       quizDoneRef.current = true;
       setQuizPhase("click");
       setQuizIndex(0);
@@ -605,7 +634,7 @@ export default function NumberRodsScene({
     if (onComplete) {
       onComplete();
     }
-  }, [onComplete]);
+  }, [onComplete, quizEnabled]);
 
   const startRecognition = useCallback((onFinished: () => void) => {
     if (!micEnabled) {
@@ -660,6 +689,9 @@ export default function NumberRodsScene({
 
   const handleRodSelect = useCallback(
     (index: number) => {
+      if (!quizEnabled) {
+        return;
+      }
       if (currentTarget === null || quizPhase !== "click") {
         return;
       }
@@ -670,7 +702,7 @@ export default function NumberRodsScene({
 
       if (index !== currentTarget) {
         if (voiceEnabled) {
-          speakText("Oh no, try again.");
+          speak("Oh no, try again.");
         }
         return;
       }
@@ -695,7 +727,7 @@ export default function NumberRodsScene({
         });
       }, quizLiftDuration * 1000);
     },
-    [currentTarget, quizPhase, voiceEnabled, clickOrder.length],
+    [currentTarget, quizPhase, voiceEnabled, clickOrder.length, quizEnabled, speak],
   );
 
   const resetQuizState = useCallback(() => {
@@ -729,6 +761,9 @@ export default function NumberRodsScene({
   }, [playing, stageIndex, resetQuizState]);
 
   useEffect(() => {
+    if (!quizEnabled) {
+      return;
+    }
     if (currentTarget === null || quizPhase === null) {
       if (recognitionRef.current) {
         try {
@@ -748,7 +783,7 @@ export default function NumberRodsScene({
 
     if (quizPhase === "click") {
       if (voiceEnabled) {
-        speakText(`Can you click on ${rodNames[currentTarget]}?`);
+        speak(`Can you click on ${rodNames[currentTarget]}?`);
       }
       return;
     }
@@ -757,7 +792,7 @@ export default function NumberRodsScene({
       awaitingAnswerRef.current = true;
       setQuizLiftRod(currentTarget);
       if (voiceEnabled) {
-        speakText(micEnabled ? "What is this?" : `This is ${rodNames[currentTarget]}.`);
+        speak(micEnabled ? "What is this?" : `This is ${rodNames[currentTarget]}.`);
       }
       const advance = () => {
         awaitingAnswerRef.current = false;
@@ -792,9 +827,21 @@ export default function NumberRodsScene({
         finishAfterDelay();
       }
     }
-  }, [currentTarget, micEnabled, quizPhase, startRecognition, voiceEnabled, nameOrder.length]);
+  }, [
+    currentTarget,
+    micEnabled,
+    quizPhase,
+    startRecognition,
+    voiceEnabled,
+    nameOrder.length,
+    quizEnabled,
+    speak,
+  ]);
 
   useEffect(() => {
+    if (!quizEnabled) {
+      return;
+    }
     if (quizPhase !== null) {
       return;
     }
@@ -805,7 +852,7 @@ export default function NumberRodsScene({
     if (onStageComplete) {
       onStageComplete();
     }
-  }, [onStageComplete, quizPhase]);
+  }, [onStageComplete, quizPhase, quizEnabled]);
 
   useEffect(() => {
     return () => {
@@ -828,21 +875,26 @@ export default function NumberRodsScene({
     if (!controls) return;
     const camera = controls.object as THREE.PerspectiveCamera;
     camera.position.set(...cameraPosition);
-    camera.fov = 33;
+    camera.fov = cameraFov;
     camera.updateProjectionMatrix();
-    controls.target.set(targetX, 0.03, 0);
+    controls.target.set(...cameraTarget);
     controls.update();
-  }, [cameraPosition, targetX]);
+  }, [cameraFov, cameraPosition, cameraTarget]);
 
   return (
     <div
-      className={`relative w-full overflow-hidden rounded-[28px] bg-[#f7efe4] ${className ?? "h-[420px]"}`}
+      className={`relative w-full overflow-hidden rounded-[28px] bg-[#f7efe4] ${preview ? "pointer-events-none select-none" : ""} ${className ?? "h-[420px]"}`}
     >
-      <Canvas shadows camera={{ position: cameraPosition, fov: 33 }}>
+      <Canvas
+        shadows
+        camera={{ position: cameraPosition, fov: cameraFov }}
+        frameloop={preview ? "demand" : "always"}
+      >
         <color attach="background" args={["#f7efe4"]} />
         <NumberRodsContent
           playing={playing}
           voiceEnabled={voiceEnabled}
+          speakText={speak}
           timeline={timeline}
           voiceCues={voiceCues}
           stageRods={stageRods}
@@ -855,11 +907,12 @@ export default function NumberRodsScene({
         <OrbitControls
           ref={controlsRef}
           enablePan={false}
-          enableZoom
+          enableZoom={!preview}
+          enableRotate={!preview}
           maxPolarAngle={Math.PI / 2.1}
           minAzimuthAngle={-Math.PI / 4}
           maxAzimuthAngle={Math.PI / 4}
-          target={[targetX, 0.03, 0]}
+          target={cameraTarget}
           minDistance={1.1}
           maxDistance={2.2}
         />

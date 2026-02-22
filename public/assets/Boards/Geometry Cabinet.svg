@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1366 768">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #b8e0f4;
+      }
+
+      .cls-2 {
+        fill: #dac802;
+        stroke: #301616;
+        stroke-miterlimit: 10;
+      }
+
+      .cls-3 {
+        fill: #b18c62;
+      }
+
+      .cls-4 {
+        fill: #025e9d;
+      }
+    </style>
+  </defs>
+  <rect class="cls-1" width="1366" height="768"/>
+  <g>
+    <rect class="cls-3" x="317.05" y="257.89" width="731.9" height="491.16"/>
+    <rect class="cls-2" x="338.32" y="277.23" width="213.67" height="213.67"/>
+    <rect class="cls-2" x="576.35" y="277.23" width="213.67" height="213.67"/>
+    <rect class="cls-2" x="814.37" y="277.23" width="213.67" height="213.67"/>
+    <rect class="cls-2" x="338.32" y="513.19" width="213.67" height="213.67"/>
+    <rect class="cls-2" x="576.35" y="513.19" width="213.67" height="213.67"/>
+    <rect class="cls-2" x="814.37" y="513.19" width="213.67" height="213.67"/>
+  </g>
+  <rect class="cls-4" x="843.77" y="306.62" width="154.88" height="154.88"/>
+  <circle class="cls-4" cx="445.16" cy="384.06" r="77.42"/>
+  <polygon class="cls-4" points="683 546.01 597.53 694.05 768.47 694.05 683 546.01"/>
+</svg>

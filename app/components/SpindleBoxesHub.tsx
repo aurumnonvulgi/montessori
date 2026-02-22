@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import SpindleBoxesPreview from "./SpindleBoxesPreview";
 import HomeLink from "./HomeLink";
+import MaterialTeachersGuide from "./MaterialTeachersGuide";
+import { SPINDLE_BOXES_TEACHERS_GUIDE } from "../data/materialTeachersGuides";
 
 const LESSONS = [
   { id: 1, name: "0, 1, 2, 3, 4", color: "bg-amber-100", borderColor: "border-amber-200", textColor: "text-amber-700" },
@@ -163,6 +165,8 @@ export default function SpindleBoxesHub() {
             </div>
           </div>
         )}
+
+        <MaterialTeachersGuide guide={SPINDLE_BOXES_TEACHERS_GUIDE} className="mt-8" />
       </main>
     </div>
   );

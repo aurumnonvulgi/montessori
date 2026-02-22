@@ -5,6 +5,7 @@ import { OrbitControls as DreiOrbitControls } from "@react-three/drei";
 import { useRef, useState, useEffect, useCallback } from "react";
 import * as THREE from "three";
 import ZoomResetButton from "./ZoomResetButton";
+import { speakWithPreferredVoice } from "../lib/speech";
 
 const BEAD_RADIUS = 0.01;
 const BEAD_SPACING = BEAD_RADIUS * 1.05;
@@ -52,6 +53,7 @@ type TeenBoardSceneProps = {
   interactive?: boolean;
   onPositionsChange?: (positions: Record<string, [number, number, number]>) => void;
   cameraSettings?: { x: number; y: number; z: number; fov: number };
+  cameraTarget?: { x: number; y: number; z: number };
   startAnimationKey?: number;
   onStartComplete?: () => void;
   onCameraChange?: (settings: { x: number; y: number; z: number; fov: number }) => void;
@@ -63,11 +65,7 @@ const pointer = new THREE.Vector2();
 const raycaster = new THREE.Raycaster();
 
 const speakText = (text: string) => {
-  if (typeof window === "undefined" || !window.speechSynthesis) return;
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.rate = 0.9;
-  utterance.pitch = 1;
-  window.speechSynthesis.speak(utterance);
+  speakWithPreferredVoice(text, { rate: 0.9, pitch: 1, volume: 0.9, lang: "en-US" });
 };
 
 function SceneContent({
@@ -76,6 +74,7 @@ function SceneContent({
   startAnimationKey,
   onStartComplete,
   cameraSettings,
+  cameraTarget,
   onCameraChange,
   controlsRef,
 }: {
@@ -84,6 +83,7 @@ function SceneContent({
   startAnimationKey?: number;
   onStartComplete?: () => void;
   cameraSettings?: { x: number; y: number; z: number; fov: number };
+  cameraTarget?: { x: number; y: number; z: number };
   onCameraChange?: (settings: { x: number; y: number; z: number; fov: number }) => void;
   controlsRef: React.MutableRefObject<React.ElementRef<typeof DreiOrbitControls> | null>;
 }) {
@@ -113,6 +113,9 @@ function SceneContent({
   );
 
   useEffect(() => {
+    if (!interactive) {
+      return;
+    }
     const canvas = gl.domElement;
     const release = () => {
       setDragTarget(null);
@@ -126,12 +129,12 @@ function SceneContent({
       canvas.removeEventListener("pointerup", release);
       canvas.removeEventListener("pointerleave", release);
     };
-  }, [gl.domElement, pointerMove]);
+  }, [interactive, gl.domElement, pointerMove]);
 
   const handleDown = useCallback(
     (id: string) => (event: ThreeEvent<PointerEvent>) => {
-      event.stopPropagation();
       if (!interactive) return;
+      event.stopPropagation();
       const current = new THREE.Vector3(...(barPositions[id] ?? [0, 0, 0]));
       setDragTarget({ id, offset: event.point.clone().sub(current) });
       if (orbitRef.current) orbitRef.current.enabled = false;
@@ -257,6 +260,12 @@ function SceneContent({
     cam.updateProjectionMatrix();
   }, [cameraSettings, camera]);
 
+  useEffect(() => {
+    if (!cameraTarget || !orbitRef.current) return;
+    orbitRef.current.target.set(cameraTarget.x, cameraTarget.y, cameraTarget.z);
+    orbitRef.current.update();
+  }, [cameraTarget, orbitRef]);
+
   const renderBar = (id: string, beadCount: number, color: string) => {
     const length = beadCount * BEAD_SPACING;
     const startX = -((beadCount - 1) * BEAD_SPACING) / 2;
@@ -303,8 +312,9 @@ function SceneContent({
         maxPolarAngle={Math.PI / 2}
         minDistance={0.2}
         maxDistance={3}
-        enablePan
-        enableZoom
+        enablePan={interactive}
+        enableZoom={interactive}
+        enableRotate={interactive}
       />
     </>
   );
@@ -317,6 +327,7 @@ export default function TeenBoardScene({
   startAnimationKey,
   onStartComplete,
   cameraSettings,
+  cameraTarget,
   onCameraChange,
   showZoomReset,
 }: TeenBoardSceneProps) {
@@ -336,14 +347,15 @@ export default function TeenBoardScene({
   }, []);
 
   return (
-    <div className={`relative ${className ?? "h-full w-full"}`}>
-      <Canvas>
+    <div className={`relative ${interactive ? "" : "pointer-events-none select-none"} ${className ?? "h-full w-full"}`}>
+      <Canvas frameloop={interactive ? "always" : "demand"}>
         <SceneContent
           interactive={interactive}
           onPositionsChange={onPositionsChange}
           startAnimationKey={startAnimationKey}
           onStartComplete={onStartComplete}
           cameraSettings={cameraSettings}
+          cameraTarget={cameraTarget}
           onCameraChange={onCameraChange}
           controlsRef={controlsRef}
         />

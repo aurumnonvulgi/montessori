@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import HomeLink from "../../../components/HomeLink";
+import { ENABLE_FEEDBACK } from "../../../lib/featureFlags";
 import {
   clearUserFeedbackEntries,
   getUserFeedbackEntries,
@@ -22,10 +23,12 @@ export default function FeedbackBoardPage() {
   const [entries, setEntries] = useState<UserFeedbackEntry[]>([]);
 
   const refreshEntries = useCallback(() => {
+    if (!ENABLE_FEEDBACK) return;
     setEntries(getUserFeedbackEntries());
   }, []);
 
   useEffect(() => {
+    if (!ENABLE_FEEDBACK) return;
     refreshEntries();
     const onStorage = (event: StorageEvent) => {
       if (event.key && event.key !== USER_FEEDBACK_STORAGE_KEY) return;
@@ -48,11 +51,25 @@ export default function FeedbackBoardPage() {
   );
 
   const clearAll = () => {
+    if (!ENABLE_FEEDBACK) return;
     if (!window.confirm("Clear all feedback entries?")) return;
     if (!window.confirm("Are you sure? This cannot be undone.")) return;
     clearUserFeedbackEntries();
     refreshEntries();
   };
+
+  if (!ENABLE_FEEDBACK) {
+    return (
+      <div className="relative min-h-screen bg-[radial-gradient(circle_at_top,#f2fbff,#fbfeff_45%,#f6fcff)]">
+        <HomeLink onBackClick={() => router.push("/lessons/development-tools")} />
+        <main className="mx-auto flex min-h-screen w-full max-w-4xl flex-col items-center justify-center gap-4 px-6 py-10 text-center sm:px-10">
+          <p className="text-xs uppercase tracking-[0.35em] text-cyan-600">Development Tools</p>
+          <h1 className="font-display text-4xl font-semibold text-stone-900">Feedback Hidden</h1>
+          <p className="max-w-xl text-sm text-stone-600">Feedback is temporarily hidden and can be re-enabled later.</p>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-screen bg-[radial-gradient(circle_at_top,#f2fbff,#fbfeff_45%,#f6fcff)]">

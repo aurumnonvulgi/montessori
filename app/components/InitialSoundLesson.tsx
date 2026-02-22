@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import HomeLink from "./HomeLink";
 import InitialSoundDevBanner from "./InitialSoundDevBanner";
 import { trackLessonEvent } from "../lib/lessonTelemetry";
+import { getVoiceEnabled, getVoiceVolume } from "../lib/voicePreferences";
 
 export type InitialSoundSlide = {
   word: string;
@@ -64,9 +65,13 @@ export default function InitialSoundLesson({
   };
   const speakText = (text: string, delay = 0) => {
     if (typeof window === "undefined") return;
+    if (!getVoiceEnabled()) return;
+    const masterVolume = getVoiceVolume();
+    if (masterVolume <= 0) return;
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = "en-US";
     utterance.rate = 0.7;
+    utterance.volume = Math.max(0, Math.min(1, 0.9 * masterVolume));
     if (voices[voiceIndex]) utterance.voice = voices[voiceIndex];
     sequenceTimeouts.current.push(
       window.setTimeout(() => {

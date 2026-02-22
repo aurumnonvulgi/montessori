@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 1366 768">
+  <!-- Generator: Adobe Illustrator 30.2.1, SVG Export Plug-In . SVG Version: 2.1.1 Build 1)  -->
+  <defs>
+    <style>
+      .st0 {
+        fill: none;
+      }
+
+      .st1 {
+        fill: #b8e0f4;
+      }
+
+      .st2 {
+        fill: #b78c62;
+      }
+
+      .st3 {
+        fill: #e9cfb0;
+      }
+
+      .st4 {
+        fill: #724a26;
+      }
+    </style>
+  </defs>
+  <rect class="st1" x="0" width="1366" height="768"/>
+  <g id="Board">
+    <rect class="st4" x="156.1" y="221.5" width="499.6" height="484.9"/>
+    <rect class="st2" x="163" y="228.3" width="485.7" height="471.4"/>
+    <g>
+      <rect class="st3" x="171.5" y="235.9" width="62.6" height="111.1"/>
+      <rect class="st3" x="239.2" y="235.9" width="62.6" height="111.1"/>
+      <rect class="st3" x="306.9" y="235.9" width="62.6" height="111.1"/>
+      <rect class="st3" x="374.6" y="235.9" width="62.6" height="111.1"/>
+      <rect class="st3" x="442.3" y="235.9" width="62.6" height="111.1"/>
+      <rect class="st3" x="572" y="465.3" width="68.2" height="111.1"/>
+      <rect class="st3" x="572" y="580.9" width="68.2" height="111.1"/>
+      <rect class="st3" x="509.9" y="465.3" width="58.3" height="111.1"/>
+      <rect class="st3" x="442.3" y="465.3" width="62.6" height="111.1"/>
+      <rect class="st3" x="372.8" y="465.3" width="64.4" height="111.1"/>
+      <rect class="st3" x="306.4" y="465.3" width="62.6" height="111.1"/>
+      <rect class="st3" x="238.6" y="465.3" width="64" height="111.1"/>
+      <rect class="st3" x="171.5" y="465.3" width="62.6" height="111.1"/>
+      <rect class="st3" x="442.3" y="350.6" width="62.6" height="111.1"/>
+      <rect class="st3" x="372.8" y="350.6" width="64.4" height="111.1"/>
+      <rect class="st3" x="306.9" y="350.6" width="62.6" height="111.1"/>
+      <rect class="st3" x="238.6" y="350.6" width="63.2" height="111.1"/>
+      <rect class="st3" x="171.5" y="350.6" width="62.6" height="111.1"/>
+      <rect class="st3" x="238.6" y="580.9" width="63.2" height="111.1"/>
+      <rect class="st3" x="171.5" y="580.9" width="62.6" height="111.1"/>
+      <rect class="st3" x="509.9" y="580.9" width="58.3" height="111.1"/>
+      <rect class="st3" x="442.3" y="580.9" width="62.6" height="111.1"/>
+      <rect class="st3" x="509.9" y="237" width="62.6" height="155.9"/>
+      <rect class="st3" x="577.6" y="235.9" width="62.6" height="157"/>
+      <rect class="st3" x="509.9" y="398.2" width="130.3" height="62.6"/>
+      <rect class="st3" x="306.4" y="580.9" width="130.8" height="111.1"/>
+    </g>
+  </g>
+  <g id="Board1" data-name="Board">
+    <rect class="st4" x="704.6" y="221.5" width="499.6" height="484.9"/>
+    <rect class="st2" x="711.6" y="228.3" width="485.7" height="471.4"/>
+    <g>
+      <rect class="st3" x="720.1" y="235.9" width="62.6" height="111.1"/>
+      <rect class="st3" x="787.8" y="235.9" width="62.6" height="111.1"/>
+      <rect class="st3" x="855.5" y="235.9" width="62.6" height="111.1"/>
+      <rect class="st3" x="923.2" y="235.9" width="62.6" height="111.1"/>
+      <rect class="st3" x="990.8" y="235.9" width="62.6" height="111.1"/>
+      <rect class="st3" x="1120.6" y="465.3" width="68.2" height="111.1"/>
+      <rect class="st3" x="1120.6" y="580.9" width="68.2" height="111.1"/>
+      <rect class="st3" x="1058.5" y="465.3" width="58.3" height="111.1"/>
+      <rect class="st3" x="990.8" y="465.3" width="62.6" height="111.1"/>
+      <rect class="st3" x="921.4" y="465.3" width="64.4" height="111.1"/>
+      <rect class="st3" x="855" y="465.3" width="62.6" height="111.1"/>
+      <rect class="st3" x="787.2" y="465.3" width="64" height="111.1"/>
+      <rect class="st3" x="720.1" y="465.3" width="62.6" height="111.1"/>
+      <rect class="st3" x="990.8" y="350.6" width="62.6" height="111.1"/>
+      <rect class="st3" x="921.4" y="350.6" width="64.4" height="111.1"/>
+      <rect class="st3" x="855.5" y="350.6" width="62.6" height="111.1"/>
+      <rect class="st3" x="787.2" y="350.6" width="63.2" height="111.1"/>
+      <rect class="st3" x="720.1" y="350.6" width="62.6" height="111.1"/>
+      <rect class="st3" x="787.2" y="580.9" width="63.2" height="111.1"/>
+      <rect class="st3" x="720.1" y="580.9" width="62.6" height="111.1"/>
+      <rect class="st3" x="1058.5" y="580.9" width="58.3" height="111.1"/>
+      <rect class="st3" x="990.8" y="580.9" width="62.6" height="111.1"/>
+      <rect class="st3" x="1058.5" y="237" width="62.6" height="155.9"/>
+      <rect class="st3" x="1126.2" y="235.9" width="62.6" height="157"/>
+      <rect class="st3" x="1058.5" y="398.2" width="130.3" height="62.6"/>
+      <rect class="st3" x="855" y="580.9" width="130.8" height="111.1"/>
+    </g>
+  </g>
+  <rect id="pic1-holder" class="st0" x="368.9" y="42.2" width="141" height="141"/>
+  <rect id="pic1-answer-letter-1" class="st0" x="521.5" y="63.4" width="78" height="116.6"/>
+  <rect id="pic1-answer-letter-2" class="st0" x="620.9" y="63.4" width="78" height="116.6"/>
+  <rect id="pic1-answer-letter-3" class="st0" x="720.3" y="63.4" width="78" height="116.6"/>
+  <rect id="pic1-answer-letter-4" class="st0" x="819.7" y="63.4" width="78" height="116.6"/>
+  <rect id="pic1-answer-letter-5" class="st0" x="919" y="63.4" width="78.1" height="116.3"/>
+</svg>

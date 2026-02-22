@@ -3,6 +3,7 @@ import { Fraunces, Manrope } from "next/font/google";
 import "./globals.css";
 import IOSHideMenuBridge from "./components/IOSHideMenuBridge";
 import ActivityTelemetryBridge from "./components/ActivityTelemetryBridge";
+import BackgroundMusicPlayer from "./components/BackgroundMusicPlayer";
 
 const fraunces = Fraunces({
   variable: "--font-fraunces",
@@ -21,7 +22,7 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: "/favicon.png", type: "image/png", sizes: "64x64" },
-      { url: "/MDS_f.png", type: "image/png", sizes: "2834x2834" },
+      { url: "/MDS_fv.png", type: "image/png", sizes: "680x680" },
     ],
     apple: "/apple-touch-icon.png",
     shortcut: "/favicon.png",
@@ -50,6 +51,7 @@ export default function RootLayout({
       <body className={`${fraunces.variable} ${manrope.variable} antialiased`}>
         <IOSHideMenuBridge />
         <ActivityTelemetryBridge />
+        <BackgroundMusicPlayer />
         {children}
       </body>
     </html>

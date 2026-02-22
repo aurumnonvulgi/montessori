@@ -1,16 +1,21 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo } from "react";
+import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
 import LanguageArtsPreview from "./LanguageArtsPreview";
 import MicrophonePrivacyToggle from "./MicrophonePrivacyToggle";
 import HistoryTimeClockPreview from "./HistoryTimeClockPreview";
+import TeenBoardPreview from "./TeenBoardPreview";
+import GeometryCabinetFirstTrayScene from "./GeometryCabinetFirstTrayScene";
 
 const CARD_STYLE =
   "group select-none rounded-[36px] border border-stone-200 bg-white/90 p-6 shadow-[0_30px_80px_-50px_rgba(60,40,20,0.6)] transition hover:-translate-y-1 hover:shadow-[0_40px_90px_-50px_rgba(60,40,20,0.7)]";
 
 export default function MontessoriHome() {
-  const subjectHighlights = useMemo(() => ["Counting", "Geometry", "Sequencing"], []);
+  const router = useRouter();
+  const [loggingOut, setLoggingOut] = useState(false);
+
   const dashboardPreview = useMemo(
     () => [
       {
@@ -35,8 +40,21 @@ export default function MontessoriHome() {
         note: "Across all materials",
       },
     ],
-    []
+    [],
   );
+
+  const handleLogout = async () => {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {
+      // Redirect anyway if request fails.
+    }
+    router.replace("/login");
+    router.refresh();
+    setLoggingOut(false);
+  };
 
   return (
     <div className="min-h-screen select-none bg-[radial-gradient(circle_at_top,#f5efe6_0%,#fdfbf8_45%,#f7efe4_100%)]">
@@ -44,7 +62,7 @@ export default function MontessoriHome() {
         <div className="space-y-2 text-center">
           <div className="mx-auto flex w-full flex-col items-center gap-0">
             <Image
-              src="/MDS_f.png"
+              src="/MDS_fv.png"
               alt="Montessori DS logo"
               width={132}
               height={132}
@@ -57,37 +75,6 @@ export default function MontessoriHome() {
 
         <div className="mt-10 grid w-full gap-6 md:grid-cols-2 xl:grid-cols-3">
           <a
-            href="/lessons/mathematics"
-            aria-label="Open Mathematics hub"
-            className={`${CARD_STYLE} max-w-full`}
-          >
-            <div className="flex flex-col gap-5 sm:gap-8">
-              <h2 className="font-display text-3xl font-semibold text-stone-900">Mathematics</h2>
-              <div className="relative h-48 w-full overflow-hidden rounded-[24px] border border-stone-200 bg-stone-100 shadow-inner">
-                <Image
-                  src="/mathematics-card.png"
-                  alt="Montessori number rods"
-                  fill
-                  sizes="(max-width: 768px) 100vw, 760px"
-                  priority
-                  className="object-cover"
-                />
-              </div>
-              <div className="flex flex-wrap gap-2 text-[11px] uppercase tracking-[0.25em] text-stone-500">
-                {subjectHighlights.map((highlight) => (
-                  <span
-                    key={highlight}
-                    className="inline-flex items-center gap-1 rounded-full border border-stone-200 px-3 py-1"
-                  >
-                    <span className="h-1 w-1 rounded-full bg-stone-400" />
-                    {highlight}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </a>
-
-          <a
             href="/lessons/language-arts"
             aria-label="Open Language Arts hub"
             className={`${CARD_STYLE} max-w-full`}
@@ -95,9 +82,22 @@ export default function MontessoriHome() {
             <div className="flex flex-col gap-5 sm:gap-8">
               <h2 className="font-display text-3xl font-semibold text-stone-900">Language Arts</h2>
               <LanguageArtsPreview className="h-48" />
-              <p className="text-sm text-stone-500">
-                Initial Sound Cards — trace each letter as you hear its matching object.
-              </p>
+            </div>
+          </a>
+
+          <a
+            href="/lessons/mathematics"
+            aria-label="Open Mathematics hub"
+            className={`${CARD_STYLE} max-w-full`}
+          >
+            <div className="flex flex-col gap-5 sm:gap-8">
+              <h2 className="font-display text-3xl font-semibold text-stone-900">Mathematics</h2>
+              <div
+                className="relative h-48 w-full overflow-hidden rounded-[24px] border border-stone-200 bg-stone-100 shadow-inner"
+                style={{ touchAction: "pan-y" }}
+              >
+                <TeenBoardPreview className="h-full w-full" scene="symbols" />
+              </div>
             </div>
           </a>
 
@@ -124,10 +124,19 @@ export default function MontessoriHome() {
                   </div>
                 ))}
               </div>
-              <p className="text-sm text-stone-500">Montessori analog clock material with three separate games.</p>
             </div>
           </a>
 
+          <a
+            href="/lessons/geometry"
+            aria-label="Open Geometry hub"
+            className={`${CARD_STYLE} max-w-full`}
+          >
+            <div className="flex flex-col gap-5 sm:gap-8">
+              <h2 className="font-display text-3xl font-semibold text-stone-900">Geometry</h2>
+              <GeometryCabinetFirstTrayScene preview className="h-48" />
+            </div>
+          </a>
         </div>
 
         <div className="mt-6 w-full max-w-5xl">
@@ -200,9 +209,49 @@ export default function MontessoriHome() {
                   <p className="mt-2 text-sm font-semibold text-emerald-900">Send exact view values</p>
                 </div>
               </div>
-              <p className="text-sm text-stone-500">Utilities for dialing in 3D layout and camera settings.</p>
             </div>
           </a>
+        </div>
+
+        <div className="mt-14 w-full max-w-5xl pb-3 sm:mt-16">
+          <div className="mx-auto flex w-fit flex-col items-center justify-center gap-3">
+            <a
+              href="/about-us"
+              aria-label="Open About Us page"
+              className="group flex w-fit flex-col items-center justify-center gap-2 transition"
+            >
+              <span className="text-base font-semibold uppercase tracking-[0.34em] text-stone-400 transition group-hover:text-stone-500">
+                About Us
+              </span>
+              <Image
+                src="/MDS_fv.png"
+                alt=""
+                width={46}
+                height={46}
+                className="h-[46px] w-[46px] object-contain opacity-65 transition group-hover:opacity-90"
+              />
+            </a>
+
+            <button
+              type="button"
+              onClick={handleLogout}
+              disabled={loggingOut}
+              aria-label="Log out"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-stone-300 bg-white/90 text-stone-700 shadow-sm transition hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                className="h-5 w-5 fill-none stroke-current"
+                strokeWidth="1.9"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M10 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h4" />
+                <path d="M14 16l4-4-4-4" />
+                <path d="M9 12h9" />
+              </svg>
+            </button>
+          </div>
         </div>
       </main>
     </div>

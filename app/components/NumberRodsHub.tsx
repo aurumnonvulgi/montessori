@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import NumberRodsScene from "./NumberRodsScene";
+import NumberRodsTeachersGuide from "./NumberRodsTeachersGuide";
 import HomeLink from "./HomeLink";
 
 const LESSONS = [
@@ -95,6 +96,7 @@ export default function NumberRodsHub() {
             voiceEnabled={false}
             className="h-full"
             showZoomReset={false}
+            preview
           />
         </div>
 
@@ -170,6 +172,8 @@ export default function NumberRodsHub() {
             </div>
           </div>
         )}
+
+        <NumberRodsTeachersGuide className="mt-8" />
       </main>
     </div>
   );

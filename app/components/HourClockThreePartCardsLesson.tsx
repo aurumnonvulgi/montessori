@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import HomeLink from "./HomeLink";
+import { primeSpeechVoices, speakWithPreferredVoice } from "../lib/speech";
 
 const BOARD_IMAGE = "/assets/language_arts/moveable_alphabet/tcp-pic-pic.svg";
 const BOARD_WIDTH = 1366;
@@ -31,7 +32,8 @@ type HourClockPair = {
   id: string;
   hour: number;
   label: string;
-  image: string;
+  fullImage: string;
+  pictureImage: string;
 };
 
 type CardState = {
@@ -64,7 +66,8 @@ const ALL_HOUR_PAIRS: HourClockPair[] = Array.from({ length: 12 }, (_, index) =>
     id: `hour-${hour}`,
     hour,
     label: `${HOUR_WORDS[index]} o'clock`,
-    image: `/assets/time/hour_clock/${hour}-hour_clock.png`,
+    fullImage: `/assets/time/hour_clock/hour_clock_tcp_full/${hour}-hour_clock_tcp_full.png`,
+    pictureImage: `/assets/time/hour_clock/hour_clock_tcp_picture/${hour}-hour_clock.png`,
   };
 });
 
@@ -85,6 +88,10 @@ export default function HourClockThreePartCardsLesson() {
   const [assignments, setAssignments] = useState<Record<string, string>>({});
   const [dragging, setDragging] = useState<{ id: string; offsetX: number; offsetY: number } | null>(null);
 
+  useEffect(() => {
+    primeSpeechVoices();
+  }, []);
+
   const stageCount = Math.ceil(ALL_HOUR_PAIRS.length / STAGE_SIZE);
   const stageBasePairs = useMemo(() => {
     const start = stageIndex * STAGE_SIZE;
@@ -92,7 +99,7 @@ export default function HourClockThreePartCardsLesson() {
   }, [stageIndex]);
 
   useEffect(() => {
-    setStagePairs(shuffleArray(stageBasePairs));
+    setStagePairs(stageBasePairs);
   }, [stageBasePairs]);
 
   useEffect(() => {
@@ -168,6 +175,10 @@ export default function HourClockThreePartCardsLesson() {
       });
       return next;
     });
+  }, []);
+
+  const handleSpeak = useCallback((label: string) => {
+    speakWithPreferredVoice(label, { rate: 0.9, pitch: 0.95, volume: 0.9, lang: "en-US" });
   }, []);
 
   useEffect(() => {
@@ -254,9 +265,23 @@ export default function HourClockThreePartCardsLesson() {
       const pair = stagePairs[index];
       const card = cards.find((item) => item.id === assignedCardId);
       const matched = Boolean(pair && card && card.pairId === pair.id);
-      return { slot, matched };
+      return { slot, matched, pair };
     });
   }, [assignments, cards, stagePairs]);
+
+  const spokenMatchesRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    spokenMatchesRef.current = new Set();
+  }, [stageIndex]);
+
+  useEffect(() => {
+    assignedMatches.forEach((item) => {
+      if (!item.matched || !item.pair) return;
+      if (spokenMatchesRef.current.has(item.pair.id)) return;
+      spokenMatchesRef.current.add(item.pair.id);
+      handleSpeak(item.pair.label);
+    });
+  }, [assignedMatches, handleSpeak]);
 
   const allMatched = useMemo(
     () => assignedMatches.length > 0 && assignedMatches.every((item) => item.matched),
@@ -285,9 +310,11 @@ export default function HourClockThreePartCardsLesson() {
       <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-6 py-10">
         <header className="space-y-3 text-center">
           <p className="text-xs uppercase tracking-[0.35em] text-stone-400">
-            History &amp; Time · Hour Clock Three-Part Cards
+            History &amp; Time · Hour Clock Three-Part Cards Pictures
           </p>
-          <h1 className="font-display text-4xl font-semibold text-stone-900">Hour Clock Three-Part Cards</h1>
+          <h1 className="font-display text-4xl font-semibold text-stone-900">
+            Hour Clock Three-Part Cards Pictures
+          </h1>
           <p className="text-sm text-stone-600">Drag each clock picture to the matching hour card.</p>
         </header>
 
@@ -313,9 +340,15 @@ export default function HourClockThreePartCardsLesson() {
                     height: `${(slot.height / BOARD_HEIGHT) * 100}%`,
                   }}
                 >
-                  <div className="flex h-full w-full items-center justify-center rounded-md border border-stone-300 bg-white/95 px-2 text-center text-lg font-semibold text-stone-800">
-                    {pair.label}
-                  </div>
+                  <img src={pair.fullImage} alt={pair.label} className="h-full w-full object-contain" />
+                  <button
+                    type="button"
+                    onClick={() => handleSpeak(pair.label)}
+                    aria-label={`Say ${pair.label}`}
+                    className="absolute right-0 bottom-0 z-20 flex h-4 w-4 translate-x-1/2 translate-y-1/2 items-center justify-center rounded-full border border-stone-200 bg-white/95 text-[9px] leading-none text-stone-600 shadow shadow-stone-300 transition hover:bg-white"
+                  >
+                    🔊
+                  </button>
                 </div>
               );
             })}
@@ -350,7 +383,19 @@ export default function HourClockThreePartCardsLesson() {
                   }}
                 >
                   <div className="h-full w-full rounded-md bg-white/90 p-1 shadow-[0_8px_18px_-14px_rgba(0,0,0,0.8)] sm:p-1.5">
-                    <img src={pair.image} alt={pair.label} className="h-full w-full object-contain" />
+                    <img src={pair.pictureImage} alt={pair.label} className="h-full w-full object-contain" />
+                    <button
+                      type="button"
+                      onPointerDown={(event) => event.stopPropagation()}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleSpeak(pair.label);
+                      }}
+                      aria-label={`Say ${pair.label}`}
+                      className="absolute right-0 bottom-0 z-20 flex h-4 w-4 translate-x-1/2 translate-y-1/2 items-center justify-center rounded-full border border-stone-200 bg-white/95 text-[9px] leading-none text-stone-600 shadow shadow-stone-300 transition hover:bg-white"
+                    >
+                      🔊
+                    </button>
                   </div>
                 </div>
               );

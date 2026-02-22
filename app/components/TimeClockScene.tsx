@@ -25,6 +25,7 @@ type TimeClockSceneProps = {
   highlightPart?: "hour" | "minute" | "track" | null;
   className?: string;
   cameraPositionZ?: number;
+  frozen?: boolean;
 };
 
 const FACE_RADIUS = 1.35;
@@ -339,13 +340,18 @@ export default function TimeClockScene({
   highlightPart = null,
   className,
   cameraPositionZ = 5.6,
+  frozen = false,
 }: TimeClockSceneProps) {
   return (
     <div
-      className={`relative w-full touch-none overscroll-contain overflow-hidden rounded-[26px] border border-stone-200 bg-[radial-gradient(circle_at_top,#fbf7f2_0%,#f2ebe3_55%,#ece2d6_100%)] ${className ?? "h-[420px]"}`}
-      style={{ touchAction: "none" }}
+      className={`relative w-full overflow-hidden rounded-[26px] border border-stone-200 bg-[radial-gradient(circle_at_top,#fbf7f2_0%,#f2ebe3_55%,#ece2d6_100%)] ${frozen ? "" : "touch-none overscroll-contain"} ${className ?? "h-[420px]"}`}
+      style={frozen ? undefined : { touchAction: "none" }}
     >
-      <Canvas camera={{ position: [0, 0, cameraPositionZ], fov: 34 }} shadows>
+      <Canvas
+        camera={{ position: [0, 0, cameraPositionZ], fov: 34 }}
+        shadows
+        frameloop={frozen ? "demand" : "always"}
+      >
         <ClockHands
           mode={mode}
           value={value}

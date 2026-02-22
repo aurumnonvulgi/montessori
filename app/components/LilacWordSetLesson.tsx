@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import HomeLink from "./HomeLink";
 import CompletionOverlay from "./CompletionOverlay";
+import MicrophoneLessonBanner from "./MicrophoneLessonBanner";
 import { trackLessonEvent } from "../lib/lessonTelemetry";
 import { useMicrophoneEnabled } from "../lib/microphonePreferences";
 import { primeSpeechVoices, speakWithPreferredVoice } from "../lib/speech";
@@ -390,6 +391,8 @@ export default function LilacWordSetLesson({
             Page {pageIndex + 1} of {pages.length} · 10 words per page
           </p>
         </header>
+
+        <MicrophoneLessonBanner microphoneEnabled={microphoneEnabled} />
 
         {microphoneEnabled && !speechAvailable ? (
           <div className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">

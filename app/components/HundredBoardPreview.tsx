@@ -67,10 +67,11 @@ function PreviewTile({ number, x, z }: { number: number; x: number; z: number })
 
 export default function HundredBoardPreview({ className }: HundredBoardPreviewProps) {
   return (
-    <div className={`w-full overflow-hidden rounded-[24px] bg-[#efe6d8] ${className ?? "h-36"}`}>
+    <div className={`pointer-events-none w-full select-none overflow-hidden rounded-[24px] bg-[#efe6d8] ${className ?? "h-36"}`}>
       <Canvas
         shadows
         camera={{ position: [0.32, 0.98, 2.38], fov: 42 }}
+        frameloop="demand"
         onCreated={({ camera }) => camera.lookAt(0.2, 0.03, 0.24)}
       >
         <ambientLight intensity={0.72} />

@@ -1,3 +1,5 @@
+import { getVoiceEnabled, getVoiceVolume } from "./voicePreferences";
+
 type SpeechOptions = {
   rate?: number;
   pitch?: number;
@@ -74,6 +76,13 @@ export const speakWithPreferredVoice = (text: string, options: SpeechOptions = {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) {
     return;
   }
+  if (!getVoiceEnabled()) {
+    return;
+  }
+  const masterVoiceVolume = getVoiceVolume();
+  if (masterVoiceVolume <= 0) {
+    return;
+  }
   const phrase = text.trim();
   if (!phrase) {
     return;
@@ -103,7 +112,7 @@ export const speakWithPreferredVoice = (text: string, options: SpeechOptions = {
     }
     utterance.rate = options.rate ?? 0.9;
     utterance.pitch = options.pitch ?? 0.95;
-    utterance.volume = options.volume ?? 0.85;
+    utterance.volume = Math.max(0, Math.min(1, (options.volume ?? 0.85) * masterVoiceVolume));
     return utterance;
   };
 

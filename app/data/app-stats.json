@@ -1,0 +1,329 @@
+{
+  "generatedAtISO": "2026-02-22T19:22:30.759Z",
+  "totals": {
+    "files": 7314,
+    "sizeBytes": 1526046447
+  },
+  "pages": {
+    "total": 91,
+    "lesson": 85,
+    "dynamicLesson": 16
+  },
+  "components": {
+    "total": 75,
+    "apiRoutes": 7
+  },
+  "media": {
+    "total": 7021,
+    "images": 6658,
+    "audio": 361,
+    "video": 2
+  },
+  "assets": {
+    "total": 6999,
+    "public": 3486,
+    "master": 3513,
+    "publicMedia": {
+      "total": 3524,
+      "images": 3308,
+      "audio": 216
+    },
+    "masterMedia": {
+      "total": 3479,
+      "images": 3334,
+      "audio": 145
+    }
+  },
+  "moments": {
+    "oldestPage": {
+      "relPath": "app/page.tsx",
+      "extension": ".tsx",
+      "size": 488,
+      "createdMs": 1769148978095.27,
+      "modifiedMs": 1771749662029.3127
+    },
+    "newestPage": {
+      "relPath": "app/register/page.tsx",
+      "extension": ".tsx",
+      "size": 8147,
+      "createdMs": 1771751019798.9233,
+      "modifiedMs": 1771782324103.4463
+    },
+    "oldestLessonPage": {
+      "relPath": "app/lessons/number-rods-presentation/page.tsx",
+      "extension": ".tsx",
+      "size": 191,
+      "createdMs": 1769333995644.6978,
+      "modifiedMs": 1769333995646.8645
+    },
+    "newestLessonPage": {
+      "relPath": "app/lessons/development-tools/feedback/page.tsx",
+      "extension": ".tsx",
+      "size": 6882,
+      "createdMs": 1771732477964.6946,
+      "modifiedMs": 1771732551702.38
+    },
+    "oldestFile": {
+      "relPath": ".gitignore",
+      "extension": "",
+      "size": 508,
+      "createdMs": 1769148978036.7068,
+      "modifiedMs": 1771723583129.4983
+    },
+    "newestFile": {
+      "relPath": "app/components/MaterialTeachersGuide.tsx",
+      "extension": ".tsx",
+      "size": 4942,
+      "createdMs": 1771788024176.5933,
+      "modifiedMs": 1771788024176.8953
+    }
+  },
+  "lessonSubjects": [
+    {
+      "name": "language-arts",
+      "count": 37
+    },
+    {
+      "name": "history-time",
+      "count": 16
+    },
+    {
+      "name": "development-tools",
+      "count": 5
+    },
+    {
+      "name": "number-rods",
+      "count": 5
+    },
+    {
+      "name": "numerals-and-counters",
+      "count": 5
+    },
+    {
+      "name": "sandpaper-numerals",
+      "count": 4
+    },
+    {
+      "name": "geometry",
+      "count": 3
+    },
+    {
+      "name": "spindle-boxes",
+      "count": 3
+    },
+    {
+      "name": "hundred-board",
+      "count": 1
+    },
+    {
+      "name": "mathematics",
+      "count": 1
+    },
+    {
+      "name": "number-rods-presentation",
+      "count": 1
+    },
+    {
+      "name": "short-bead-stair",
+      "count": 1
+    },
+    {
+      "name": "teen-board",
+      "count": 1
+    },
+    {
+      "name": "teen-board-symbols",
+      "count": 1
+    },
+    {
+      "name": "teen-board-v1",
+      "count": 1
+    }
+  ],
+  "topLevels": [
+    {
+      "name": "public",
+      "count": 3575
+    },
+    {
+      "name": "assets_master",
+      "count": 3513
+    },
+    {
+      "name": "app",
+      "count": 205
+    },
+    {
+      "name": "scripts",
+      "count": 5
+    },
+    {
+      "name": "types",
+      "count": 2
+    },
+    {
+      "name": ".DS_Store",
+      "count": 1
+    },
+    {
+      "name": ".env.local",
+      "count": 1
+    },
+    {
+      "name": ".gitignore",
+      "count": 1
+    },
+    {
+      "name": ".nvmrc",
+      "count": 1
+    },
+    {
+      "name": "CLAUDE.md",
+      "count": 1
+    }
+  ],
+  "extensions": [
+    {
+      "name": ".png",
+      "count": 6625
+    },
+    {
+      "name": ".m4a",
+      "count": 342
+    },
+    {
+      "name": ".tsx",
+      "count": 170
+    },
+    {
+      "name": "(no ext)",
+      "count": 57
+    },
+    {
+      "name": ".svg",
+      "count": 33
+    },
+    {
+      "name": ".ts",
+      "count": 33
+    },
+    {
+      "name": ".json",
+      "count": 22
+    },
+    {
+      "name": ".mp3",
+      "count": 18
+    },
+    {
+      "name": ".mjs",
+      "count": 5
+    },
+    {
+      "name": ".md",
+      "count": 2
+    },
+    {
+      "name": ".mp4",
+      "count": 2
+    },
+    {
+      "name": ".css",
+      "count": 1
+    },
+    {
+      "name": ".local",
+      "count": 1
+    },
+    {
+      "name": ".py",
+      "count": 1
+    }
+  ],
+  "largestFiles": [
+    {
+      "relPath": "assets_master/media/songs/Piano Sonata no. 11, K. 331 - III. Alla Turca.mp3",
+      "extension": ".mp3",
+      "size": 6250996,
+      "createdMs": 1771706378421.586,
+      "modifiedMs": 1771723602763.9592
+    },
+    {
+      "relPath": "public/assets/media/songs/Piano Sonata no. 11, K. 331 - III. Alla Turca.mp3",
+      "extension": ".mp3",
+      "size": 6250996,
+      "createdMs": 1771706377842.2292,
+      "modifiedMs": 1771706378421.586
+    },
+    {
+      "relPath": "assets_master/language_arts/initial_sound/Initial Sound - I/i---inch___initial_sound.png",
+      "extension": ".png",
+      "size": 3903326,
+      "createdMs": 1771265880693.9434,
+      "modifiedMs": 1771723602009.3374
+    },
+    {
+      "relPath": "public/assets/language_arts/initial_sound/Initial Sound - I/i---inch___initial_sound.png",
+      "extension": ".png",
+      "size": 3903326,
+      "createdMs": 1770708835663.2793,
+      "modifiedMs": 1771265880693.9434
+    },
+    {
+      "relPath": "assets_master/media/songs/Air on the G String (from Orchestral Suite no. 3, BWV 1068).mp3",
+      "extension": ".mp3",
+      "size": 2934974,
+      "createdMs": 1771707270618.3772,
+      "modifiedMs": 1771723602752.6772
+    },
+    {
+      "relPath": "public/assets/media/songs/Air on the G String (from Orchestral Suite no. 3, BWV 1068).mp3",
+      "extension": ".mp3",
+      "size": 2934974,
+      "createdMs": 1771707270386.4822,
+      "modifiedMs": 1771707270618.3772
+    },
+    {
+      "relPath": "assets_master/media/songs/Gymnopédie no. 1 (for Harp).mp3",
+      "extension": ".mp3",
+      "size": 2665357,
+      "createdMs": 1771706110595.8364,
+      "modifiedMs": 1771723602757.8865
+    },
+    {
+      "relPath": "public/assets/media/songs/Gymnopédie no. 1 (for Harp).mp3",
+      "extension": ".mp3",
+      "size": 2665357,
+      "createdMs": 1771706110296.0242,
+      "modifiedMs": 1771706110595.8364
+    },
+    {
+      "relPath": "assets_master/language_arts/concept_development/parts-to-whole/leopard-part-to-whole____parts-to-whole.png",
+      "extension": ".png",
+      "size": 2196719,
+      "createdMs": 1771451082007.6748,
+      "modifiedMs": 1771723601402.147
+    },
+    {
+      "relPath": "public/assets/language_arts/concept_development/parts-to-whole/leopard-part-to-whole____parts-to-whole.png",
+      "extension": ".png",
+      "size": 2196719,
+      "createdMs": 1771451082006.1812,
+      "modifiedMs": 1771451082007.6748
+    },
+    {
+      "relPath": "assets_master/language_arts/concept_development/parts-to-whole/cheetah-part-to-whole____parts-to-whole.png",
+      "extension": ".png",
+      "size": 2091125,
+      "createdMs": 1771451263922.0503,
+      "modifiedMs": 1771723601375.948
+    },
+    {
+      "relPath": "public/assets/language_arts/concept_development/parts-to-whole/cheetah-part-to-whole____parts-to-whole.png",
+      "extension": ".png",
+      "size": 2091125,
+      "createdMs": 1771451263920.698,
+      "modifiedMs": 1771451263922.0503
+    }
+  ]
+}

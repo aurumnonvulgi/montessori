@@ -39,6 +39,20 @@ export default function LanguageArtsHub() {
     { src: "/assets/language_arts/moveable_alphabet/images/a---bat___moveable_phonics.png", alt: "bat" },
     { src: "/assets/language_arts/moveable_alphabet/images/a---hat___moveable_phonics.png", alt: "hat" },
   ];
+  const consonantBlendImages: PreviewImage[] = [
+    {
+      src: "/assets/language_arts/consonant_blend/consonant_blend_picture_cards/bl-blab-1-blab____consonant_blends.png",
+      alt: "blab",
+    },
+    {
+      src: "/assets/language_arts/consonant_blend/consonant_blend_picture_cards/cl-clap-1-clap____consonant_blends.png",
+      alt: "clap",
+    },
+    {
+      src: "/assets/language_arts/consonant_blend/consonant_blend_picture_cards/dr-drab-1-drab____consonant_blends.png",
+      alt: "drab",
+    },
+  ];
 
   const initialSoundImages: PreviewImage[] = [
     {
@@ -63,14 +77,6 @@ export default function LanguageArtsHub() {
           <p className="text-xs uppercase tracking-[0.35em] text-stone-400">Language Arts</p>
           <h1 className="font-display text-4xl font-semibold text-stone-900">Language Arts Materials</h1>
           <p className="text-sm text-stone-600">Choose a material to explore letter and phonics experiences.</p>
-          <div>
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center justify-center rounded-full border border-sky-200 bg-sky-50 px-4 py-2 text-xs uppercase tracking-[0.3em] text-sky-700"
-            >
-              Activity Dashboard
-            </Link>
-          </div>
         </div>
         <div className="grid gap-6 md:grid-cols-2">
           <Link
@@ -142,6 +148,20 @@ export default function LanguageArtsHub() {
             </div>
             <p className="text-xs uppercase tracking-[0.35em] text-amber-700">Organize playful explorations</p>
             <div className="absolute -bottom-3 right-4 rounded-full border border-amber-400 bg-amber-200 px-3 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-amber-800">
+              Folder
+            </div>
+          </Link>
+          <Link
+            href="/lessons/language-arts/consonant-blends"
+            className="group relative flex h-56 flex-col justify-between rounded-3xl border border-sky-200 bg-gradient-to-br from-sky-100 via-white to-blue-50 p-6 shadow-[0_30px_60px_-40px_rgba(15,23,42,0.8)] transition hover:-translate-y-0.5 hover:shadow-[0_40px_90px_-50px_rgba(15,23,42,0.7)]"
+          >
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-sky-300 bg-sky-100 text-xl font-semibold text-sky-700">📁</span>
+              <h2 className="font-display text-2xl font-semibold text-stone-900">Consonant Blends | Blue Series</h2>
+            </div>
+            <ImageGridPreview images={consonantBlendImages} className="bg-sky-50/70" />
+            <p className="text-xs uppercase tracking-[0.35em] text-sky-700">Blend words + moveable alphabet + label matching</p>
+            <div className="absolute -bottom-3 right-4 rounded-full border border-sky-300 bg-sky-200 px-3 py-1 text-xs font-semibold uppercase tracking-[0.35em] text-sky-800">
               Folder
             </div>
           </Link>

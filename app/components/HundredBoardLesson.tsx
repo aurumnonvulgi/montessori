@@ -8,6 +8,8 @@ import HomeLink from "./HomeLink";
 import CompletionOverlay from "./CompletionOverlay";
 import { trackLessonEvent } from "../lib/lessonTelemetry";
 import ZoomResetButton from "./ZoomResetButton";
+import MaterialTeachersGuide from "./MaterialTeachersGuide";
+import { HUNDRED_BOARD_TEACHERS_GUIDE } from "../data/materialTeachersGuides";
 
 const GRID_SIZE = 10;
 const SLOT_SIZE = 0.42;
@@ -1089,6 +1091,8 @@ export default function HundredBoardLesson() {
             </div>
           </div>
         </section>
+
+        <MaterialTeachersGuide guide={HUNDRED_BOARD_TEACHERS_GUIDE} className="mb-2" />
       </main>
       <CompletionOverlay
         open={showBatchCompletion}

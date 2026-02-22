@@ -11,6 +11,7 @@ import {
 } from "react";
 import Draggable from "react-draggable";
 import { getPreferredVoice, primeSpeechVoices } from "../lib/speech";
+import { getVoiceEnabled, getVoiceVolume } from "../lib/voicePreferences";
 
 type NumberRodsPresentationCanvasProps = {
   playing: boolean;
@@ -580,6 +581,15 @@ export default function NumberRodsPresentationCanvas({
           resolve();
           return;
         }
+        if (!getVoiceEnabled()) {
+          resolve();
+          return;
+        }
+        const masterVoiceVolume = getVoiceVolume();
+        if (masterVoiceVolume <= 0) {
+          resolve();
+          return;
+        }
         const utterance = new SpeechSynthesisUtterance(text);
         const preferredVoice = getPreferredVoice("en-US");
         if (preferredVoice) {
@@ -587,7 +597,7 @@ export default function NumberRodsPresentationCanvas({
         }
         utterance.rate = rate;
         utterance.pitch = 0.95;
-        utterance.volume = 0.9;
+        utterance.volume = Math.max(0, Math.min(1, 0.9 * masterVoiceVolume));
         utterance.onend = () => resolve();
         utterance.onerror = () => resolve();
         window.speechSynthesis.cancel();

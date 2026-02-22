@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import NumeralsAndCountersPreview from "./NumeralsAndCountersPreview";
 import HomeLink from "./HomeLink";
+import MaterialTeachersGuide from "./MaterialTeachersGuide";
+import { NUMERALS_AND_COUNTERS_TEACHERS_GUIDE } from "../data/materialTeachersGuides";
 
 const LESSONS = [
   { id: 1, name: "1, 2, 3", numerals: [1, 2, 3], color: "bg-rose-100", borderColor: "border-rose-200", textColor: "text-rose-700" },
@@ -165,6 +167,8 @@ export default function NumeralsAndCountersHub() {
             </div>
           </div>
         )}
+
+        <MaterialTeachersGuide guide={NUMERALS_AND_COUNTERS_TEACHERS_GUIDE} className="mt-8" />
       </main>
     </div>
   );

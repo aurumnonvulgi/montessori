@@ -1,7 +1,6 @@
 "use client";
 
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls } from "@react-three/drei";
 import { useMemo } from "react";
 import * as THREE from "three";
 
@@ -107,15 +106,6 @@ function NumeralsAndCountersPreviewContent() {
           />
         </mesh>
       ))}
-
-      <OrbitControls
-        enableZoom={false}
-        enablePan={false}
-        minPolarAngle={Math.PI / 4}
-        maxPolarAngle={Math.PI / 3}
-        minAzimuthAngle={-Math.PI / 8}
-        maxAzimuthAngle={Math.PI / 8}
-      />
     </>
   );
 }
@@ -124,11 +114,12 @@ export default function NumeralsAndCountersPreview({
   className = "",
 }: NumeralsAndCountersPreviewProps) {
   return (
-    <div className={className}>
+    <div className={`pointer-events-none select-none ${className}`}>
       <Canvas
         camera={{ position: [0, 1.5, 2.2], fov: 35 }}
         shadows={false}
         gl={{ antialias: true }}
+        frameloop="demand"
       >
         <NumeralsAndCountersPreviewContent />
       </Canvas>

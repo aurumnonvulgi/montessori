@@ -4,6 +4,8 @@ import { useCallback, useMemo, useState } from "react";
 import * as THREE from "three";
 import ShortBeadStairScene from "./ShortBeadStairScene";
 import HomeLink from "./HomeLink";
+import MaterialTeachersGuide from "./MaterialTeachersGuide";
+import { SHORT_BEAD_STAIR_TEACHERS_GUIDE } from "../data/materialTeachersGuides";
 
 type HomePositions = Record<number, THREE.Vector3[]>;
 
@@ -53,6 +55,8 @@ export default function ShortBeadStairLesson() {
             </div>
           )}
         </section>
+
+        <MaterialTeachersGuide guide={SHORT_BEAD_STAIR_TEACHERS_GUIDE} className="mt-2" />
       </main>
     </div>
   );

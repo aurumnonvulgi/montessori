@@ -170,7 +170,7 @@ export default function PhonicThreePartCardsLesson() {
         };
       })
       .filter(Boolean) as ThreePartPair[];
-    setPairs(nextPairs);
+    setPairs(shuffleArray(nextPairs));
     setStageIndex(0);
   }, [cardFiles, pictureFiles, vowel]);
 

@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import HomeLink from "../../../components/HomeLink";
 import MicrophonePrivacyToggle from "../../../components/MicrophonePrivacyToggle";
+import DashboardMusicToggle from "../../../components/DashboardMusicToggle";
+import PrivacyDisclosuresCard from "../../../components/PrivacyDisclosuresCard";
 import { initialSoundGroups } from "../initial-sound-cards/data";
 import { LILAC_WORD_SETS } from "../lilac-word-lists/data";
 import {
@@ -21,6 +23,40 @@ const HISTORY_TIME_TRACKS = [
   { key: "minutes", label: "Minute Clock", activity: "mode-minutes", href: "/lessons/history-time/minute-clock" },
   { key: "both", label: "Clock", activity: "mode-both", href: "/lessons/history-time/clock" },
 ] as const;
+const HOUR_TCP_SCREENS_PER_MATERIAL = 4;
+const MINUTE_CHUNK_COUNT = 6;
+const MINUTE_CHUNK_SCREENS = Math.ceil(10 / 3);
+const MINUTE_TCP_SCREENS_PER_MATERIAL = MINUTE_CHUNK_COUNT * MINUTE_CHUNK_SCREENS;
+const BLEND_MOVEABLE_STAGE_SIZE = 3;
+const BLEND_LABEL_STAGE_SIZE = 5;
+const BLEND_ORDER = [
+  "bl",
+  "br",
+  "cl",
+  "cr",
+  "dr",
+  "fl",
+  "fr",
+  "gl",
+  "gr",
+  "pl",
+  "pr",
+  "sc",
+  "sk",
+  "sl",
+  "sm",
+  "sn",
+  "sp",
+  "st",
+  "sw",
+  "tr",
+  "tw",
+] as const;
+
+type BlendKey = (typeof BLEND_ORDER)[number];
+type FileListResponse = {
+  files?: unknown;
+};
 
 type MathLesson = {
   key: string;
@@ -68,6 +104,23 @@ type ActivityProgress = ProgressItem & {
   vowelItems: ProgressItem[];
 };
 
+type CatalogTopicStat = {
+  key: string;
+  label: string;
+  materials: number;
+  activities: number;
+  colorClass: string;
+};
+
+type CatalogSubjectStat = {
+  key: string;
+  label: string;
+  materials: number;
+  activities: number;
+  colorClass: string;
+  topics: CatalogTopicStat[];
+};
+
 const clampPercent = (value: number) => Math.max(0, Math.min(100, Math.round(value)));
 const isComplete = (percent: number) => percent >= 100;
 
@@ -98,6 +151,20 @@ const getCompletedUnits = (events: LessonEvent[], completionEvent: string) => {
     }
   });
   return pages.size;
+};
+
+const parseBlendFromPictureFile = (file: string): BlendKey | null => {
+  const match = file.match(/^([a-z]{2})-[a-z]+-\d+-[a-z]+____consonant_blends\.png$/i);
+  if (!match) return null;
+  const candidate = match[1].toLowerCase();
+  return BLEND_ORDER.includes(candidate as BlendKey) ? (candidate as BlendKey) : null;
+};
+
+const parseBlendFromLabelFile = (file: string): BlendKey | null => {
+  const match = file.match(/^([a-z]{2})-[a-z]+_consonant_blend_word_labels\.png$/i);
+  if (!match) return null;
+  const candidate = match[1].toLowerCase();
+  return BLEND_ORDER.includes(candidate as BlendKey) ? (candidate as BlendKey) : null;
 };
 
 const buildProgressItem = ({
@@ -327,6 +394,8 @@ function ActivityCard({ item, color }: { item: ActivityProgress; color: string }
 export default function LanguageArtsDashboardPage() {
   const router = useRouter();
   const [events, setEvents] = useState<LessonEvent[]>([]);
+  const [consonantBlendPictureFiles, setConsonantBlendPictureFiles] = useState<string[]>([]);
+  const [consonantBlendLabelFiles, setConsonantBlendLabelFiles] = useState<string[]>([]);
   const [openCategory, setOpenCategory] = useState({
     language: true,
     historyTime: false,
@@ -362,6 +431,48 @@ export default function LanguageArtsDashboardPage() {
     };
   }, []);
 
+  useEffect(() => {
+    let active = true;
+    const loadConsonantBlendFiles = async () => {
+      try {
+        const [picturesResponse, labelsResponse] = await Promise.all([
+          fetch("/api/language-arts/consonant-blends/cards", { cache: "no-store" }),
+          fetch("/api/language-arts/consonant-blends/labels", { cache: "no-store" }),
+        ]);
+
+        if (picturesResponse.ok) {
+          const payload = (await picturesResponse.json()) as FileListResponse;
+          const files = Array.isArray(payload.files)
+            ? payload.files.filter((value): value is string => typeof value === "string")
+            : [];
+          if (active) {
+            setConsonantBlendPictureFiles(files);
+          }
+        }
+
+        if (labelsResponse.ok) {
+          const payload = (await labelsResponse.json()) as FileListResponse;
+          const files = Array.isArray(payload.files)
+            ? payload.files.filter((value): value is string => typeof value === "string")
+            : [];
+          if (active) {
+            setConsonantBlendLabelFiles(files);
+          }
+        }
+      } catch {
+        // Fallback to empty list below.
+      }
+      if (active) {
+        setConsonantBlendPictureFiles([]);
+        setConsonantBlendLabelFiles([]);
+      }
+    };
+    void loadConsonantBlendFiles();
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const attemptResults = useMemo(() => events.filter((event) => event.event === "attempt_result"), [events]);
   const totalAttempts = attemptResults.length || events.filter((event) => event.event === "attempt_started").length;
   const totalSuccesses = attemptResults.filter((event) => event.success).length;
@@ -382,7 +493,7 @@ export default function LanguageArtsDashboardPage() {
     () =>
       buildActivityProgress({
         key: "moveable-alphabet",
-        label: "Phonics Moveable Alphabet",
+        label: "Phonic Picture Cards",
         href: "/lessons/language-arts/moveable-alphabet",
         vowelItems: buildVowelProgress({
           events,
@@ -399,7 +510,7 @@ export default function LanguageArtsDashboardPage() {
     () =>
       buildActivityProgress({
         key: "phonic-labels",
-        label: "Phonic Picture Cards with Word Labels",
+        label: "Phonic Picture Cards",
         href: "/lessons/language-arts/phonic-labels",
         vowelItems: buildVowelProgress({
           events,
@@ -416,7 +527,7 @@ export default function LanguageArtsDashboardPage() {
     () =>
       buildActivityProgress({
         key: "three-part-cards",
-        label: "Phonics Three-Part Cards",
+        label: "Phonic Three-Part Cards",
         href: "/lessons/language-arts/phonic-three-part-cards",
         vowelItems: buildVowelProgress({
           events,
@@ -429,11 +540,28 @@ export default function LanguageArtsDashboardPage() {
     [events]
   );
 
+  const threePartCardsLabelsOnly = useMemo(
+    () =>
+      buildActivityProgress({
+        key: "three-part-cards-labels-only",
+        label: "Phonic Three-Part Cards",
+        href: "/lessons/language-arts/phonic-three-part-cards-labels-only",
+        vowelItems: buildVowelProgress({
+          events,
+          lesson: "language-arts:phonic-three-part-cards-labels-only",
+          completionEvent: "stage_completed",
+          completionSignalEvent: "lesson_completed",
+          hrefForVowel: (vowel) => `/lessons/language-arts/phonic-three-part-cards-labels-only/${vowel}`,
+        }),
+      }),
+    [events]
+  );
+
   const threePartCardsLabels = useMemo(
     () =>
       buildActivityProgress({
         key: "three-part-cards-labels",
-        label: "Phonics Three-Part + Labels",
+        label: "Phonic Three-Part Cards",
         href: "/lessons/language-arts/phonic-three-part-cards-labels",
         vowelItems: buildVowelProgress({
           events,
@@ -450,7 +578,7 @@ export default function LanguageArtsDashboardPage() {
     () =>
       buildActivityProgress({
         key: "reading-books",
-        label: "Phonics Reading Booklets",
+        label: "Phonic Reading Books",
         href: "/lessons/language-arts/phonics/reading-book",
         vowelItems: buildVowelProgress({
           events,
@@ -463,8 +591,132 @@ export default function LanguageArtsDashboardPage() {
     [events]
   );
 
-  const phonicsActivities = [moveableAlphabet, phonicLabels, threePartCards, threePartCardsLabels, readingBooks];
+  const phonicsActivities = [
+    moveableAlphabet,
+    phonicLabels,
+    threePartCards,
+    threePartCardsLabelsOnly,
+    threePartCardsLabels,
+    readingBooks,
+  ];
   const phonicsPercent = averagePercent(phonicsActivities);
+
+  const consonantBlendImageCounts = useMemo(() => {
+    const counts: Record<BlendKey, number> = Object.fromEntries(
+      BLEND_ORDER.map((blend) => [blend, 0]),
+    ) as Record<BlendKey, number>;
+    consonantBlendPictureFiles.forEach((file) => {
+      const blend = parseBlendFromPictureFile(file);
+      if (!blend) return;
+      counts[blend] += 1;
+    });
+    return counts;
+  }, [consonantBlendPictureFiles]);
+
+  const consonantBlendLabelCounts = useMemo(() => {
+    const counts: Record<BlendKey, number> = Object.fromEntries(
+      BLEND_ORDER.map((blend) => [blend, 0]),
+    ) as Record<BlendKey, number>;
+    consonantBlendLabelFiles.forEach((file) => {
+      const blend = parseBlendFromLabelFile(file);
+      if (!blend) return;
+      counts[blend] += 1;
+    });
+    return counts;
+  }, [consonantBlendLabelFiles]);
+
+  const consonantBlendMoveableItems = useMemo(() => {
+    return BLEND_ORDER.map((blend) => {
+      const blendEvents = events.filter(
+        (event) =>
+          event.lesson === "language-arts:consonant-blends:moveable-alphabet" &&
+          event.activity === `blend-${blend}`,
+      );
+      const imageCount = consonantBlendImageCounts[blend] ?? 0;
+      const totalUnits = imageCount > 0 ? Math.ceil(imageCount / BLEND_MOVEABLE_STAGE_SIZE) : 0;
+      return buildProgressItem({
+        key: `consonant-blend-moveable-${blend}`,
+        label: blend.toUpperCase(),
+        events: blendEvents,
+        completionEvent: "stage_completed",
+        completionSignalEvent: "lesson_completed",
+        totalUnits,
+        href:
+          imageCount > 0 ? `/lessons/language-arts/consonant-blends/moveable-alphabet/${blend}` : undefined,
+      });
+    });
+  }, [consonantBlendImageCounts, events]);
+
+  const consonantBlendLabelItems = useMemo(() => {
+    return BLEND_ORDER.map((blend) => {
+      const blendEvents = events.filter(
+        (event) =>
+          event.lesson === "language-arts:consonant-blends:phonic-labels" &&
+          event.activity === `blend-${blend}`,
+      );
+      const pairCount = Math.min(consonantBlendImageCounts[blend] ?? 0, consonantBlendLabelCounts[blend] ?? 0);
+      const totalUnits = pairCount > 0 ? Math.ceil(pairCount / BLEND_LABEL_STAGE_SIZE) : 0;
+      return buildProgressItem({
+        key: `consonant-blend-labels-${blend}`,
+        label: blend.toUpperCase(),
+        events: blendEvents,
+        completionEvent: "stage_completed",
+        completionSignalEvent: "lesson_completed",
+        totalUnits,
+        href:
+          pairCount > 0 ? `/lessons/language-arts/consonant-blends/phonic-labels/${blend}` : undefined,
+      });
+    });
+  }, [consonantBlendImageCounts, consonantBlendLabelCounts, events]);
+
+  const consonantBlendsMoveablePercent = averagePercent(consonantBlendMoveableItems);
+  const consonantBlendsLabelPercent = averagePercent(consonantBlendLabelItems);
+  const consonantBlendsPercent = averagePercent([
+    {
+      key: "blue-moveable",
+      label: "Moveable Alphabet",
+      percent: consonantBlendsMoveablePercent,
+      status: "",
+      detail: "",
+    },
+    {
+      key: "blue-labels",
+      label: "Label to Picture",
+      percent: consonantBlendsLabelPercent,
+      status: "",
+      detail: "",
+    },
+  ]);
+
+  const consonantBlendRows = useMemo(
+    () =>
+      BLEND_ORDER.map((blend) => {
+        const moveableItem = consonantBlendMoveableItems.find((entry) => entry.key === `consonant-blend-moveable-${blend}`) ?? {
+          key: `consonant-blend-moveable-${blend}`,
+          label: blend.toUpperCase(),
+          percent: 0,
+          status: toStatus(0),
+          detail: "No activity yet",
+          href: undefined,
+        };
+        const labelItem = consonantBlendLabelItems.find((entry) => entry.key === `consonant-blend-labels-${blend}`) ?? {
+          key: `consonant-blend-labels-${blend}`,
+          label: blend.toUpperCase(),
+          percent: 0,
+          status: toStatus(0),
+          detail: "No activity yet",
+          href: undefined,
+        };
+        return {
+          blend,
+          imageCount: consonantBlendImageCounts[blend] ?? 0,
+          labelCount: consonantBlendLabelCounts[blend] ?? 0,
+          moveableItem,
+          labelItem,
+        };
+      }).filter((row) => row.imageCount > 0 || row.labelCount > 0),
+    [consonantBlendImageCounts, consonantBlendLabelCounts, consonantBlendMoveableItems, consonantBlendLabelItems],
+  );
 
   const lilacSetItems = useMemo(() => {
     return LILAC_WORD_SETS.map((set) => {
@@ -573,6 +825,13 @@ export default function LanguageArtsDashboardPage() {
   const historyTimePercent = averagePercent(historyTimeItems);
   const languagePercent = averagePercent([
     { key: "lang-phonics", label: "Phonics | Pink Series", percent: phonicsPercent, status: "", detail: "" },
+    {
+      key: "lang-consonant-blends",
+      label: "Consonant Blends | Blue Series",
+      percent: consonantBlendsPercent,
+      status: "",
+      detail: "",
+    },
     { key: "lang-lilac", label: "Lilac", percent: lilacPercent, status: "", detail: "" },
     { key: "lang-initial", label: "Initial Sound", percent: initialSoundPercent, status: "", detail: "" },
     { key: "lang-concept", label: "Concept Development", percent: conceptDevelopmentPercent, status: "", detail: "" },
@@ -622,6 +881,152 @@ export default function LanguageArtsDashboardPage() {
   );
   const mathPercent = averagePercent(mathItems);
 
+  const curriculumSubjects = useMemo<CatalogSubjectStat[]>(() => {
+    const phonicsMaterials = phonicsActivities.length;
+    const phonicsActivitiesCount = VOWELS.length * phonicsMaterials;
+    const blueSeriesMoveableActivities = BLEND_ORDER.reduce(
+      (sum, blend) => sum + Math.ceil((consonantBlendImageCounts[blend] ?? 0) / BLEND_MOVEABLE_STAGE_SIZE),
+      0,
+    );
+    const blueSeriesLabelActivities = BLEND_ORDER.reduce(
+      (sum, blend) =>
+        sum + Math.ceil(Math.min(consonantBlendImageCounts[blend] ?? 0, consonantBlendLabelCounts[blend] ?? 0) / BLEND_LABEL_STAGE_SIZE),
+      0,
+    );
+    const blueSeriesMaterials =
+      (blueSeriesMoveableActivities > 0 ? 1 : 0) + (blueSeriesLabelActivities > 0 ? 1 : 0);
+    const blueSeriesActivities = blueSeriesMoveableActivities + blueSeriesLabelActivities;
+    const initialSoundMaterials = initialSoundGroups.length;
+    const initialSoundActivities = initialSoundGroups.reduce((sum, group) => sum + group.slides.length, 0);
+    const lilacMaterials = LILAC_WORD_SETS.length;
+    const lilacActivities = LILAC_WORD_SETS.reduce(
+      (sum, set) => sum + Math.ceil(set.words.length / WORDS_PER_LILAC_PAGE),
+      0
+    );
+    const conceptMaterials = conceptDevelopmentItems.length;
+    const conceptActivities = conceptDevelopmentItems.length;
+    const languageTopics: CatalogTopicStat[] = [
+      {
+        key: "language-phonics",
+        label: "Phonics | Pink Series",
+        materials: phonicsMaterials,
+        activities: phonicsActivitiesCount,
+        colorClass: "bg-sky-500",
+      },
+      {
+        key: "language-blue-series",
+        label: "Consonant Blends | Blue Series",
+        materials: blueSeriesMaterials,
+        activities: blueSeriesActivities,
+        colorClass: "bg-blue-500",
+      },
+      {
+        key: "language-initial",
+        label: "Initial Sound",
+        materials: initialSoundMaterials,
+        activities: initialSoundActivities,
+        colorClass: "bg-fuchsia-500",
+      },
+      {
+        key: "language-lilac",
+        label: "Lilac",
+        materials: lilacMaterials,
+        activities: lilacActivities,
+        colorClass: "bg-violet-500",
+      },
+      {
+        key: "language-concept",
+        label: "Concept Development",
+        materials: conceptMaterials,
+        activities: conceptActivities,
+        colorClass: "bg-amber-500",
+      },
+    ];
+    const languageMaterials = languageTopics.reduce((sum, topic) => sum + topic.materials, 0);
+    const languageActivitiesTotal = languageTopics.reduce((sum, topic) => sum + topic.activities, 0);
+
+    const hourClockActivities = 3 + HOUR_TCP_SCREENS_PER_MATERIAL * 3;
+    const minuteClockActivities = 3 + MINUTE_TCP_SCREENS_PER_MATERIAL * 3;
+    const historyTopics: CatalogTopicStat[] = [
+      {
+        key: "history-hour",
+        label: "Hour Clock",
+        materials: 4,
+        activities: hourClockActivities,
+        colorClass: "bg-cyan-500",
+      },
+      {
+        key: "history-minute",
+        label: "Minute Clock",
+        materials: 4,
+        activities: minuteClockActivities,
+        colorClass: "bg-blue-500",
+      },
+      {
+        key: "history-clock",
+        label: "Clock",
+        materials: 1,
+        activities: 3,
+        colorClass: "bg-indigo-500",
+      },
+    ];
+    const historyMaterials = historyTopics.reduce((sum, topic) => sum + topic.materials, 0);
+    const historyActivitiesTotal = historyTopics.reduce((sum, topic) => sum + topic.activities, 0);
+
+    const hundredBoardUnits =
+      MATH_LESSONS.find((lesson) => lesson.key === "hundred-board-complete")?.telemetry?.totalUnits ?? 1;
+    const coreMathMaterials = MATH_LESSONS.length - 1;
+    const mathTopics: CatalogTopicStat[] = [
+      {
+        key: "math-core",
+        label: "Core Materials",
+        materials: coreMathMaterials,
+        activities: coreMathMaterials,
+        colorClass: "bg-emerald-500",
+      },
+      {
+        key: "math-hundred-board",
+        label: "Hundred Board",
+        materials: 1,
+        activities: hundredBoardUnits,
+        colorClass: "bg-lime-500",
+      },
+    ];
+    const mathMaterials = mathTopics.reduce((sum, topic) => sum + topic.materials, 0);
+    const mathActivitiesTotal = mathTopics.reduce((sum, topic) => sum + topic.activities, 0);
+
+    return [
+      {
+        key: "subject-language",
+        label: "Language",
+        materials: languageMaterials,
+        activities: languageActivitiesTotal,
+        colorClass: "from-fuchsia-100 via-violet-100 to-sky-100",
+        topics: languageTopics,
+      },
+      {
+        key: "subject-history-time",
+        label: "History & Time",
+        materials: historyMaterials,
+        activities: historyActivitiesTotal,
+        colorClass: "from-cyan-100 via-sky-100 to-blue-100",
+        topics: historyTopics,
+      },
+      {
+        key: "subject-math",
+        label: "Math",
+        materials: mathMaterials,
+        activities: mathActivitiesTotal,
+        colorClass: "from-emerald-100 via-lime-100 to-teal-100",
+        topics: mathTopics,
+      },
+    ];
+  }, [conceptDevelopmentItems.length, consonantBlendImageCounts, consonantBlendLabelCounts, phonicsActivities.length]);
+
+  const totalSubjects = curriculumSubjects.length;
+  const totalMaterials = curriculumSubjects.reduce((sum, subject) => sum + subject.materials, 0);
+  const totalActivities = curriculumSubjects.reduce((sum, subject) => sum + subject.activities, 0);
+
   const culturalPercent = 0;
   const sensorialPercent = 0;
 
@@ -634,6 +1039,83 @@ export default function LanguageArtsDashboardPage() {
           <h1 className="font-display text-4xl font-semibold text-stone-900">Material Progress</h1>
           <p className="text-sm text-stone-600">Open each category card to drill down into groups and activities.</p>
         </header>
+
+        <section className="rounded-3xl border border-stone-200 bg-white/90 p-5 shadow-sm">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.28em] text-stone-500">Curriculum Snapshot</p>
+              <p className="mt-1 text-sm text-stone-600">
+                Activity count uses screen-level units where available.
+              </p>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-3">
+              <div className="min-w-[120px] rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-3">
+                <p className="text-[10px] uppercase tracking-[0.22em] text-indigo-700">Subjects</p>
+                <p className="mt-1 text-2xl font-semibold text-indigo-900">{totalSubjects}</p>
+              </div>
+              <div className="min-w-[120px] rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3">
+                <p className="text-[10px] uppercase tracking-[0.22em] text-sky-700">Materials</p>
+                <p className="mt-1 text-2xl font-semibold text-sky-900">{totalMaterials}</p>
+              </div>
+              <div className="min-w-[120px] rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+                <p className="text-[10px] uppercase tracking-[0.22em] text-emerald-700">Activities</p>
+                <p className="mt-1 text-2xl font-semibold text-emerald-900">{totalActivities}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-4 md:grid-cols-3">
+            {curriculumSubjects.map((subject) => {
+              const topicMax = Math.max(...subject.topics.map((topic) => topic.activities), 1);
+              return (
+                <div
+                  key={subject.key}
+                  className={`rounded-2xl border border-stone-200 bg-gradient-to-br ${subject.colorClass} p-4`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-lg font-semibold text-stone-900">{subject.label}</p>
+                      <p className="text-xs uppercase tracking-[0.2em] text-stone-600">
+                        {subject.materials} materials · {subject.activities} activities
+                      </p>
+                    </div>
+                    <div className="flex h-12 items-end gap-1 rounded-lg border border-white/80 bg-white/70 px-2 py-1">
+                      {subject.topics.map((topic) => {
+                        const height = Math.max(20, Math.round((topic.activities / topicMax) * 38));
+                        return (
+                          <span
+                            key={`${subject.key}-${topic.key}-bar`}
+                            className={`w-2 rounded-t ${topic.colorClass}`}
+                            style={{ height: `${height}px` }}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="mt-3 space-y-2">
+                    {subject.topics.map((topic) => {
+                      const width = Math.max(8, Math.round((topic.activities / Math.max(subject.activities, 1)) * 100));
+                      return (
+                        <div key={`${subject.key}-${topic.key}`} className="rounded-xl border border-white/70 bg-white/75 p-2">
+                          <div className="mb-1 flex items-center justify-between gap-2">
+                            <p className="text-xs font-semibold text-stone-800">{topic.label}</p>
+                            <p className="text-[11px] text-stone-600">
+                              {topic.materials} materials · {topic.activities} activities
+                            </p>
+                          </div>
+                          <div className="h-2 w-full overflow-hidden rounded-full bg-stone-200/80">
+                            <div className={`h-full rounded-full ${topic.colorClass}`} style={{ width: `${width}%` }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
 
         <section className="grid gap-3 sm:grid-cols-3">
           <div className="rounded-2xl border border-stone-200 bg-white/90 p-4 shadow-sm">
@@ -687,7 +1169,7 @@ export default function LanguageArtsDashboardPage() {
             </div>
           </OpenCard>
 
-          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-2">
             <section className="rounded-2xl border border-fuchsia-200 bg-gradient-to-br from-fuchsia-50 to-rose-50 p-4">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
@@ -801,6 +1283,72 @@ export default function LanguageArtsDashboardPage() {
                   </div>
                 ))}
               </div>
+            </section>
+
+            <section className="rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 to-cyan-50 p-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <Pie percent={consonantBlendsPercent} color="#2563eb" />
+                  <div>
+                    <p className="font-semibold text-stone-900">Consonant Blends | Blue Series</p>
+                    <p className="text-sm text-stone-600">{toStatus(consonantBlendsPercent)}</p>
+                  </div>
+                </div>
+                <Link
+                  href="/lessons/language-arts/consonant-blends"
+                  className="rounded-full border border-sky-200 bg-sky-50 px-3 py-2 text-[11px] uppercase tracking-[0.2em] text-sky-700"
+                >
+                  Work on This Activity
+                </Link>
+              </div>
+              <div className="mb-3 grid gap-2 md:grid-cols-2">
+                <div className="rounded-xl border border-blue-200 bg-white/80 px-3 py-2">
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-blue-700">Moveable Alphabet</p>
+                  <p className="text-sm font-semibold text-stone-800">{consonantBlendsMoveablePercent}%</p>
+                  <Link
+                    href="/lessons/language-arts/consonant-blends/moveable-alphabet"
+                    className="text-[10px] uppercase tracking-[0.18em] text-blue-800 underline underline-offset-2"
+                  >
+                    Open
+                  </Link>
+                </div>
+                <div className="rounded-xl border border-blue-200 bg-white/80 px-3 py-2">
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-blue-700">Label to Picture</p>
+                  <p className="text-sm font-semibold text-stone-800">{consonantBlendsLabelPercent}%</p>
+                  <Link
+                    href="/lessons/language-arts/consonant-blends/phonic-labels"
+                    className="text-[10px] uppercase tracking-[0.18em] text-blue-800 underline underline-offset-2"
+                  >
+                    Open
+                  </Link>
+                </div>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {consonantBlendRows.map((row) => (
+                  <div
+                    key={row.blend}
+                    className={`flex items-center justify-between gap-2 rounded-xl border bg-white/80 px-3 py-2 text-sm ${
+                      row.moveableItem.percent >= 100 && row.labelItem.percent >= 100 ? "border-emerald-300" : "border-blue-200"
+                    }`}
+                  >
+                    <div>
+                      <p className={`font-semibold ${row.moveableItem.percent >= 100 && row.labelItem.percent >= 100 ? "text-emerald-800" : "text-stone-700"}`}>
+                        {row.blend.toUpperCase()}
+                      </p>
+                      <p className="text-[11px] uppercase tracking-[0.2em] text-stone-500">
+                        {Math.min(row.imageCount, row.labelCount)} pair{Math.min(row.imageCount, row.labelCount) === 1 ? "" : "s"}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[11px] text-stone-600">MA {row.moveableItem.percent}%</p>
+                      <p className="text-[11px] text-stone-600">LBL {row.labelItem.percent}%</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {!consonantBlendRows.length ? (
+                <p className="mt-3 text-sm text-stone-600">No consonant blend images indexed yet.</p>
+              ) : null}
             </section>
 
           </div>
@@ -939,7 +1487,18 @@ export default function LanguageArtsDashboardPage() {
             >
               Clear Records
             </button>
-            <MicrophonePrivacyToggle compact />
+            <div className="w-full rounded-2xl border border-stone-200 bg-stone-50/70 p-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-700">Microphone</p>
+              <div className="mt-2">
+                <MicrophonePrivacyToggle compact />
+              </div>
+              <div className="mt-3">
+                <PrivacyDisclosuresCard compact />
+              </div>
+            </div>
+            <div className="w-full rounded-2xl border border-stone-200 bg-stone-50/70 p-3">
+              <DashboardMusicToggle />
+            </div>
           </div>
         </OpenCard>
       </main>

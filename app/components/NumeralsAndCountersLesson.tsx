@@ -7,6 +7,7 @@ import NumeralsAndCountersScene, {
 } from "./NumeralsAndCountersScene";
 import { CompletionCheck } from "./NumeralsAndCountersStagelesson";
 import { useMicrophoneEnabled } from "../lib/microphonePreferences";
+import MicrophoneLessonBanner from "./MicrophoneLessonBanner";
 
 export default function NumeralsAndCountersLesson() {
   const router = useRouter();
@@ -91,6 +92,8 @@ export default function NumeralsAndCountersLesson() {
             <span>Numerals and Counters</span>
           </div>
         </div>
+
+        <MicrophoneLessonBanner microphoneEnabled={microphoneEnabled} />
 
         <NumeralsAndCountersScene
           key={`${resetKey}-${stageIndex}`}

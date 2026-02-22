@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import NumberRodsScene, { NUMBER_ROD_STAGES } from "./NumberRodsScene";
 import { useMicrophoneEnabled } from "../lib/microphonePreferences";
+import MicrophoneLessonBanner from "./MicrophoneLessonBanner";
 
 export default function NumberRodsLesson() {
   const router = useRouter();
@@ -90,6 +91,8 @@ export default function NumberRodsLesson() {
           <span>Three-Period Lesson</span>
           <span>Number Rods</span>
         </div>
+
+        <MicrophoneLessonBanner microphoneEnabled={microphoneEnabled} />
 
         <NumberRodsScene
           key={`${resetKey}-${stageIndex}`}

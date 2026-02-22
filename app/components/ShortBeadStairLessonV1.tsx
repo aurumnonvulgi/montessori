@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ShortBeadStairScene, { BAR_IDS } from "./ShortBeadStairScene";
 import HomeLink from "./HomeLink";
 import * as THREE from "three";
+import { speakWithPreferredVoice } from "../lib/speech";
 
 type ShiftOffset = { x: number; y: number; z: number };
 
@@ -79,12 +80,7 @@ export default function ShortBeadStairLessonV1() {
   const speak = useCallback(
     (text: string) => {
       logEvent(`Speech: ${text}`);
-      if (typeof window !== "undefined" && "speechSynthesis" in window) {
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.rate = 0.95;
-        window.speechSynthesis.cancel();
-        window.speechSynthesis.speak(utterance);
-      }
+      speakWithPreferredVoice(text, { rate: 0.95, pitch: 0.95, volume: 0.9, lang: "en-US" });
     },
     [logEvent],
   );

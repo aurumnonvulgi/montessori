@@ -3,10 +3,20 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import HomeLink from "../../../components/HomeLink";
+import { MATERIAL_ACTIVITY_STYLES, type MaterialActivityKind } from "../../../lib/materialActivityKinds";
 
 type PreviewImage = {
   src: string;
   alt: string;
+};
+
+type PhonicsMaterialCard = {
+  href: string;
+  title: string;
+  previewImages: PreviewImage[];
+  note: string;
+  activityKind: MaterialActivityKind;
+  activityLabelOverride?: string;
 };
 
 function ImageGridPreview({
@@ -61,6 +71,51 @@ export default function PhonicsHub() {
     { src: "/assets/language_arts/moveable_alphabet/phonic_pictures/a-picture-hat.png", alt: "hat" },
     { src: "/assets/language_arts/moveable_alphabet/phonic_pictures/a-picture-rat.png", alt: "rat" },
   ];
+  const cards: PhonicsMaterialCard[] = [
+    {
+      href: "/lessons/language-arts/moveable-alphabet",
+      title: "Phonic Picture Cards",
+      previewImages: moveableAlphabetImages,
+      note: "Vowel groups · drag & drop",
+      activityKind: "moveable-alphabet",
+    },
+    {
+      href: "/lessons/language-arts/phonic-labels",
+      title: "Phonic Picture Cards",
+      previewImages: phonicLabelImages,
+      note: "Match labels to pictures",
+      activityKind: "tcp-label-to-picture",
+      activityLabelOverride: "Label to Picture",
+    },
+    {
+      href: "/lessons/language-arts/phonic-three-part-cards",
+      title: "Phonic Three-Part Cards",
+      previewImages: threePartCardImages,
+      note: "Match pictures to cards",
+      activityKind: "tcp-picture-to-picture",
+    },
+    {
+      href: "/lessons/language-arts/phonic-three-part-cards-labels-only",
+      title: "Phonic Three-Part Cards",
+      previewImages: threePartLabelImages,
+      note: "Match labels to picture + cards",
+      activityKind: "tcp-label-to-picture",
+    },
+    {
+      href: "/lessons/language-arts/phonic-three-part-cards-labels",
+      title: "Phonic Three-Part Cards",
+      previewImages: threePartLabelImages,
+      note: "Match labels to pictures",
+      activityKind: "tcp-picture-and-label-to-picture",
+    },
+    {
+      href: "/lessons/language-arts/phonics/reading-book",
+      title: "Phonic Reading Books",
+      previewImages: readingBookImages,
+      note: "Read along with audio",
+      activityKind: "booklet",
+    },
+  ];
 
   return (
     <div className="relative min-h-screen bg-[radial-gradient(circle_at_top,#f5efe6,#fdfbf8_55%,#f7efe4)]">
@@ -72,67 +127,33 @@ export default function PhonicsHub() {
           <p className="text-sm text-stone-600">Choose a phonics material to continue.</p>
         </header>
         <div className="grid gap-6 md:grid-cols-2">
-          <Link
-            href="/lessons/language-arts/moveable-alphabet"
-            className="group flex h-56 flex-col justify-between rounded-3xl border border-pink-200 bg-gradient-to-br from-pink-100 via-white to-rose-50 p-6 shadow-[0_30px_60px_-40px_rgba(15,23,42,0.8)] transition hover:-translate-y-0.5 hover:shadow-[0_40px_90px_-50px_rgba(15,23,42,0.7)]"
-          >
-            <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-pink-300 bg-pink-100 text-xl font-semibold text-pink-700">✦</span>
-              <h2 className="font-display text-2xl font-semibold text-stone-900">
-                Phonic Picture Cards and Moveable Alphabet
-              </h2>
-            </div>
-            <ImageGridPreview images={moveableAlphabetImages} className="bg-pink-50/70" />
-            <p className="text-xs uppercase tracking-[0.35em] text-pink-700">Vowel groups · drag & drop</p>
-          </Link>
-          <Link
-            href="/lessons/language-arts/phonic-labels"
-            className="group flex h-56 flex-col justify-between rounded-3xl border border-pink-200 bg-gradient-to-br from-pink-100 via-white to-rose-50 p-6 shadow-[0_30px_60px_-40px_rgba(15,23,42,0.8)] transition hover:-translate-y-0.5 hover:shadow-[0_40px_90px_-50px_rgba(15,23,42,0.7)]"
-          >
-            <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-pink-300 bg-pink-100 text-xl font-semibold text-pink-700">✦</span>
-              <h2 className="font-display text-2xl font-semibold text-stone-900">
-                Phonic Picture Cards with Word Labels
-              </h2>
-            </div>
-            <ImageGridPreview images={phonicLabelImages} className="bg-pink-50/70" />
-            <p className="text-xs uppercase tracking-[0.35em] text-pink-700">Match labels to pictures</p>
-          </Link>
-          <Link
-            href="/lessons/language-arts/phonic-three-part-cards"
-            className="group flex h-56 flex-col justify-between rounded-3xl border border-pink-200 bg-gradient-to-br from-pink-100 via-white to-rose-50 p-6 shadow-[0_30px_60px_-40px_rgba(15,23,42,0.8)] transition hover:-translate-y-0.5 hover:shadow-[0_40px_90px_-50px_rgba(15,23,42,0.7)]"
-          >
-            <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-pink-300 bg-pink-100 text-xl font-semibold text-pink-700">✦</span>
-              <h2 className="font-display text-2xl font-semibold text-stone-900">Phonic three-Part Cards Pictures</h2>
-            </div>
-            <ImageGridPreview images={threePartCardImages} className="bg-pink-50/70" />
-            <p className="text-xs uppercase tracking-[0.35em] text-pink-700">Match pictures to cards</p>
-          </Link>
-          <Link
-            href="/lessons/language-arts/phonic-three-part-cards-labels"
-            className="group flex h-56 flex-col justify-between rounded-3xl border border-pink-200 bg-gradient-to-br from-pink-100 via-white to-rose-50 p-6 shadow-[0_30px_60px_-40px_rgba(15,23,42,0.8)] transition hover:-translate-y-0.5 hover:shadow-[0_40px_90px_-50px_rgba(15,23,42,0.7)]"
-          >
-            <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-pink-300 bg-pink-100 text-xl font-semibold text-pink-700">✦</span>
-              <h2 className="font-display text-2xl font-semibold text-stone-900">
-                Phonic three-Part Cards Pictures &amp; Labels
-              </h2>
-            </div>
-            <ImageGridPreview images={threePartLabelImages} className="bg-pink-50/70" />
-            <p className="text-xs uppercase tracking-[0.35em] text-pink-700">Match labels to pictures</p>
-          </Link>
-          <Link
-            href="/lessons/language-arts/phonics/reading-book"
-            className="group flex h-56 flex-col justify-between rounded-3xl border border-pink-200 bg-gradient-to-br from-pink-100 via-white to-rose-50 p-6 shadow-[0_30px_60px_-40px_rgba(15,23,42,0.8)] transition hover:-translate-y-0.5 hover:shadow-[0_40px_90px_-50px_rgba(15,23,42,0.7)]"
-          >
-            <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-pink-300 bg-pink-100 text-xl font-semibold text-pink-700">✦</span>
-              <h2 className="font-display text-2xl font-semibold text-stone-900">Phonic Reading Books</h2>
-            </div>
-            <ImageGridPreview images={readingBookImages} className="bg-pink-50/70" />
-            <p className="text-xs uppercase tracking-[0.35em] text-pink-700">Read along with audio</p>
-          </Link>
+          {cards.map((card) => {
+            const activityTag = MATERIAL_ACTIVITY_STYLES[card.activityKind];
+            const activityLabel = card.activityLabelOverride ?? activityTag.label;
+            return (
+              <Link
+                key={card.href}
+                href={card.href}
+                className="group flex h-56 flex-col justify-between rounded-3xl border border-pink-200 bg-gradient-to-br from-pink-100 via-white to-rose-50 p-6 shadow-[0_30px_60px_-40px_rgba(15,23,42,0.8)] transition hover:-translate-y-0.5 hover:shadow-[0_40px_90px_-50px_rgba(15,23,42,0.7)]"
+              >
+                <div className="flex items-start gap-3">
+                  <span className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-pink-300 bg-pink-100 text-xl font-semibold text-pink-700">
+                    ✦
+                  </span>
+                  <div className="min-w-0">
+                    <h2 className="font-display text-2xl font-semibold text-stone-900">{card.title}</h2>
+                    <span
+                      className={`mt-2 inline-flex rounded-xl border px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] ${activityTag.className}`}
+                    >
+                      {activityLabel}
+                    </span>
+                  </div>
+                </div>
+                <ImageGridPreview images={card.previewImages} className="bg-pink-50/70" />
+                <p className="text-xs uppercase tracking-[0.35em] text-pink-700">{card.note}</p>
+              </Link>
+            );
+          })}
         </div>
       </main>
     </div>

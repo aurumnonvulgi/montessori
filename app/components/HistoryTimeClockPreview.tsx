@@ -26,6 +26,7 @@ export default function HistoryTimeClockPreview({
           onChange={() => {}}
           draggable={false}
           showCheckOverlay={false}
+          frozen
           className={viewportClassName ?? "h-36"}
         />
       </div>
