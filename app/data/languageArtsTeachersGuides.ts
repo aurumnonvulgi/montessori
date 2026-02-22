@@ -315,30 +315,31 @@ export const CONCEPT_PART_TO_WHOLE_TEACHERS_GUIDE: MaterialTeachersGuideData = {
 };
 
 export const BLUE_PICTURE_CARDS_MOVEABLE_ALPHABET_TEACHERS_GUIDE: MaterialTeachersGuideData = {
-  title: "Blue Series Picture Cards and Moveable Alphabet (Consonant Blends)",
+  title: "Consonant Blend Picture Cards with Moveable Alphabet (Blue Series)",
   purpose:
-    "This work strengthens encoding and blending of consonant blends (e.g., /bl/, /st/, /gr/) by building words from pictures using the moveable alphabet. It deepens phonetic analysis beyond CVC patterns and supports more advanced early spelling and reading.",
-  whatsIncluded: "Blue Series picture cards (blend words) and a moveable alphabet.",
+    "This activity helps the child encode and read words that include consonant blends (two consonant sounds said together, like /st/, /bl/, /gr/). It strengthens phonemic analysis beyond CVC words, supports accurate left-to-right building, and prepares the child for more advanced phonetic reading and spelling.",
+  whatsIncluded: "Blue Series consonant blend picture cards and a moveable alphabet.",
   keyLanguage: [
+    '"What is this?"',
     '"Say it slowly."',
     '"What sounds do you hear at the beginning?"',
-    '"This word begins with /st/."',
-    '"Let\'s build it left to right."',
-    '"Now read it."',
+    '"This starts with /st/."',
+    '"Now let\'s build it."',
+    '"Read the word."',
   ],
   presentationNotes:
-    "Choose one picture and name it. Have the child stretch the word and identify the blend as a unit of sound at the beginning (or end, depending on set). Build the word with the moveable alphabet, then read it back by blending. Best practice: confirm the child can hear the blend before expecting accurate building.",
+    "Choose one picture card and name it clearly. Invite the child to repeat the word slowly, then help them isolate the beginning blend by exaggerating it slightly (\"ssss-t... stop\"). Have the child select the correct letters and place them left to right, then listen for and add the remaining sounds (vowel and ending consonant(s)). When complete, have the child track under the word and blend to read it. Best practice: if the child drops a sound in the blend, return to careful articulation and build only one word at a time until the blend is consistently heard.",
   controlOfError:
-    "Re-sounding the word and comparing to the picture; teacher supports accurate blend hearing.",
+    "The child can re-sound the word and compare it to the picture; incorrect blend spelling becomes obvious when the built word won't read correctly.",
   observeFor:
-    "Clear detection of the blend and correct letter choices; watch for dropping a sound in the blend - return to slow, exaggerated articulation.",
+    "Accurate hearing of both consonant sounds in the blend, correct letter selection, and smooth blending when reading. Watch for omitted blend letters (e.g., \"top\" for \"stop\") or guessing from the picture - slow down and prompt sound-by-sound listening.",
   extensions: [
-    "Contrast sets: /st/ vs /sp/; /bl/ vs /br/.",
-    "Build word families (stop, stamp, stand).",
-    "Sort by blend sound.",
+    "Contrast two blends (/st/ vs /sp/, /bl/ vs /br/).",
+    "Build word families with one blend (stop, step, still).",
+    "Sort words by beginning blend sound.",
   ],
   readiness:
-    "Typically 5-7 years; prerequisites include strong Pink Series decoding/encoding and clear phonemic awareness.",
+    "Typically 5-7 years; prerequisites include confident Pink Series encoding/decoding and strong phonemic awareness.",
 };
 
 export const BLUE_PICTURE_CARDS_LABEL_TO_PICTURE_TEACHERS_GUIDE: MaterialTeachersGuideData = {
@@ -368,29 +369,28 @@ export const BLUE_PICTURE_CARDS_LABEL_TO_PICTURE_TEACHERS_GUIDE: MaterialTeacher
 };
 
 export const BLUE_BOOKLETS_TEACHERS_GUIDE: MaterialTeachersGuideData = {
-  title: "Consonant Blend Picture Cards with Moveable Alphabet (Blue Series)",
+  title: "Blue Series Booklets (Consonant Blends)",
   purpose:
-    "This activity helps the child encode and read words that include consonant blends (two consonant sounds said together, like /st/, /bl/, /gr/). It strengthens phonemic analysis beyond CVC words, supports accurate left-to-right building, and prepares the child for more advanced phonetic reading and spelling.",
-  whatsIncluded: "Blue Series consonant blend picture cards and a moveable alphabet.",
+    "Blue Series booklets help children read blends in meaningful, connected text, strengthening fluency, accuracy, and comprehension. This bridges from word-level decoding to sentence-level reading with more complex phonetic patterns.",
+  whatsIncluded: "Short booklets or story strips featuring blend words in controlled sentences.",
   keyLanguage: [
-    '"What is this?"',
-    '"Say it slowly."',
-    '"What sounds do you hear at the beginning?"',
-    '"This starts with /st/."',
-    '"Now let\'s build it."',
-    '"Read the word."',
+    '"Point under each word."',
+    '"Find the blend."',
+    '"Read the sentence again smoothly."',
+    '"What did it say?"',
+    '"Can you find a word with /gr/?"',
   ],
   presentationNotes:
-    "Choose one picture card and name it clearly. Invite the child to repeat the word slowly, then help them isolate the beginning blend by exaggerating it slightly (\"ssss-t... stop\"). Have the child select the correct letters and place them left to right, then listen for and add the remaining sounds (vowel and ending consonant(s)). When complete, have the child track under the word and blend to read it. Best practice: if the child drops a sound in the blend, return to careful articulation and build only one word at a time until the blend is consistently heard.",
+    "Choose a booklet aligned to the child's blend set. Preview one or two key blend words if needed, then have the child read sentence by sentence with finger tracking. Briefly discuss meaning after a sentence or page. Best practice: stop before fatigue - short, successful readings build confidence.",
   controlOfError:
-    "The child can re-sound the word and compare it to the picture; incorrect blend spelling becomes obvious when the built word won't read correctly.",
+    "The text itself supports re-reading and self-correction; teacher offers minimal prompts.",
   observeFor:
-    "Accurate hearing of both consonant sounds in the blend, correct letter selection, and smooth blending when reading. Watch for omitted blend letters (e.g., \"top\" for \"stop\") or guessing from the picture - slow down and prompt sound-by-sound listening.",
+    "Accurate blend decoding inside sentences; watch for skipping blends or inserting words - slow the pace and return to word labels if needed.",
   extensions: [
-    "Contrast two blends (/st/ vs /sp/, /bl/ vs /br/).",
-    "Build word families with one blend (stop, step, still).",
-    "Sort words by beginning blend sound.",
+    "Highlight all words with a target blend.",
+    "Child builds one booklet sentence with word cards.",
+    "Child writes one new sentence using a known blend word.",
   ],
   readiness:
-    "Typically 5-7 years; prerequisites include confident Pink Series encoding/decoding and strong phonemic awareness.",
+    "Typically 5-8 years; prerequisites include successful Blue Series word reading and sustained attention for short texts.",
 };
