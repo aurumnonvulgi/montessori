@@ -3,6 +3,8 @@
 import Link from "next/link";
 import HomeLink from "../../../components/HomeLink";
 import InitialSoundDevBanner from "../../../components/InitialSoundDevBanner";
+import MaterialTeachersGuide from "../../../components/MaterialTeachersGuide";
+import { INITIAL_SOUND_CARDS_TEACHERS_GUIDE } from "../../../data/languageArtsTeachersGuides";
 import { initialSoundGroups } from "./data";
 
 export default function InitialSoundCardsPage() {
@@ -38,6 +40,7 @@ export default function InitialSoundCardsPage() {
             </Link>
           ))}
         </div>
+        <MaterialTeachersGuide guide={INITIAL_SOUND_CARDS_TEACHERS_GUIDE} />
       </div>
     </div>
   );

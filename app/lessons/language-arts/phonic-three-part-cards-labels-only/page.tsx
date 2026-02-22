@@ -3,7 +3,7 @@
 import Link from "next/link";
 import HomeLink from "../../../components/HomeLink";
 import MaterialTeachersGuide from "../../../components/MaterialTeachersGuide";
-import { PHONIC_TCP_PICTURE_AND_LABEL_TO_PICTURE_PINK_TEACHERS_GUIDE } from "../../../data/languageArtsTeachersGuides";
+import { PHONIC_TCP_LABEL_TO_PICTURE_PINK_TEACHERS_GUIDE } from "../../../data/languageArtsTeachersGuides";
 
 const VOWELS = [
   {
@@ -49,25 +49,23 @@ const toCardImage = (letter: string, word: string) =>
 const toLabelImage = (letter: string, word: string) =>
   `/assets/language_arts/moveable_alphabet/phonic_labels/${letter}-${word}-label.png`;
 
-export default function PhonicThreePartCardsLabelsHub() {
+export default function PhonicThreePartCardsLabelsOnlyHub() {
   return (
     <div className="relative min-h-screen bg-[radial-gradient(circle_at_top,#f5efe6,#fdfbf8_55%,#f7efe4)]">
       <HomeLink />
       <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-6 py-10">
         <header className="space-y-3 text-center">
           <p className="text-xs uppercase tracking-[0.35em] text-stone-400">
-            Language Arts · Phonic Three-Part Cards Pictures & Labels
+            Language Arts · Phonic Three-Part Cards Labels
           </p>
-          <h1 className="font-display text-4xl font-semibold text-stone-900">
-            Phonic Three-Part Cards Pictures &amp; Labels
-          </h1>
-          <p className="text-sm text-stone-600">Choose a vowel group to match pictures and labels.</p>
+          <h1 className="font-display text-4xl font-semibold text-stone-900">Phonic Three-Part Cards Labels</h1>
+          <p className="text-sm text-stone-600">Choose a vowel group to match labels to the picture + full card set.</p>
         </header>
         <div className="grid gap-6 md:grid-cols-2">
           {VOWELS.map((vowel) => (
             <Link
               key={vowel.letter}
-              href={`/lessons/language-arts/phonic-three-part-cards-labels/${vowel.letter}`}
+              href={`/lessons/language-arts/phonic-three-part-cards-labels-only/${vowel.letter}`}
               className="group flex h-48 flex-col justify-between rounded-3xl border border-stone-200 bg-white/90 p-6 shadow-[0_30px_60px_-40px_rgba(15,23,42,0.8)] transition hover:-translate-y-0.5 hover:shadow-[0_40px_90px_-50px_rgba(15,23,42,0.7)]"
             >
               <div className="flex items-center justify-between">
@@ -98,7 +96,7 @@ export default function PhonicThreePartCardsLabelsHub() {
             </Link>
           ))}
         </div>
-        <MaterialTeachersGuide guide={PHONIC_TCP_PICTURE_AND_LABEL_TO_PICTURE_PINK_TEACHERS_GUIDE} />
+        <MaterialTeachersGuide guide={PHONIC_TCP_LABEL_TO_PICTURE_PINK_TEACHERS_GUIDE} />
       </main>
     </div>
   );

@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import HomeLink from "../../../components/HomeLink";
+import MaterialTeachersGuide from "../../../components/MaterialTeachersGuide";
+import { PHONIC_PICTURE_CARDS_LABEL_TO_PICTURE_PINK_TEACHERS_GUIDE } from "../../../data/languageArtsTeachersGuides";
 
 const VOWELS = [
   {
@@ -92,6 +94,7 @@ export default function PhonicLabelsHub() {
             </Link>
           ))}
         </div>
+        <MaterialTeachersGuide guide={PHONIC_PICTURE_CARDS_LABEL_TO_PICTURE_PINK_TEACHERS_GUIDE} />
       </main>
     </div>
   );

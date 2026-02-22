@@ -2,8 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import HomeLink from "../../../../components/HomeLink";
+import MaterialTeachersGuide from "../../../../components/MaterialTeachersGuide";
+import { CONCEPT_OPPOSITES_TEACHERS_GUIDE } from "../../../../data/languageArtsTeachersGuides";
 import { trackLessonEvent } from "../../../../lib/lessonTelemetry";
 import { primeSpeechVoices, speakWithPreferredVoice } from "../../../../lib/speech";
+import { getVoiceEnabled, getVoiceVolume } from "../../../../lib/voicePreferences";
 
 const BOARD_IMAGE = "/assets/language_arts/concept_development/opposites/matching_board6x6.svg";
 const BOARD_WIDTH = 1366;
@@ -190,9 +193,13 @@ export default function OppositesGame() {
 
   const playAudio = useCallback((src: string, onFail?: () => void) => {
     if (typeof window === "undefined") return;
+    if (!getVoiceEnabled()) return;
+    const masterVoiceVolume = getVoiceVolume();
+    if (masterVoiceVolume <= 0) return;
     stopCurrentAudio();
     const audio = new Audio(src);
     audio.preload = "auto";
+    audio.volume = Math.max(0, Math.min(1, masterVoiceVolume));
     confirmationAudioRef.current = audio;
     void audio.play().catch(() => {
       onFail?.();
@@ -573,6 +580,7 @@ export default function OppositesGame() {
             </button>
           </div>
         </div>
+        <MaterialTeachersGuide guide={CONCEPT_OPPOSITES_TEACHERS_GUIDE} />
       </main>
     </div>
   );

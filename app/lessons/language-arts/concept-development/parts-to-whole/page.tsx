@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import HomeLink from "../../../../components/HomeLink";
+import MaterialTeachersGuide from "../../../../components/MaterialTeachersGuide";
+import { CONCEPT_PART_TO_WHOLE_TEACHERS_GUIDE } from "../../../../data/languageArtsTeachersGuides";
 import { trackLessonEvent } from "../../../../lib/lessonTelemetry";
 
 const BOARD_IMAGE = "/assets/language_arts/concept_development/opposites/matching_board6x6.svg";
@@ -481,6 +483,7 @@ export default function PartsToWholeGame() {
             </button>
           </div>
         </div>
+        <MaterialTeachersGuide guide={CONCEPT_PART_TO_WHOLE_TEACHERS_GUIDE} />
       </main>
     </div>
   );

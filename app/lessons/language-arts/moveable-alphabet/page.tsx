@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import HomeLink from "../../../components/HomeLink";
+import MaterialTeachersGuide from "../../../components/MaterialTeachersGuide";
+import { PHONIC_PICTURE_CARDS_MOVEABLE_ALPHABET_PINK_TEACHERS_GUIDE } from "../../../data/languageArtsTeachersGuides";
 
 const VOWEL_CARDS = [
   { letter: "a", color: "text-rose-600", bg: "bg-rose-50", border: "border-rose-200" },
@@ -47,6 +49,7 @@ export default function MoveableAlphabetHub() {
             Back to Language Arts
           </Link>
         </div>
+        <MaterialTeachersGuide guide={PHONIC_PICTURE_CARDS_MOVEABLE_ALPHABET_PINK_TEACHERS_GUIDE} />
       </main>
     </div>
   );

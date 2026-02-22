@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import HomeLink from "../../../../components/HomeLink";
+import MaterialTeachersGuide from "../../../../components/MaterialTeachersGuide";
+import { CONCEPT_ASSOCIATIONS_TEACHERS_GUIDE } from "../../../../data/languageArtsTeachersGuides";
 import { trackLessonEvent } from "../../../../lib/lessonTelemetry";
 import { primeSpeechVoices, speakWithPreferredVoice } from "../../../../lib/speech";
 
@@ -572,6 +574,7 @@ export default function AssociationsGame() {
             </button>
           </div>
         </div>
+        <MaterialTeachersGuide guide={CONCEPT_ASSOCIATIONS_TEACHERS_GUIDE} />
       </main>
     </div>
   );

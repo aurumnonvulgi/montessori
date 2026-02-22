@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import HomeLink from "../../../../components/HomeLink";
+import MaterialTeachersGuide from "../../../../components/MaterialTeachersGuide";
+import { CONCEPT_TRANSPORTATION_TEACHERS_GUIDE } from "../../../../data/languageArtsTeachersGuides";
 import { trackLessonEvent } from "../../../../lib/lessonTelemetry";
 import { primeSpeechVoices, speakWithPreferredVoice } from "../../../../lib/speech";
 
@@ -635,6 +637,7 @@ export default function TransportationGame() {
             </button>
           </div>
         </div>
+        <MaterialTeachersGuide guide={CONCEPT_TRANSPORTATION_TEACHERS_GUIDE} />
       </main>
     </div>
   );

@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import HomeLink from "./HomeLink";
+import MaterialTeachersGuide from "./MaterialTeachersGuide";
 import { LILAC_WORD_SETS } from "../lessons/language-arts/lilac-word-lists/data";
+import { LILAC_SIGHT_WORDS_TEACHERS_GUIDE } from "../data/languageArtsTeachersGuides";
 
 export default function LilacWordListsHub() {
   return (
@@ -28,8 +30,8 @@ export default function LilacWordListsHub() {
             </Link>
           ))}
         </div>
+        <MaterialTeachersGuide guide={LILAC_SIGHT_WORDS_TEACHERS_GUIDE} />
       </main>
     </div>
   );
 }
-
