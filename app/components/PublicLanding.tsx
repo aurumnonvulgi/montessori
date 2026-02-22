@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import DashboardLandingDemo from "./DashboardLandingDemo";
 import MaterialTeachersGuide from "./MaterialTeachersGuide";
 import MoveableAlphabetLandingDemo from "./MoveableAlphabetLandingDemo";
 import NumberRodsLandingDemo from "./NumberRodsLandingDemo";
@@ -116,6 +117,32 @@ export default function PublicLanding() {
               </div>
             </div>
           </div>
+
+          <details className="mt-8 overflow-hidden rounded-3xl border border-stone-200 bg-white/85 shadow-[0_24px_70px_-50px_rgba(15,23,42,0.55)]">
+            <summary className="flex cursor-pointer list-none items-center justify-between px-6 py-5 text-left transition hover:bg-stone-50">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#0e6798]">Sample Dashboard</p>
+                <p className="mt-1 text-sm text-stone-600">Expand to preview a full dashboard demo with fake progress.</p>
+              </div>
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-stone-300 bg-white text-stone-700">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-5 w-5"
+                  aria-hidden="true"
+                >
+                  <path d="m6 9 6 6 6-6" />
+                </svg>
+              </span>
+            </summary>
+            <div className="border-t border-stone-200 p-4 sm:p-5">
+              <DashboardLandingDemo />
+            </div>
+          </details>
         </section>
 
         <div className="mt-10 grid w-full max-w-2xl gap-4 sm:grid-cols-2">
