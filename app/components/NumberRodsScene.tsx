@@ -906,7 +906,7 @@ export default function NumberRodsScene({
         />
         <OrbitControls
           ref={controlsRef}
-          enablePan={false}
+          enablePan={!preview}
           enableZoom={!preview}
           enableRotate={!preview}
           maxPolarAngle={Math.PI / 2.1}
@@ -915,6 +915,15 @@ export default function NumberRodsScene({
           target={cameraTarget}
           minDistance={1.1}
           maxDistance={2.2}
+          mouseButtons={{
+            LEFT: THREE.MOUSE.ROTATE,
+            MIDDLE: THREE.MOUSE.DOLLY,
+            RIGHT: THREE.MOUSE.PAN,
+          }}
+          touches={{
+            ONE: THREE.TOUCH.ROTATE,
+            TWO: THREE.TOUCH.DOLLY_PAN,
+          }}
         />
       </Canvas>
       {showZoomReset ? <ZoomResetButton onClick={handleZoomReset} /> : null}

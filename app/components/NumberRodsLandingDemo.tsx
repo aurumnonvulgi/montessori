@@ -18,11 +18,25 @@ const DESKTOP_DEMO_CAMERA = {
   fov: 27,
 };
 
+const DESKTOP_PRESENTATION_CAMERA = {
+  // Pull back when the lesson starts so the full opening movement is visible.
+  position: [0.12, 0.44, 1.06] as [number, number, number],
+  target: [-0.2, 0.03, 0] as [number, number, number],
+  fov: 33,
+};
+
 const PORTRAIT_MOBILE_DEMO_CAMERA = {
   // Portrait phones start slightly more zoomed in so rods remain readable.
   position: [0.2, 0.28, 0.74] as [number, number, number],
   target: [0.02, 0.03, 0] as [number, number, number],
   fov: 21,
+};
+
+const PORTRAIT_MOBILE_PRESENTATION_CAMERA = {
+  // Keep rods centered on portrait during the opening slide-in sequence.
+  position: [0.5, 0.56, 1.58] as [number, number, number],
+  target: [-0.2, 0.03, 0] as [number, number, number],
+  fov: 40,
 };
 
 export default function NumberRodsLandingDemo() {
@@ -76,7 +90,9 @@ export default function NumberRodsLandingDemo() {
     setPlaying(true);
   }, []);
 
-  const demoCamera = isPortraitMobile ? PORTRAIT_MOBILE_DEMO_CAMERA : DESKTOP_DEMO_CAMERA;
+  const demoCamera = isPortraitMobile
+    ? (playing ? PORTRAIT_MOBILE_PRESENTATION_CAMERA : PORTRAIT_MOBILE_DEMO_CAMERA)
+    : (playing ? DESKTOP_PRESENTATION_CAMERA : DESKTOP_DEMO_CAMERA);
 
   return (
     <div className="rounded-[32px] border border-stone-200 bg-white/90 p-3 shadow-[0_30px_90px_-60px_rgba(15,23,42,0.7)] sm:p-5">

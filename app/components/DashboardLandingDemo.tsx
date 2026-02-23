@@ -163,10 +163,10 @@ export default function DashboardLandingDemo() {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-[11px] uppercase tracking-[0.28em] text-stone-500">Dashboard Preview</p>
-            <p className="mt-1 text-sm text-stone-600">Demo data only. Real dashboard updates from live activity tracking.</p>
+            <p className="mt-1 text-sm text-stone-600">*Not actual values</p>
           </div>
           <div className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-sky-700">
-            Fake Progress Data
+            *Not actual values
           </div>
         </div>
 
